@@ -141,31 +141,33 @@ void draw_bar(GLfloat x_offset, GLfloat z_offset, GLfloat height, GLfloat red, G
 {
   GLfloat width = 0.1;
 
-  //height = height * (-1.0f);
-
   if (g_mode == GL_POINTS)
     set_color(0.2f, 1.0f, 0.2f, 1.0f);
 
-  if (g_mode != GL_POINTS)
-  {
-    set_color(red, green, blue, 1.0f);
-    draw_rectangle(x_offset, height, z_offset, x_offset + width, height, z_offset + 0.1);
-  }
-  draw_rectangle(x_offset, 0, z_offset, x_offset + width, 0, z_offset + 0.1);
-
-  if (g_mode != GL_POINTS)
-  {
-    set_color(0.5 * red, 0.5 * green, 0.5 * blue, 1.0f);
-    draw_rectangle(x_offset, 0.0, z_offset + 0.1, x_offset + width, height, z_offset + 0.1);
-  }
-  draw_rectangle(x_offset, 0.0, z_offset, x_offset + width, height, z_offset );
-
+  /*
   if (g_mode != GL_POINTS)
   {
     set_color(0.25 * red, 0.25 * green, 0.25 * blue, 1.0f);
     draw_rectangle(x_offset, 0.0, z_offset , x_offset, height, z_offset + 0.1);
   }
   draw_rectangle(x_offset + width, 0.0, z_offset , x_offset + width, height, z_offset + 0.1);
+
+  if (g_mode != GL_POINTS)
+  {
+    set_color(0.5 * red, 0.5 * green, 0.5 * blue, 1.0f);
+    draw_rectangle(x_offset, 0.0, z_offset + 0.1, x_offset + width, height, z_offset + 0.1);
+  }
+  draw_rectangle(x_offset, 0.0, z_offset, x_offset + width, height, z_offset);
+  */
+
+  if (g_mode != GL_POINTS)
+  {
+    set_color(red, green, blue, 1.0f);
+    //set_color(128, 128, 128, 1.0f);
+    draw_rectangle(x_offset, height, z_offset, x_offset + width, height, z_offset + 0.1);
+  }
+  //draw_rectangle(x_offset, 0.0, z_offset, x_offset + width, height, z_offset );
+
 }
 
 void draw_bars(void)

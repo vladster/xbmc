@@ -137,6 +137,7 @@ void set_color(GLfloat red, GLfloat blue, GLfloat green, GLfloat alpha)
 }
 
 
+#if 0
 void draw_bar(GLfloat x_offset, GLfloat z_offset, GLfloat height, GLfloat red, GLfloat green, GLfloat blue )
 {
   GLfloat width = 0.1;
@@ -168,6 +169,66 @@ void draw_bar(GLfloat x_offset, GLfloat z_offset, GLfloat height, GLfloat red, G
   }
   //draw_rectangle(x_offset, 0.0, z_offset, x_offset + width, height, z_offset );
 
+}
+#endif
+
+void draw_bar(GLfloat x_offset, GLfloat z_offset, GLfloat height, GLfloat red, GLfloat green, GLfloat blue )
+{
+  GLfloat col[] =  {
+                      red, green, blue,
+                      red, green, blue,
+                      red, green, blue,
+                      red, green, blue,
+                      red, green, blue,
+                      red, green, blue,
+                      red, green, blue,
+                      red, green, blue
+                   };
+  GLfloat ver[] =  {
+                      x_offset + 0.0f, 0.0f,    z_offset + 0.0f,
+                      x_offset + 0.1f, 0.0f,    z_offset + 0.0f,
+                      x_offset + 0.1f, 0.0f,    z_offset + 0.1f,
+                      x_offset + 0.0f, 0.0f,    z_offset + 0.1f,
+                      x_offset + 0.0f, height,  z_offset + 0.0f,
+                      x_offset + 0.1f, height,  z_offset + 0.0f,
+                      x_offset + 0.1f, height,  z_offset + 0.1f,
+                      x_offset + 0.0f, height,  z_offset + 0.1f
+                   };
+
+  GLubyte idx[] =  {
+                      // Bottom
+                      0, 1, 2,
+                      0, 2, 3,
+                      // Left
+                      0, 4, 7,
+                      0, 7, 3,
+                      // Back
+                      3, 7, 6,
+                      3, 6, 2,
+                      // Right
+                      1, 5, 6,
+                      1, 6, 2,
+                      // Front
+                      0, 4, 5,
+                      0, 5, 1,
+                      // Top
+                      4, 5, 6,
+                      4, 6, 7
+                   };
+
+  GLint   posLoc = m_shader->GetPosLoc();
+  GLint   colLoc = m_shader->GetColLoc();
+
+  glVertexAttribPointer(colLoc, 3, GL_FLOAT, 0, 0, col);
+  glVertexAttribPointer(posLoc, 3, GL_FLOAT, 0, 0, ver);
+
+  glEnableVertexAttribArray(posLoc);
+  glEnableVertexAttribArray(colLoc);
+
+  glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_BYTE, idx);
+
+  glDisableVertexAttribArray(posLoc);
+  glDisableVertexAttribArray(colLoc);
 }
 
 void draw_bars(void)

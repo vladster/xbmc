@@ -90,14 +90,16 @@ void CMatrixGLES::PushMatrix()
     GLfloat *matrix = new GLfloat[16];
     memcpy(matrix, m_pMatrix, sizeof(GLfloat)*16);
     m_matrices[m_matrixMode].push_back(matrix);
+    m_pMatrix = matrix;
   }
 }
 
 void CMatrixGLES::PopMatrix()
 {
-  if (MODE_WITHIN_RANGE(m_matrixMode) && (m_matrices[m_matrixMode].size() > 1))
+  if (MODE_WITHIN_RANGE(m_matrixMode))
   {
-    m_matrices[m_matrixMode].pop_back();
+    if (m_matrices[m_matrixMode].size() > 1)
+      m_matrices[m_matrixMode].pop_back();
     m_pMatrix = m_matrices[m_matrixMode].back();
   }
 }
@@ -185,7 +187,7 @@ void CMatrixGLES::Rotatef(GLfloat angle, GLfloat x, GLfloat y, GLfloat z)
   }
   GLfloat cosine = cos(angle);
   GLfloat sine   = sin(angle);
-  GLfloat cos1   = 1 - cosine;
+  GLfloat cos1   = 1.0f - cosine;
   GLfloat a = (x*x*cos1) + cosine;
   GLfloat b = (x*y*cos1) - (z*sine);
   GLfloat c = (x*z*cos1) + (y*sine);

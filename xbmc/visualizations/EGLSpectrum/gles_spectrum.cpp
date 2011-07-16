@@ -47,16 +47,19 @@
 
 #define NUM_BANDS 16
 
-GLfloat y_angle = 45.0, y_speed = 0.5;
-GLfloat x_angle = 20.0, x_speed = 0.0;
-GLfloat z_angle = 0.0, z_speed = 0.0;
+#ifndef M_PI
+#define M_PI       3.141592654f
+#endif
+#define DEG2RAD(d) ( (d) * M_PI/180.0f )
+
+GLfloat x_angle = 20.0f, x_speed = 0.0f;
+GLfloat y_angle = 45.0f, y_speed = 0.5f;
+GLfloat z_angle = 0.0f, z_speed = 0.0f;
 GLfloat heights[16][16], cHeights[16][16], scale;
-GLfloat hSpeed = 0.05;
+GLfloat hSpeed = 0.05f;
 GLenum  g_mode = GL_TRIANGLES;
-/*
 GLfloat col[4][4];
 GLfloat ver[4][3];
-*/
 
 std::string frag = "precision mediump float; \n"
                    "varying lowp vec4 m_colour; \n"
@@ -151,32 +154,28 @@ void draw_bar(GLfloat x_offset, GLfloat z_offset, GLfloat height, GLfloat red, G
   if (g_mode == GL_POINTS)
     set_color(0.2f, 1.0f, 0.2f, 1.0f);
 
-  /*
-  if (g_mode != GL_POINTS)
-  {
-    set_color(0.25 * red, 0.25 * green, 0.25 * blue, 1.0f);
-    draw_rectangle(x_offset, 0.0, z_offset , x_offset, height, z_offset + 0.1);
-  }
-  draw_rectangle(x_offset + width, 0.0, z_offset , x_offset + width, height, z_offset + 0.1);
-
-  if (g_mode != GL_POINTS)
-  {
-    set_color(0.5 * red, 0.5 * green, 0.5 * blue, 1.0f);
-    draw_rectangle(x_offset, 0.0, z_offset + 0.1, x_offset + width, height, z_offset + 0.1);
-  }
-  draw_rectangle(x_offset, 0.0, z_offset, x_offset + width, height, z_offset);
-  */
-
   if (g_mode != GL_POINTS)
   {
     set_color(red, green, blue, 1.0f);
-    //set_color(128, 128, 128, 1.0f);
-    draw_rectangle(x_offset, height, z_offset, x_offset + width, height, z_offset + 0.1);
+    draw_rectangle(x_offset, height, z_offset, x_offset + width, height, z_offset + 0.1f);
   }
-  //draw_rectangle(x_offset, 0.0, z_offset, x_offset + width, height, z_offset );
+  draw_rectangle(x_offset, 0.0f, z_offset, x_offset + width, 0.0f, z_offset + 0.1f);
 
+  if (g_mode != GL_POINTS)
+  {
+    set_color(0.5f * red, 0.5f * green, 0.5f * blue, 1.0f);
+    draw_rectangle(x_offset, 0.0f, z_offset + 0.1f, x_offset + width, height, z_offset + 0.1f);
+  }
+  draw_rectangle(x_offset, 0.0f, z_offset, x_offset + width, height, z_offset );
+
+  if (g_mode != GL_POINTS)
+  {
+    set_color(0.25f * red, 0.25f * green, 0.25f * blue, 1.0f);
+    draw_rectangle(x_offset, 0.0f, z_offset , x_offset, height, z_offset + 0.1f);
+  }
+  draw_rectangle(x_offset + width, 0.0f, z_offset , x_offset + width, height, z_offset + 0.1f);
 }
-#endif
+#else
 
 void draw_bar(GLfloat x_offset, GLfloat z_offset, GLfloat height, GLfloat red, GLfloat green, GLfloat blue )
 {
@@ -236,6 +235,7 @@ void draw_bar(GLfloat x_offset, GLfloat z_offset, GLfloat height, GLfloat red, G
   glDisableVertexAttribArray(posLoc);
   glDisableVertexAttribArray(colLoc);
 }
+#endif
 
 void draw_bars(void)
 {
@@ -244,21 +244,23 @@ void draw_bars(void)
 
   glClear(GL_DEPTH_BUFFER_BIT);
   g_matricesSpectrum.PushMatrix();
-  g_matricesSpectrum.Translatef(0.0,-0.5,-5.0);
-  g_matricesSpectrum.Rotatef(x_angle,1.0,0.0,0.0);
-  g_matricesSpectrum.Rotatef(y_angle,0.0,1.0,0.0);
-  g_matricesSpectrum.Rotatef(z_angle,0.0,0.0,1.0);
+  g_matricesSpectrum.Translatef(0.0f ,-0.5f, -5.0f);
+  g_matricesSpectrum.Rotatef(DEG2RAD(x_angle), 1.0f, 0.0f, 0.0f);
+  g_matricesSpectrum.Rotatef(DEG2RAD(y_angle), 0.0f, 1.0f, 0.0f);
+  g_matricesSpectrum.Rotatef(DEG2RAD(z_angle), 0.0f, 0.0f, 1.0f);
+
+  m_shader->Enable();
 
   for(y = 0; y < 16; y++)
   {
-    z_offset = -1.6 + ((15 - y) * 0.2);
+    z_offset = -1.6f + ((15.0f - y) * 0.2f);
 
-    b_base = y * (1.0 / 15);
-    r_base = 1.0 - b_base;
+    b_base = y * (1.0f / 15.0f);
+    r_base = 1.0f - b_base;
 
     for(x = 0; x < 16; x++)
     {
-      x_offset = -1.6 + (x * 0.2);
+      x_offset = -1.6f + ((float)x * 0.2f);
       if (::fabs(cHeights[y][x]-heights[y][x])>hSpeed)
       {
         if (cHeights[y][x]<heights[y][x])
@@ -267,10 +269,12 @@ void draw_bars(void)
           cHeights[y][x] -= hSpeed;
       }
       draw_bar(x_offset, z_offset,
-        cHeights[y][x], r_base - (x * (r_base / 15.0)),
-        x * (1.0 / 15), b_base);
+        cHeights[y][x], r_base - (float(x) * (r_base / 15.0f)),
+        (float)x * (1.0f / 15.0f), b_base);
     }
   }
+
+  m_shader->Disable();
 
   g_matricesSpectrum.PopMatrix();
 }
@@ -307,12 +311,10 @@ extern "C" void Render()
   g_matricesSpectrum.MatrixMode(MM_PROJECTION);
   g_matricesSpectrum.PushMatrix();
   g_matricesSpectrum.LoadIdentity();
-  g_matricesSpectrum.Frustum(-1, 1, -1, 1, 1.5, 10);
+  g_matricesSpectrum.Frustum(-1.0f, 1.0f, -1.0f, 1.0f, 1.5f, 10.0f);
   g_matricesSpectrum.MatrixMode(MM_MODELVIEW);
   g_matricesSpectrum.PushMatrix();
   g_matricesSpectrum.LoadIdentity();
-
-  m_shader->Enable();
 
   glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_LESS);
@@ -331,11 +333,9 @@ extern "C" void Render()
 
   draw_bars();
 
-  g_matricesSpectrum.PopMatrix();
+  g_matricesSpectrum .PopMatrix();
   g_matricesSpectrum.MatrixMode(MM_PROJECTION);
   g_matricesSpectrum.PopMatrix();
-
-  m_shader->Disable();
 
   glDisable(GL_DEPTH_TEST);
   glEnable(GL_BLEND);
@@ -349,14 +349,14 @@ extern "C" void Start(int iChannels, int iSamplesPerSec, int iBitsPerSample, con
   {
     for(y = 0; y < 16; y++)
     {
-      cHeights[y][x] = 0.0;
+      cHeights[y][x] = 0.0f;
     }
   }
 
   scale = 1.0f / log(256.0f);
 
   x_speed = 0.0f;
-  y_speed = 0.01f;
+  y_speed = 0.5f;
   z_speed = 0.0f;
   x_angle = 20.0f;
   y_angle = 45.0f;
@@ -560,7 +560,7 @@ extern "C" ADDON_STATUS ADDON_SetSetting(const char *strSetting, const void* val
 
     case 0:
     default:
-      scale = 1.f / log(256.f);
+      scale = 1.0f / log(256.f);
       break;
     }
     return ADDON_STATUS_OK;

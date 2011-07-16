@@ -28,6 +28,10 @@
  */
 
 
+#include "system.h"
+
+#if HAS_GLES == 2
+
 #include "addons/include/xbmc_vis_dll.h"
 #include <string.h>
 #include <math.h>
@@ -49,8 +53,10 @@ GLfloat z_angle = 0.0, z_speed = 0.0;
 GLfloat heights[16][16], cHeights[16][16], scale;
 GLfloat hSpeed = 0.05;
 GLenum  g_mode = GL_TRIANGLES;
+/*
 GLfloat col[4][4];
 GLfloat ver[4][3];
+*/
 
 std::string frag = "precision mediump float; \n"
                    "varying lowp vec4 m_colour; \n"
@@ -79,6 +85,7 @@ std::string vert = "attribute vec4 m_attrpos;\n"
 
 CGUIShader *m_shader = NULL;
 
+#if 0
 void draw_rectangle(GLfloat x1, GLfloat y1, GLfloat z1, GLfloat x2, GLfloat y2, GLfloat z2)
 {
   GLint   posLoc = m_shader->GetPosLoc();
@@ -137,7 +144,6 @@ void set_color(GLfloat red, GLfloat blue, GLfloat green, GLfloat alpha)
 }
 
 
-#if 0
 void draw_bar(GLfloat x_offset, GLfloat z_offset, GLfloat height, GLfloat red, GLfloat green, GLfloat blue )
 {
   GLfloat width = 0.1;
@@ -225,7 +231,7 @@ void draw_bar(GLfloat x_offset, GLfloat z_offset, GLfloat height, GLfloat red, G
   glEnableVertexAttribArray(posLoc);
   glEnableVertexAttribArray(colLoc);
 
-  glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_BYTE, idx);
+  glDrawElements(g_mode, 36, GL_UNSIGNED_BYTE, idx);
 
   glDisableVertexAttribArray(posLoc);
   glDisableVertexAttribArray(colLoc);
@@ -522,7 +528,7 @@ extern "C" ADDON_STATUS ADDON_SetSetting(const char *strSetting, const void* val
         break;
 
       case 2:
-        g_mode = GL_POINTS;
+        g_mode = GL_LINES;
         break;
 
       case 0:
@@ -537,11 +543,11 @@ extern "C" ADDON_STATUS ADDON_SetSetting(const char *strSetting, const void* val
     switch (*(int*) value)
     {
     case 1:
-      scale = 2.f / log(256.f);
+      scale = 2.0f / log(256.f);
       break;
 
     case 2:
-      scale = 3.f / log(256.f);
+      scale = 3.0f / log(256.f);
       break;
 
     case 3:
@@ -589,3 +595,5 @@ extern "C" ADDON_STATUS ADDON_SetSetting(const char *strSetting, const void* val
 
   return ADDON_STATUS_UNKNOWN;
 }
+
+#endif

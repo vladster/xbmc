@@ -369,13 +369,11 @@ void CMatrixGLES::PrintMatrix(void)
   for (int i=0; i<(int)MM_MATRIXSIZE; i++)
   {
     GLfloat *m = GetMatrix((EMATRIXMODE)i);
-    /*
-    CLog::Log(LOGDEBUG, "MatrixGLES - Matrix:%d", i);
-    CLog::Log(LOGDEBUG, "%f %f %f %f", m[0], m[4], m[8],  m[12]);
-    CLog::Log(LOGDEBUG, "%f %f %f %f", m[1], m[5], m[9],  m[13]);
-    CLog::Log(LOGDEBUG, "%f %f %f %f", m[2], m[6], m[10], m[14]);
-    CLog::Log(LOGDEBUG, "%f %f %f %f", m[3], m[7], m[11], m[15]);
-    */
+    fprintf(stderr, "MatrixGLES - Matrix:%d", i);
+    fprintf(stderr, "%f %f %f %f", m[0], m[4], m[8],  m[12]);
+    fprintf(stderr, "%f %f %f %f", m[1], m[5], m[9],  m[13]);
+    fprintf(stderr, "%f %f %f %f", m[2], m[6], m[10], m[14]);
+    fprintf(stderr, "%f %f %f %f", m[3], m[7], m[11], m[15]);
   }
 }
 

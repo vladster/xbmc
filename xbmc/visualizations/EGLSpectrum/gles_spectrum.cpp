@@ -180,14 +180,14 @@ void draw_bar(GLfloat x_offset, GLfloat z_offset, GLfloat height, GLfloat red, G
 void draw_bar(GLfloat x_offset, GLfloat z_offset, GLfloat height, GLfloat red, GLfloat green, GLfloat blue )
 {
   GLfloat col[] =  {
-                      red, green, blue,
-                      red, green, blue,
-                      red, green, blue,
-                      red, green, blue,
-                      red, green, blue,
-                      red, green, blue,
-                      red, green, blue,
-                      red, green, blue
+                      red * 0.1f, green * 0.1f, blue * 0.1f,
+                      red * 0.2f, green * 0.2f, blue * 0.2f,
+                      red * 0.3f, green * 0.3f, blue * 0.3f,
+                      red * 0.4f, green * 0.4f, blue * 0.4f,
+                      red * 0.5f, green * 0.5f, blue * 0.5f,
+                      red * 0.6f, green * 0.6f, blue * 0.6f,
+                      red * 0.7f, green * 0.7f, blue * 0.7f,
+                      red * 0.8f, green * 0.8f, blue *0.8f
                    };
   GLfloat ver[] =  {
                       x_offset + 0.0f, 0.0f,    z_offset + 0.0f,

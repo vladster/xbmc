@@ -432,7 +432,7 @@ inline bool PAPlayer::ProcessStream(StreamInfo *si, float &delay)
   }
 
   /* give the stream the data */
-  unsigned int size = std::min(si->m_decoder.GetDataSize(), si->m_stream->GetSpace() / si->m_bytesPerSample);
+  unsigned int size = std::min(std::min(si->m_decoder.GetDataSize(), si->m_stream->GetSpace() / si->m_bytesPerSample), (unsigned int)OUTPUT_SAMPLES);  
   void*        data = si->m_decoder.GetData(size);
   si->m_stream->AddData(data, size * si->m_bytesPerSample);
   si->m_framesSent += size;

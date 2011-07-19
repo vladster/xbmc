@@ -405,7 +405,6 @@ inline void PAPlayer::ProcessStreams(float &delay, float &buffer)
     StreamInfo* si = *itt;
     if (!m_currentStream && !si->m_started)
       m_currentStream = si;
-
     /* if the stream is finishing */
     if ((si->m_fadeOutTriggered && si->m_stream && !si->m_stream->IsFading()) || !PrepareStream(si) || !ProcessStream(si, delay, buffer))
     {

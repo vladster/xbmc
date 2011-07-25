@@ -29,7 +29,7 @@ class CPulseAEStream : public IAEStream
 {
 public:
   /* this should NEVER be called directly, use AE.GetStream */
-  CPulseAEStream(pa_context *context, pa_threaded_mainloop *mainLoop, enum AEDataFormat format, unsigned int sampleRate, unsigned int channelCount, AEChLayout channelLayout, unsigned int options);
+  CPulseAEStream(pa_context *context, pa_threaded_mainloop *mainLoop, enum AEDataFormat format, unsigned int sampleRate, CAEChannelInfo channelLayout, unsigned int options);
   virtual ~CPulseAEStream();
 
   virtual void Destroy();
@@ -95,9 +95,8 @@ private:
   IAudioCallback* m_AudioCallback;
 
   enum AEDataFormat m_format;
-  unsigned int m_sampleRate;
-  unsigned int m_channelCount;
-  AEChLayout m_channelLayout;
+  unsigned int      m_sampleRate;
+  CAEChannelInfo    m_channelLayout;
   unsigned int m_options;
   unsigned int m_frameSize;
   unsigned int m_frameSamples;

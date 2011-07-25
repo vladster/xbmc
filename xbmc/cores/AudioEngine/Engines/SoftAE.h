@@ -65,8 +65,7 @@ public:
   virtual void  SetVolume(float volume);
 
   /* returns a new stream for data in the specified format */
-  virtual IAEStream *GetStream  (enum AEDataFormat dataFormat, unsigned int sampleRate, unsigned int channelCount, AEChLayout channelLayout, unsigned int options = 0);
-  virtual IAEStream *AlterStream(IAEStream *stream, enum AEDataFormat dataFormat, unsigned int sampleRate, unsigned int channelCount, AEChLayout channelLayout, unsigned int options = 0);
+  virtual IAEStream *GetStream (enum AEDataFormat dataFormat, unsigned int sampleRate, CAEChannelInfo channelLayout, unsigned int options = 0);
   virtual IAEStream *FreeStream(IAEStream *stream);
 
   /* returns a new sound object */
@@ -79,18 +78,17 @@ public:
   virtual void GarbageCollect();
 
   /* these are for the streams so they can provide compatible data */
-  virtual unsigned int   GetSampleRate   ();
-  virtual unsigned int   GetChannelCount () {return m_channelCount          ;}
-  virtual AEChLayout     GetChannelLayout() {return m_chLayout              ;}
-  virtual unsigned int   GetFrames       () {return m_sinkFormat.m_frames   ;}
-  virtual unsigned int   GetFrameSize    () {return m_frameSize             ;}
+  unsigned int          GetSampleRate   ();
+  unsigned int          GetChannelCount () {return m_chLayout.Count()      ;}
+  CAEChannelInfo&       GetChannelLayout() {return m_chLayout              ;}
+  unsigned int          GetFrames       () {return m_sinkFormat.m_frames   ;}
+  unsigned int          GetFrameSize    () {return m_frameSize             ;}
 
   /* these are for streams that are in RAW mode */
-  const AEAudioFormat* GetSinkAudioFormat() {return &m_sinkFormat               ;}
-  enum AEDataFormat    GetSinkDataFormat () {return m_sinkFormat.m_dataFormat   ;}
-  AEChLayout           GetSinkChLayout   () {return m_sinkFormat.m_channelLayout;}
-  unsigned int         GetSinkChCount    () {return m_sinkFormat.m_channelCount ;}
-  unsigned int         GetSinkFrameSize  () {return m_sinkFormat.m_frameSize    ;}
+  const AEAudioFormat*  GetSinkAudioFormat() {return &m_sinkFormat               ;}
+  enum AEDataFormat     GetSinkDataFormat () {return m_sinkFormat.m_dataFormat   ;}
+  CAEChannelInfo&       GetSinkChLayout   () {return m_sinkFormat.m_channelLayout;}
+  unsigned int          GetSinkFrameSize  () {return m_sinkFormat.m_frameSize    ;}
 
   virtual void EnumerateOutputDevices(AEDeviceList &devices, bool passthrough);
   virtual bool SupportsRaw();
@@ -114,10 +112,6 @@ private:
   unsigned int m_delayFrames;
   void DelayFrames();
 
-  /* this is called by streams on dtor, you should never need to call this directly */
-  friend class CSoftAEStream;
-  void RemoveStream(IAEStream *stream);
-
   enum AEStdChLayout m_stdChLayout;
   CStdString m_device;
   CStdString m_passthroughDevice;
@@ -132,8 +126,7 @@ private:
 
   /* the current configuration */
   float               m_volume;
-  unsigned int        m_channelCount;
-  AEChLayout          m_chLayout;
+  CAEChannelInfo      m_chLayout;
   unsigned int        m_frameSize;
 
   /* the sink, its format information, and conversion function */
@@ -149,13 +142,17 @@ private:
     float        *samples;
     unsigned int  sampleCount;
   } SoundState;
-  std::list<SoundState> m_playing_sounds;
 
+  typedef std::list<CSoftAEStream*> StreamList;
+  typedef std::list<CSoftAESound* > SoundList;
+  typedef std::list<SoundState    > SoundStateList;
+    
   /* the streams, sounds, output buffer and output buffer fill size */
-  bool                                      m_transcode;
-  bool                                      m_rawPassthrough;
-  std::list<CSoftAEStream*>                 m_streams;
-  std::list<CSoftAESound*>                  m_sounds;
+  bool           m_transcode;
+  bool           m_rawPassthrough;
+  StreamList     m_streams;
+  SoundList      m_sounds;
+  SoundStateList m_playing_sounds;
 
   /* this will contain either float, or uint8_t depending on if we are in raw mode or not */
   unsigned int                              m_bufferSize;

@@ -236,6 +236,8 @@ unsigned int CCoreAudioAEStream::AddData(void *data, unsigned int size)
   uint8_t     *adddata  = (uint8_t *)data;
   unsigned int addsize  = size;
 
+  if(m_bufferFull)
+     printf("m_bufferFull\n");
   if (!m_valid || size == 0 || data == NULL || m_draining || !m_Buffer || m_bufferFull)
   {
     return 0; 

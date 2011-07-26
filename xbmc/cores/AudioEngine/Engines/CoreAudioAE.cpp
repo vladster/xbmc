@@ -386,7 +386,7 @@ IAEStream *CCoreAudioAE::GetStream(enum AEDataFormat dataFormat,
                                    unsigned int options/* = 0 */)
 {
   CAEChannelInfo channelInfo(channelLayout);
-  CLog::Log(LOGINFO, "CCoreAudioAE::GetStream - %s, %u, %u, %s",
+  CLog::Log(LOGINFO, "CCoreAudioAE::GetStream - %s, %u, %s",
             CAEUtil::DataFormatToStr(dataFormat),
             sampleRate,
             ((CStdString)channelInfo).c_str()

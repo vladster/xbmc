@@ -101,6 +101,7 @@ private:
   CAERemap                m_remap;         /* the remapper */
   float                   m_volume;        /* the volume level */
   float                   m_rgain;         /* replay gain level */
+  unsigned int            m_waterlevel;    /* stream filling waterlefen */
 
   CAEConvert::AEConvertToFn m_convertFn;
 
@@ -130,6 +131,7 @@ private:
   float              m_fadeStep;
   float              m_fadeTarget;
   unsigned int       m_fadeTime;
+  bool               m_bufferFull;
 };
 
 #endif

@@ -103,8 +103,7 @@ public:
   virtual void FreeSound(IAESound *sound);
   virtual void PlaySound(IAESound *sound);
   virtual void StopSound(IAESound *sound);
-  void MixSounds32(float *buffer, unsigned int samples);
-  void MixSounds16(int16_t *buffer, unsigned int samples);
+  void MixSounds(float *buffer, unsigned int samples);
 
   /* free's sounds that have expired */
   virtual void GarbageCollect();
@@ -116,14 +115,11 @@ public:
   inline static void SSEMulArray   (float *data, const float mul, uint32_t count);
 #endif
 
-  void LockEngine();
-  void UnlockEngine();
-  
 private:
   CCriticalSection  m_Mutex;
-  CCriticalSection  m_MutexLockEngine;
   CCriticalSection  m_streamLock;
-  bool              m_EngineLock;
+  CCriticalSection  m_soundLock;
+  CCriticalSection  m_soundSampleLock;
   
   std::list<CCoreAudioAEStream*> m_streams;
   std::list<CCoreAudioAESound* > m_sounds;
@@ -151,7 +147,7 @@ private:
 
   enum AEChannel    *m_RemapChannelLayout;
   
-  bool OpenCoreAudio(unsigned int sampleRate = 48000, bool forceRaw = false, enum AEDataFormat rawFormat = AE_FMT_AC3);
+  bool OpenCoreAudio(unsigned int sampleRate = 44100, bool forceRaw = false, enum AEDataFormat rawFormat = AE_FMT_AC3);
   
   void Deinitialize();
   void Start();

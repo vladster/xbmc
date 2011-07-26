@@ -1515,10 +1515,10 @@ bool CCoreAudioAEHALOSX::InitializePCM(AEAudioFormat &format, CStdString &device
   inputFormat.mFormatFlags |= kLinearPCMFormatFlagIsBigEndian;
 #endif
   
-  inputFormat.mChannelsPerFrame = format.m_channelCount;          // Number of interleaved audiochannels
+  inputFormat.mChannelsPerFrame = format.m_channelLayout.Count(); // Number of interleaved audiochannels
   inputFormat.mSampleRate = (Float64)format.m_sampleRate;         //  the sample rate of the audio stream
   inputFormat.mBitsPerChannel =  bps;                             // Number of bits per sample, per channel
-  inputFormat.mBytesPerFrame = (bps>>3) * format.m_channelCount;  // Size of a frame == 1 sample per channel    
+  inputFormat.mBytesPerFrame = (bps>>3) * format.m_channelLayout.Count();  // Size of a frame == 1 sample per channel    
   inputFormat.mFramesPerPacket = 1;                               // The smallest amount of indivisible data. Always 1 for uncompressed audio   
   inputFormat.mBytesPerPacket = inputFormat.mBytesPerFrame * inputFormat.mFramesPerPacket;
   inputFormat.mReserved = 0;
@@ -1592,7 +1592,7 @@ bool CCoreAudioAEHALOSX::InitializeEncoded(AudioDeviceID outputDevice, AEAudioFo
         outputStream = stream.GetId();
         
         /* Adjust samplerate */
-        outputFormat.mChannelsPerFrame = format.m_channelCount;
+        outputFormat.mChannelsPerFrame = format.m_channelLayout.Count();
         outputFormat.mSampleRate = (Float64)format.m_sampleRate;
         stream.SetPhysicalFormat(&outputFormat);
         
@@ -1657,7 +1657,7 @@ bool CCoreAudioAEHALOSX::Initialize(IAE *ae, bool passThrough, AEAudioFormat &fo
   int bPassthrough = m_Passthrough;
   unsigned int bps = CAEUtil::DataFormatToBits(format.m_dataFormat);;
   
-  if (format.m_channelCount == 0)
+  if (format.m_channelLayout.Count() == 0)
   {
     CLog::Log(LOGERROR, "CCoreAudioAEHALOSX::Initialize - Unable to open the requested channel layout");
     return false;
@@ -1744,10 +1744,10 @@ bool CCoreAudioAEHALOSX::Initialize(IAE *ae, bool passThrough, AEAudioFormat &fo
     CStdString formatString;
     m_AUOutput->GetFormat(&inputDesc_end, kAudioUnitScope_Output, kInputBus);
     
-    if(inputDesc_end.mChannelsPerFrame != format.m_channelCount) {
+    if(inputDesc_end.mChannelsPerFrame != format.m_channelLayout.Count()) {
       CLog::Log(LOGERROR, "CCoreAudioAEHALOSX::Initialize: Output channel count does not match input channel count. in %d : out %d. Please Correct your speaker layout setting.", 
-                format.m_channelCount, inputDesc_end.mChannelsPerFrame);      
-      format.m_channelCount = inputDesc_end.mChannelsPerFrame;
+                format.m_channelLayout.Count(), inputDesc_end.mChannelsPerFrame);      
+      format.m_channelLayout = CAEChannelInfo((AEStdChLayout)(inputDesc_end.mChannelsPerFrame - 1));
       if(!InitializePCM(format, device, bps))
       {
         CLog::Log(LOGERROR, "CCoreAudioAEHALOSX::Initialize: Reinit with right channel count failed"); 

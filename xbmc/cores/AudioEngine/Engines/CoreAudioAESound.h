@@ -45,7 +45,6 @@ public:
 
   virtual void  SetVolume(float volume);
   virtual float GetVolume();
-  virtual void  SetFreeCallback(AECBFunc *func, void *arg);
 
   unsigned int GetSampleCount();
 
@@ -63,8 +62,6 @@ private:
   CAEWAVLoader     m_wavLoader;
   float            m_volume;
   int              m_inUse;
-  AECBFunc        *m_freeCallback;
-  void            *m_freeCallbackArg;
 };
 
 #endif

@@ -374,8 +374,6 @@
 		18C1D22E13033F6A00CFFE59 /* GLUtils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 18C1D22B13033F6A00CFFE59 /* GLUtils.cpp */; };
 		18ECC96213CF178D00A9ED6C /* StreamUtils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 18ECC96013CF178D00A9ED6C /* StreamUtils.cpp */; };
 		18ECC96313CF178D00A9ED6C /* StreamUtils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 18ECC96013CF178D00A9ED6C /* StreamUtils.cpp */; };
-		3802709A13D5A653009493DD /* SystemClock.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3802709813D5A653009493DD /* SystemClock.cpp */; };
-		3802709B13D5A653009493DD /* SystemClock.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3802709813D5A653009493DD /* SystemClock.cpp */; };
 		322D790713D52D3900F59B62 /* AEFactory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 322D78BF13D52D3900F59B62 /* AEFactory.cpp */; };
 		322D790813D52D3900F59B62 /* AESinkFactory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 322D78C113D52D3900F59B62 /* AESinkFactory.cpp */; };
 		322D790913D52D3900F59B62 /* AEEncoderFFmpeg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 322D78C413D52D3900F59B62 /* AEEncoderFFmpeg.cpp */; };
@@ -408,6 +406,10 @@
 		322D794013D52D7400F59B62 /* DVDAudioCodecPassthrough.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 322D793D13D52D7400F59B62 /* DVDAudioCodecPassthrough.cpp */; };
 		322D7A5213D5E20600F59B62 /* CoreAudioAEEventThread.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 322D7A5013D5E20600F59B62 /* CoreAudioAEEventThread.cpp */; };
 		322D7A5313D5E20600F59B62 /* CoreAudioAEEventThread.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 322D7A5013D5E20600F59B62 /* CoreAudioAEEventThread.cpp */; };
+		32D9D39C13DF236D00CA3F7F /* AEChannelInfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 32D9D39A13DF236D00CA3F7F /* AEChannelInfo.cpp */; };
+		32D9D39D13DF236D00CA3F7F /* AEChannelInfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 32D9D39A13DF236D00CA3F7F /* AEChannelInfo.cpp */; };
+		3802709A13D5A653009493DD /* SystemClock.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3802709813D5A653009493DD /* SystemClock.cpp */; };
+		3802709B13D5A653009493DD /* SystemClock.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3802709813D5A653009493DD /* SystemClock.cpp */; };
 		384718D81325BA04000486D6 /* XBDateTime.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 384718D61325BA04000486D6 /* XBDateTime.cpp */; };
 		38F4E57013CCCB3B00664821 /* Implementation.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 38F4E56C13CCCB3B00664821 /* Implementation.cpp */; };
 		38F4E57213CCCB3B00664821 /* Implementation.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 38F4E56C13CCCB3B00664821 /* Implementation.cpp */; };
@@ -2256,9 +2258,6 @@
 		18C1D22C13033F6A00CFFE59 /* GLUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GLUtils.h; sourceTree = "<group>"; };
 		18ECC96013CF178D00A9ED6C /* StreamUtils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = StreamUtils.cpp; sourceTree = "<group>"; };
 		18ECC96113CF178D00A9ED6C /* StreamUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = StreamUtils.h; sourceTree = "<group>"; };
-		3802709713D5A62D009493DD /* ThreadLocal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ThreadLocal.h; sourceTree = "<group>"; };
-		3802709813D5A653009493DD /* SystemClock.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SystemClock.cpp; sourceTree = "<group>"; };
-		3802709913D5A653009493DD /* SystemClock.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SystemClock.h; sourceTree = "<group>"; };
 		322D78BE13D52D3900F59B62 /* AEAudioFormat.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AEAudioFormat.h; sourceTree = "<group>"; };
 		322D78BF13D52D3900F59B62 /* AEFactory.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = AEFactory.cpp; sourceTree = "<group>"; };
 		322D78C013D52D3900F59B62 /* AEFactory.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AEFactory.h; sourceTree = "<group>"; };
@@ -2301,6 +2300,11 @@
 		322D793E13D52D7400F59B62 /* DVDAudioCodecPassthrough.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DVDAudioCodecPassthrough.h; sourceTree = "<group>"; };
 		322D7A5013D5E20600F59B62 /* CoreAudioAEEventThread.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CoreAudioAEEventThread.cpp; sourceTree = "<group>"; };
 		322D7A5113D5E20600F59B62 /* CoreAudioAEEventThread.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CoreAudioAEEventThread.h; sourceTree = "<group>"; };
+		32D9D39A13DF236D00CA3F7F /* AEChannelInfo.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = AEChannelInfo.cpp; sourceTree = "<group>"; };
+		32D9D39B13DF236D00CA3F7F /* AEChannelInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AEChannelInfo.h; sourceTree = "<group>"; };
+		3802709713D5A62D009493DD /* ThreadLocal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ThreadLocal.h; sourceTree = "<group>"; };
+		3802709813D5A653009493DD /* SystemClock.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SystemClock.cpp; sourceTree = "<group>"; };
+		3802709913D5A653009493DD /* SystemClock.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SystemClock.h; sourceTree = "<group>"; };
 		384718D61325BA04000486D6 /* XBDateTime.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = XBDateTime.cpp; sourceTree = "<group>"; };
 		384718D71325BA04000486D6 /* XBDateTime.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = XBDateTime.h; sourceTree = "<group>"; };
 		38B2BBD013131B4A00F83309 /* GlobalsHandling.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GlobalsHandling.h; sourceTree = "<group>"; };
@@ -4403,30 +4407,6 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		38F4E56013CCCB3B00664821 /* platform */ = {
-			isa = PBXGroup;
-			children = (
-				38F4E56513CCCB3B00664821 /* Condition.h */,
-				38F4E56613CCCB3B00664821 /* CriticalSection.h */,
-				38F4E56813CCCB3B00664821 /* platform.select.h */,
-				38F4E56913CCCB3B00664821 /* pthreads */,
-				38F4E56D13CCCB3B00664821 /* README.platform */,
-				38F4E56E13CCCB3B00664821 /* ThreadLocal.h */,
-			);
-			path = platform;
-			sourceTree = "<group>";
-		};
-		38F4E56913CCCB3B00664821 /* pthreads */ = {
-			isa = PBXGroup;
-			children = (
-				3802709713D5A62D009493DD /* ThreadLocal.h */,
-				38F4E56A13CCCB3B00664821 /* Condition.h */,
-				38F4E56B13CCCB3B00664821 /* CriticalSection.h */,
-				38F4E56C13CCCB3B00664821 /* Implementation.cpp */,
-			);
-			path = pthreads;
-			sourceTree = "<group>";
-		};
 		322D78BD13D52D3900F59B62 /* AudioEngine */ = {
 			isa = PBXGroup;
 			children = (
@@ -4498,6 +4478,8 @@
 		322D78FA13D52D3900F59B62 /* Utils */ = {
 			isa = PBXGroup;
 			children = (
+				32D9D39A13DF236D00CA3F7F /* AEChannelInfo.cpp */,
+				32D9D39B13DF236D00CA3F7F /* AEChannelInfo.h */,
 				322D78FB13D52D3900F59B62 /* AEConvert.cpp */,
 				322D78FC13D52D3900F59B62 /* AEConvert.h */,
 				322D78FD13D52D3900F59B62 /* AEPackIEC61937.cpp */,
@@ -4512,6 +4494,30 @@
 				322D790613D52D3900F59B62 /* AEWAVLoader.h */,
 			);
 			path = Utils;
+			sourceTree = "<group>";
+		};
+		38F4E56013CCCB3B00664821 /* platform */ = {
+			isa = PBXGroup;
+			children = (
+				38F4E56513CCCB3B00664821 /* Condition.h */,
+				38F4E56613CCCB3B00664821 /* CriticalSection.h */,
+				38F4E56813CCCB3B00664821 /* platform.select.h */,
+				38F4E56913CCCB3B00664821 /* pthreads */,
+				38F4E56D13CCCB3B00664821 /* README.platform */,
+				38F4E56E13CCCB3B00664821 /* ThreadLocal.h */,
+			);
+			path = platform;
+			sourceTree = "<group>";
+		};
+		38F4E56913CCCB3B00664821 /* pthreads */ = {
+			isa = PBXGroup;
+			children = (
+				3802709713D5A62D009493DD /* ThreadLocal.h */,
+				38F4E56A13CCCB3B00664821 /* Condition.h */,
+				38F4E56B13CCCB3B00664821 /* CriticalSection.h */,
+				38F4E56C13CCCB3B00664821 /* Implementation.cpp */,
+			);
+			path = pthreads;
 			sourceTree = "<group>";
 		};
 		430C880812D649B10098821A /* powermanagement */ = {
@@ -8174,6 +8180,7 @@
 				322D792113D52D3900F59B62 /* AEWAVLoader.cpp in Sources */,
 				322D793F13D52D7400F59B62 /* DVDAudioCodecPassthrough.cpp in Sources */,
 				322D7A5213D5E20600F59B62 /* CoreAudioAEEventThread.cpp in Sources */,
+				32D9D39C13DF236D00CA3F7F /* AEChannelInfo.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -9075,6 +9082,7 @@
 				322D793C13D52D3900F59B62 /* AEWAVLoader.cpp in Sources */,
 				322D794013D52D7400F59B62 /* DVDAudioCodecPassthrough.cpp in Sources */,
 				322D7A5313D5E20600F59B62 /* CoreAudioAEEventThread.cpp in Sources */,
+				32D9D39D13DF236D00CA3F7F /* AEChannelInfo.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

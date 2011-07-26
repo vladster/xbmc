@@ -44,10 +44,10 @@ bool CAEFactory::LoadEngine()
 #ifdef __APPLE__
   if (!loaded)
     loaded = CAEFactory::LoadEngine(AE_ENGINE_COREAUDIO);
-#endif
-
+#else
   if (!loaded)
     loaded = CAEFactory::LoadEngine(AE_ENGINE_SOFT);
+#endif
 
   return loaded;
 }

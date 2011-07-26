@@ -36,7 +36,7 @@ class CCoreAudioAEStream : public IAEStream
 {
 protected:
   friend class CCoreAudioAE;
-  CCoreAudioAEStream(enum AEDataFormat format, unsigned int sampleRate, unsigned int channelCount, AEChLayout channelLayout, unsigned int options);
+  CCoreAudioAEStream(enum AEDataFormat format, unsigned int sampleRate, CAEChannelInfo channelLayout, unsigned int options);
   virtual ~CCoreAudioAEStream();
 
 public:
@@ -44,7 +44,7 @@ public:
   void InitializeRemap();
   virtual void Destroy();
 
-  virtual unsigned int GetFrameSize();
+  virtual unsigned int GetFrameSize() const;
   virtual unsigned int GetSpace();
   virtual unsigned int AddData(void *data, unsigned int size);
   unsigned int GetFrames(uint8_t *buffer, unsigned int size);
@@ -68,9 +68,9 @@ public:
   virtual void  SetVolume(float volume);
   virtual void  SetReplayGain(float factor);
 
-  virtual unsigned int      GetChannelCount();
-  virtual unsigned int      GetSampleRate();
-  virtual enum AEDataFormat GetDataFormat();
+  virtual unsigned int      GetChannelCount() const;
+  virtual unsigned int      GetSampleRate() const;
+  virtual enum AEDataFormat GetDataFormat() const;
   virtual bool              IsRaw();
 
   /* for dynamic sample rate changes (smoothvideo) */
@@ -101,7 +101,7 @@ private:
   CAERemap                m_remap;         /* the remapper */
   float                   m_volume;        /* the volume level */
   float                   m_rgain;         /* replay gain level */
-  unsigned int            m_waterlevel;    /* stream filling waterlefen */
+  unsigned int            m_waterlevel;    /* stream filling waterlevel */
 
   CAEConvert::AEConvertToFn m_convertFn;
 

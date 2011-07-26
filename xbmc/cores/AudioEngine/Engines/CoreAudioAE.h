@@ -66,11 +66,11 @@ public:
   virtual bool  Initialize();
   virtual void  OnSettingsChange(CStdString setting);
 
-  virtual unsigned int      GetSampleRate();
-  virtual AEChLayout        GetChannelLayout();
-  virtual unsigned int      GetChannelCount();
-  virtual enum AEDataFormat GetDataFormat();
-  virtual AEAudioFormat     GetAudioFormat();
+  unsigned int      GetSampleRate();
+  CAEChannelInfo    GetChannelLayout();
+  unsigned int      GetChannelCount();
+  enum AEDataFormat GetDataFormat();
+  AEAudioFormat     GetAudioFormat();
 
   virtual float GetDelay();
   virtual float GetVolume();
@@ -81,25 +81,14 @@ public:
   /* returns a new stream for data in the specified format */
   virtual IAEStream *GetStream(enum AEDataFormat dataFormat, 
                                unsigned int sampleRate, 
-                               unsigned int channelCount, 
-                               AEChLayout channelLayout, 
+                               CAEChannelInfo channelLayout, 
                                unsigned int options = 0);
-  
-  virtual IAEStream *AlterStream(IAEStream *stream, 
-                                 enum AEDataFormat dataFormat, 
-                                 unsigned int sampleRate, 
-                                 unsigned int channelCount, 
-                                 AEChLayout channelLayout, 
-                                 unsigned int options = 0);
-
-  virtual void RemoveStream(IAEStream *stream);
   
   virtual IAEStream *FreeStream(IAEStream *stream);
   void Reinit();
     
   /* returns a new sound object */
   virtual IAESound *GetSound(CStdString file);
-  virtual void RemovePlayingSound(IAESound *sound);
   virtual void FreeSound(IAESound *sound);
   virtual void PlaySound(IAESound *sound);
   virtual void StopSound(IAESound *sound);
@@ -121,31 +110,35 @@ private:
   CCriticalSection  m_soundLock;
   CCriticalSection  m_soundSampleLock;
   
-  std::list<CCoreAudioAEStream*> m_streams;
-  std::list<CCoreAudioAESound* > m_sounds;
   /* currently playing sounds */
   typedef struct {
     CCoreAudioAESound *owner;
     float        *samples;
     unsigned int  sampleCount;
   } SoundState;
-  std::list<SoundState> m_playing_sounds;
+
+  typedef std::list<CCoreAudioAEStream*> StreamList;
+  typedef std::list<CCoreAudioAESound* > SoundList;
+  typedef std::list<SoundState         > SoundStateList;
+
+  StreamList     m_streams;
+  SoundList      m_sounds;
+  SoundStateList m_playing_sounds;
   
   bool              m_Initialized; // Prevent multiple init/deinit
     
   AEAudioFormat     m_format;
   bool              m_rawPassthrough;
   
-  float             *m_OutputBuffer;
+  float            *m_OutputBuffer;
   int               m_OutputBufferSize;
   uint8_t          *m_StreamBuffer;
   int               m_StreamBufferSize;
   bool              m_guiSoundWhilePlayback;
-  bool              m_needReinit;
   
   CAEConvert::AEConvertFrFn m_convertFn;
 
-  enum AEChannel    *m_RemapChannelLayout;
+  enum AEStdChLayout m_stdChLayout;
   
   bool OpenCoreAudio(unsigned int sampleRate = 44100, bool forceRaw = false, enum AEDataFormat rawFormat = AE_FMT_AC3);
   

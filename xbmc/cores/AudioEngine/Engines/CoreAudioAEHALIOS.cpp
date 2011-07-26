@@ -558,7 +558,7 @@ bool CCoreAudioAEHALIOS::Initialize(IAE *ae, bool passThrough, AEAudioFormat &fo
   
   unsigned int bps = CAEUtil::DataFormatToBits(format.m_dataFormat);;
   
-  if (format.m_channelCount == 0)
+  if (format.m_channelLayout.Count() == 0)
   {
     CLog::Log(LOGERROR, "CCoreAudioAEHALIOS::Initialize - Unable to open the requested channel layout");
     return false;
@@ -578,10 +578,10 @@ bool CCoreAudioAEHALIOS::Initialize(IAE *ae, bool passThrough, AEAudioFormat &fo
       audioFormat.mFormatFlags |= kAudioFormatFlagIsSignedInteger;
       break;
   }
-  audioFormat.mChannelsPerFrame = format.m_channelCount;    // Number of interleaved audiochannels
+  audioFormat.mChannelsPerFrame = format.m_channelLayout.Count();    // Number of interleaved audiochannels
   audioFormat.mSampleRate = (Float64)format.m_sampleRate;   //  the sample rate of the audio stream
   audioFormat.mBitsPerChannel = bps;            // Number of bits per sample, per channel
-  audioFormat.mBytesPerFrame = (bps>>3) * format.m_channelCount; // Size of a frame == 1 sample per channel   
+  audioFormat.mBytesPerFrame = (bps>>3) * format.m_channelLayout.Count(); // Size of a frame == 1 sample per channel   
   audioFormat.mFramesPerPacket = 1;                         // The smallest amount of indivisible data. Always 1 for uncompressed audio   
   audioFormat.mBytesPerPacket = audioFormat.mBytesPerFrame * audioFormat.mFramesPerPacket;
   audioFormat.mReserved = 0;

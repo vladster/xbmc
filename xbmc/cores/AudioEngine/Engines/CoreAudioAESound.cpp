@@ -48,9 +48,7 @@ typedef struct
 CCoreAudioAESound::CCoreAudioAESound(const CStdString &filename) :
   IAESound         (filename),
   m_volume         (1.0f    ),
-  m_inUse          (0       ),
-  m_freeCallback   (NULL    ),
-  m_freeCallbackArg(NULL    )
+  m_inUse          (0       )
 {
   m_filename = filename;
 }
@@ -143,16 +141,12 @@ bool CCoreAudioAESound::IsPlaying()
   return playing;
 }
 
-void CCoreAudioAESound::SetFreeCallback(AECBFunc *callback, void *arg)
-{
-  m_freeCallback    = callback;
-  m_freeCallbackArg = arg;
-}
-
 void CCoreAudioAESound::Play()
 {
+  AE.PlaySound(this);
 }
 
 void CCoreAudioAESound::Stop()
 {
+  AE.StopSound(this);
 }

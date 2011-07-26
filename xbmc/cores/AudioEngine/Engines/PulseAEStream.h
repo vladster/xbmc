@@ -37,8 +37,8 @@ public:
   virtual unsigned int GetSpace();
   virtual unsigned int AddData(void *data, unsigned int size);
   virtual float GetDelay();
-  virtual float GetCacheTime () {return 0.0f;} /* FIXME */
-  virtual float GetCacheTotal() {return 0.0f;} /* FIXME */
+  virtual float GetCacheTime ();
+  virtual float GetCacheTotal();
 
   virtual bool IsPaused     ();
   virtual bool IsDraining   ();
@@ -54,10 +54,10 @@ public:
   virtual void  SetVolume    (float volume);
   virtual void  SetReplayGain(float factor);
 
-  virtual unsigned int      GetFrameSize   ();
-  virtual unsigned int      GetChannelCount();
-  virtual unsigned int      GetSampleRate  ();
-  virtual enum AEDataFormat GetDataFormat  ();
+  virtual unsigned int      GetFrameSize   () const;
+  virtual unsigned int      GetChannelCount() const;
+  virtual unsigned int      GetSampleRate  () const;
+  virtual enum AEDataFormat GetDataFormat  () const;
 
   /* for dynamic sample rate changes (smoothvideo) */
   virtual double GetResampleRatio();
@@ -100,6 +100,7 @@ private:
   unsigned int m_options;
   unsigned int m_frameSize;
   unsigned int m_frameSamples;
+  unsigned int m_cacheSize;
 
   bool m_draining;
 };

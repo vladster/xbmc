@@ -53,7 +53,9 @@ CCoreAudioAEStream::CCoreAudioAEStream(enum AEDataFormat dataFormat, unsigned in
   m_audioCallback   (NULL ),
   m_AvgBytesPerSec  (0    ),
   m_Buffer          (NULL ),
-  m_fadeRunning     (false)
+  m_fadeRunning     (false),
+  m_bufferFull      (false),
+  m_waterlevel      (0    )
 {
   m_ssrcData.data_out             = NULL;
 
@@ -76,7 +78,7 @@ CCoreAudioAEStream::CCoreAudioAEStream(enum AEDataFormat dataFormat, unsigned in
 
 CCoreAudioAEStream::~CCoreAudioAEStream()
 {
-  ((CCoreAudioAE*)&AE)->RemoveStream(this);
+  //((CCoreAudioAE*)&AE)->RemoveStream(this);
   CSingleLock StreamLock(m_MutexStream);
 
   InternalFlush();
@@ -91,7 +93,7 @@ CCoreAudioAEStream::~CCoreAudioAEStream()
   
   StreamLock.Leave();
     
-  CLog::Log(LOGDEBUG, "CCoreAudioAEStream::~CCoreAudioAEStream - Destructed");
+  //CLog::Log(LOGDEBUG, "CCoreAudioAEStream::~CCoreAudioAEStream - Destructed");
 }
 
 void CCoreAudioAEStream::InitializeRemap()
@@ -184,18 +186,24 @@ void CCoreAudioAEStream::Initialize(AEAudioFormat &outputFormat)
   if (m_resample)
   {
     int err;
-    m_ssrc                   = src_new(SRC_SINC_MEDIUM_QUALITY, m_StreamFormat.m_channelCount, &err);
+#if defined(TARGET_DARWIN_IOS)
+      m_ssrc                   = src_new(SRC_SINC_FASTEST, m_StreamFormat.m_channelCount, &err);
+#else
+      m_ssrc                   = src_new(SRC_SINC_MEDIUM_QUALITY, m_StreamFormat.m_channelCount, &err);
+#endif
     m_ssrcData.src_ratio     = (double)m_OutputFormat.m_sampleRate / (double)m_StreamFormat.m_sampleRate;
     m_ssrcData.data_in       = m_convertBuffer;
     m_ssrcData.end_of_input  = 0;
   }
 
-  m_AvgBytesPerSec =  m_OutputFormat.m_frameSize * m_OutputFormat.m_sampleRate;
+  //m_AvgBytesPerSec =  m_OutputFormat.m_frameSize * m_OutputFormat.m_sampleRate;
+  m_AvgBytesPerSec =  m_StreamFormat.m_frameSize * m_StreamFormat.m_sampleRate;
 
   if(m_Buffer)
     delete m_Buffer;
   
-  m_Buffer = new CoreAudioRingBuffer(m_AvgBytesPerSec);
+  m_waterlevel = m_AvgBytesPerSec * 0.25;
+  m_Buffer = new CoreAudioRingBuffer(m_AvgBytesPerSec + m_waterlevel);
 
   /* print input output channels */
   CLog::Log(LOGDEBUG, "==[Stream input channels]==");
@@ -241,13 +249,12 @@ unsigned int CCoreAudioAEStream::AddData(void *data, unsigned int size)
   uint8_t     *adddata  = (uint8_t *)data;
   unsigned int addsize  = size;
 
-  if (!m_valid || size == 0 || data == NULL || m_draining || !m_Buffer)
+  if (!m_valid || size == 0 || data == NULL || m_draining || !m_Buffer || m_bufferFull)
   {
     return 0; 
   }
 
-  CSingleLock StreamLock(m_MutexStream);
-  unsigned int room = m_Buffer->GetWriteSize();
+  //CSingleLock StreamLock(m_MutexStream);
      
   /* convert the data if we need to */
   if (m_convert)
@@ -265,7 +272,7 @@ unsigned int CCoreAudioAEStream::AddData(void *data, unsigned int size)
 
   if (samples == 0)
   {
-    StreamLock.Leave();
+    //StreamLock.Leave();
     return 0;
   }
   
@@ -284,6 +291,7 @@ unsigned int CCoreAudioAEStream::AddData(void *data, unsigned int size)
         
     if (src_process(m_ssrc, &m_ssrcData) != 0) 
     {
+      //StreamLock.Leave();
       return 0;
     }
     
@@ -309,19 +317,26 @@ unsigned int CCoreAudioAEStream::AddData(void *data, unsigned int size)
     //addsize   = frames * m_OutputFormat.m_frameSize;
   }
 
-  //unsigned int copy = std::min(addsize, room);
-  room = m_Buffer->GetWriteSize();
-      
+  unsigned int room = m_Buffer->GetWriteSize();
+  unsigned int buffersize = m_Buffer->GetMaxSize() - m_waterlevel;
+  
   if(addsize > room)
   {
-    //CLog::Log(LOGDEBUG, "CCoreAudioAEStream::AddData failed : free size %d add size %d", room, addsize);
+    CLog::Log(LOGDEBUG, "CCoreAudioAEStream::AddData failed : free size %d add size %d", room, addsize);
+    m_bufferFull = true;
     size = 0;
   }
   else 
   {
+    m_bufferFull = false;
     m_Buffer->Write(adddata, addsize);
+    if(m_Buffer->GetReadSize() >= buffersize)
+      m_bufferFull = true;
   }
-  StreamLock.Leave();
+  
+  //printf("AddData  : %d %d\n", addsize, m_Buffer->GetWriteSize());
+
+  //StreamLock.Leave();
 
   return size;    
 }
@@ -334,16 +349,7 @@ unsigned int CCoreAudioAEStream::GetFrames(uint8_t *buffer, unsigned int size)
     return 0;
   }
     
-  /* we are draining */
-  /*
-  if (m_draining)
-  {
-    return 0;
-  }
-  */
-
-  CSingleLock StreamLock(m_MutexStream);
-  
+  //CSingleLock StreamLock(m_MutexStream);
   unsigned int readsize = std::min(m_Buffer->GetReadSize(), size);
   m_Buffer->Read(buffer, readsize);
 
@@ -389,8 +395,17 @@ unsigned int CCoreAudioAEStream::GetFrames(uint8_t *buffer, unsigned int size)
 
   m_fadeRunning = false;
   
-  StreamLock.Leave();
-  
+  unsigned int buffersize = m_Buffer->GetMaxSize() - m_waterlevel;
+  m_bufferFull = false;
+  if(m_Buffer->GetReadSize() >= buffersize)
+    m_bufferFull = true;
+
+  if(readsize == 0)
+  {
+    printf("buffer size zero\n");
+  }
+
+  //StreamLock.Leave();  
   return readsize;  
 }
 
@@ -403,7 +418,10 @@ unsigned int CCoreAudioAEStream::GetSpace()
 {
   if (!m_valid || m_draining) return 0;
 
-  return m_Buffer->GetWriteSize() / m_StreamFormat.m_frameSize;
+  if(m_bufferFull)
+    return 0;
+  else
+    return (m_Buffer->GetWriteSize() - m_waterlevel);
 }
 
 float CCoreAudioAEStream::GetDelay()
@@ -426,7 +444,7 @@ float CCoreAudioAEStream::GetCacheTotal()
 {
   if (m_delete || !m_Buffer) return 0.0f;
   
-  return (float)m_Buffer->GetMaxSize() / (float)m_AvgBytesPerSec;
+  return (float)(m_Buffer->GetMaxSize() - m_waterlevel) / (float)m_AvgBytesPerSec;
 }
 
 bool CCoreAudioAEStream::IsPaused()
@@ -508,6 +526,8 @@ void CCoreAudioAEStream::InternalFlush()
 
   if(m_Buffer)
     m_Buffer->Reset();
+  
+  m_bufferFull = false;
 }
 
 unsigned int CCoreAudioAEStream::GetChannelCount()
@@ -550,6 +570,7 @@ void CCoreAudioAEStream::SetResampleRatio(double ratio)
 
 void CCoreAudioAEStream::RegisterAudioCallback(IAudioCallback* pCallback)
 {
+  CSingleLock StreamLock(m_MutexStream);
   m_audioCallback = pCallback;
   if (m_audioCallback)
     m_audioCallback->OnInitialize(2, m_StreamFormat.m_sampleRate, 32);
@@ -558,7 +579,6 @@ void CCoreAudioAEStream::RegisterAudioCallback(IAudioCallback* pCallback)
 void CCoreAudioAEStream::UnRegisterAudioCallback()
 {
   CSingleLock StreamLock(m_MutexStream);
-
   m_audioCallback = NULL;
   
   StreamLock.Leave();

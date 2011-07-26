@@ -50,8 +50,7 @@ CCoreAudioAESound::CCoreAudioAESound(const CStdString &filename) :
   m_volume         (1.0f    ),
   m_inUse          (0       ),
   m_freeCallback   (NULL    ),
-  m_freeCallbackArg(NULL    ),
-  m_locked         (false)
+  m_freeCallbackArg(NULL    )
 {
   m_filename = filename;
 }
@@ -61,11 +60,15 @@ CCoreAudioAESound::~CCoreAudioAESound()
   DeInitialize();
 }
 
+
+CStdString CCoreAudioAESound::GetFileName()
+{
+  return m_filename;
+}
+
 void CCoreAudioAESound::DeInitialize()
 {
   m_wavLoader.DeInitialize();
-  if(m_locked)
-    UnLock();
 }
 
 bool CCoreAudioAESound::Initialize(AEAudioFormat &outputFormat)
@@ -93,59 +96,49 @@ float CCoreAudioAESound::GetVolume()
 
 unsigned int CCoreAudioAESound::GetSampleCount()
 {
-  CSingleLock SoundLock(m_MutexSound);
-
+  m_sampleLock.lock_shared();
   int sampleCount = 0;
   if (m_wavLoader.IsValid())
     sampleCount = m_wavLoader.GetSampleCount();
-
-  SoundLock.Leave();
-  
+  m_sampleLock.unlock_shared();
   return sampleCount;
-}
-
-void CCoreAudioAESound::Lock()
-{
-  if(!m_locked)
-  {
-    m_locked = true;
-  }
-}
-
-void CCoreAudioAESound::UnLock()
-{
-  if(m_locked)
-  {
-    m_locked = false;
-  }
 }
 
 float* CCoreAudioAESound::GetSamples()
 {
-  CSingleLock SoundLock(m_MutexSound);
+  m_sampleLock.lock_shared();
   if (!m_wavLoader.IsValid())
   {
-    SoundLock.Leave();
+    m_sampleLock.unlock_shared();
     return NULL;
   }
 
   ++m_inUse;
-  SoundLock.Leave();
+  
   return m_wavLoader.GetSamples();
+}
+
+void CCoreAudioAESound::Lock()
+{
+  m_sampleLock.lock();
+}
+
+void CCoreAudioAESound::UnLock()
+{
+  m_sampleLock.unlock();
 }
 
 void CCoreAudioAESound::ReleaseSamples()
 {
-  CSingleLock SoundLock(m_MutexSound);
   --m_inUse;
-  SoundLock.Leave();
+  m_sampleLock.unlock_shared();
 }
 
 bool CCoreAudioAESound::IsPlaying()
 {
-  CSingleLock SoundLock(m_MutexSound);
+  m_sampleLock.lock_shared();
   bool playing = m_inUse > 0;
-  SoundLock.Leave();
+  m_sampleLock.unlock_shared();
 
   return playing;
 }

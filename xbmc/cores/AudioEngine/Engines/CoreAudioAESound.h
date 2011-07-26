@@ -35,6 +35,7 @@ public:
   CCoreAudioAESound (const CStdString &filename);
   virtual ~CCoreAudioAESound();
 
+  virtual CStdString GetFileName();
   virtual void DeInitialize();
   virtual bool Initialize(AEAudioFormat &outputFormat);
 
@@ -56,14 +57,14 @@ public:
   virtual float* GetSamples    ();
   void           ReleaseSamples();
 private:
-  CCriticalSection m_MutexSound;
+  CSharedSection   m_sampleLock;
+  CCriticalSection m_critSection;
   CStdString       m_filename;
   CAEWAVLoader     m_wavLoader;
   float            m_volume;
   int              m_inUse;
   AECBFunc        *m_freeCallback;
   void            *m_freeCallbackArg;
-  bool             m_locked;
 };
 
 #endif

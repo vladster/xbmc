@@ -23,6 +23,7 @@
 #ifdef HAS_PULSEAUDIO
 
 #include "Interfaces/AEStream.h"
+#include "threads/Thread.h"
 #include <pulse/pulseaudio.h>
 
 class CPulseAEStream : public IAEStream
@@ -54,10 +55,10 @@ public:
   virtual void  SetVolume    (float volume);
   virtual void  SetReplayGain(float factor);
 
-  virtual unsigned int      GetFrameSize   () const;
-  virtual unsigned int      GetChannelCount() const;
-  virtual unsigned int      GetSampleRate  () const;
-  virtual enum AEDataFormat GetDataFormat  () const;
+  virtual const unsigned int      GetFrameSize   () const;
+  virtual const unsigned int      GetChannelCount() const;
+  virtual const unsigned int      GetSampleRate  () const;
+  virtual const enum AEDataFormat GetDataFormat  () const;
 
   /* for dynamic sample rate changes (smoothvideo) */
   virtual double GetResampleRatio();
@@ -67,12 +68,16 @@ public:
   virtual void RegisterAudioCallback(IAudioCallback* pCallback);
   virtual void UnRegisterAudioCallback();
 
+  virtual void FadeVolume(float from, float target, unsigned int time);
+  virtual bool IsFading();
+
   /* trigger the stream to update its volume relative to AE */
   void UpdateVolume(float max);
 private:
   static void StreamRequestCallback(pa_stream *s, size_t length, void *userdata);
   static void StreamLatencyUpdateCallback(pa_stream *s, void *userdata);
   static void StreamStateCallback(pa_stream *s, void *userdata);
+  static void StreamUnderflowCallback(pa_stream *s, void *userdata);
   static void StreamDrainComplete(pa_stream *s, int success, void *userdata);
 
   static inline bool WaitForOperation(pa_operation *op, pa_threaded_mainloop *mainloop, const char *LogEntry);
@@ -99,10 +104,25 @@ private:
   CAEChannelInfo    m_channelLayout;
   unsigned int m_options;
   unsigned int m_frameSize;
-  unsigned int m_frameSamples;
   unsigned int m_cacheSize;
 
-  bool m_draining;
+  pa_operation *m_DrainOperation;
+
+  class CLinearFader : public CThread
+  {
+  public:
+    CLinearFader(IAEStream *stream);
+    void SetupFader(float from, float target, unsigned int time);
+    bool IsRunning();
+  protected:
+    virtual void Process();
+  private:
+    IAEStream *m_stream;
+    float m_from;
+    float m_target;
+    unsigned int m_time;
+    volatile bool m_isRunning;
+  } m_fader;
 };
 
 #endif

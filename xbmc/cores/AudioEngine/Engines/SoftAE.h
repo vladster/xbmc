@@ -102,7 +102,7 @@ private:
   CThread *m_thread;
 
   void LoadSettings();
-  bool OpenSink(unsigned int sampleRate = 48000, unsigned int channels = 2, bool forceRaw = false, enum AEDataFormat rawFormat = AE_FMT_AC3);
+  bool OpenSink();
   void ResetEncoder();
   bool SetupEncoder(AEAudioFormat &format);
   void Deinitialize();
@@ -129,10 +129,12 @@ private:
   /* the current configuration */
   float               m_volume;
   CAEChannelInfo      m_chLayout;
+  unsigned int        m_chLayoutCount;
   unsigned int        m_frameSize;
 
   /* the sink, its format information, and conversion function */
   IAESink                  *m_sink;
+  unsigned int              m_sinkChLayoutCount;
   AEAudioFormat             m_sinkFormat;
   AEAudioFormat             m_encoderFormat;
   unsigned int              m_bytesPerSample;

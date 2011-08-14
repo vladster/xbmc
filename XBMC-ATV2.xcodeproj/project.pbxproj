@@ -21,7 +21,6 @@
 		322D7D1813D612E600F59B62 /* AESinkFactory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 322D7CD013D612E600F59B62 /* AESinkFactory.cpp */; };
 		322D7D1913D612E600F59B62 /* AEEncoderFFmpeg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 322D7CD313D612E600F59B62 /* AEEncoderFFmpeg.cpp */; };
 		322D7D1A13D612E600F59B62 /* CoreAudioAE.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 322D7CD613D612E600F59B62 /* CoreAudioAE.cpp */; };
-		322D7D1B13D612E600F59B62 /* CoreAudioAEEventThread.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 322D7CD813D612E600F59B62 /* CoreAudioAEEventThread.cpp */; };
 		322D7D1C13D612E600F59B62 /* CoreAudioAEHALIOS.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 322D7CDA13D612E600F59B62 /* CoreAudioAEHALIOS.cpp */; };
 		322D7D1E13D612E600F59B62 /* CoreAudioAESound.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 322D7CDE13D612E600F59B62 /* CoreAudioAESound.cpp */; };
 		322D7D1F13D612E600F59B62 /* CoreAudioAEStream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 322D7CE013D612E600F59B62 /* CoreAudioAEStream.cpp */; };
@@ -32,7 +31,12 @@
 		322D7D3313D612E600F59B62 /* AEStreamInfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 322D7D1113D612E600F59B62 /* AEStreamInfo.cpp */; };
 		322D7D3413D612E600F59B62 /* AEUtil.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 322D7D1313D612E600F59B62 /* AEUtil.cpp */; };
 		322D7D3513D612E600F59B62 /* AEWAVLoader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 322D7D1513D612E600F59B62 /* AEWAVLoader.cpp */; };
+<<<<<<< HEAD
 		32D6D47C1423A9D8003641AC /* JpegIO.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 32D6D47A1423A9D8003641AC /* JpegIO.cpp */; };
+=======
+		32EC074B13DF422F00339EC7 /* AEChannelInfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 32EC074913DF422F00339EC7 /* AEChannelInfo.cpp */; };
+		32F4F12013F7F2EB00F575D8 /* CoreAudioAEHAL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 32F4F11E13F7F2EB00F575D8 /* CoreAudioAEHAL.cpp */; };
+>>>>>>> [AE/iOS/OSX] AE meats CoreAudio :D
 		4D5D2E131301753F006ABC13 /* CFNetwork.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4D5D2E121301753F006ABC13 /* CFNetwork.framework */; };
 		7C0A7ECD13A5DBF900AFC2BD /* AppParamParser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7C0A7ECB13A5DBF900AFC2BD /* AppParamParser.cpp */; };
 		7C0A7FC813A9E75400AFC2BD /* DirtyRegionSolvers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7C0A7FC413A9E75400AFC2BD /* DirtyRegionSolvers.cpp */; };
@@ -981,8 +985,6 @@
 		322D7CD413D612E600F59B62 /* AEEncoderFFmpeg.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AEEncoderFFmpeg.h; sourceTree = "<group>"; };
 		322D7CD613D612E600F59B62 /* CoreAudioAE.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CoreAudioAE.cpp; sourceTree = "<group>"; };
 		322D7CD713D612E600F59B62 /* CoreAudioAE.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CoreAudioAE.h; sourceTree = "<group>"; };
-		322D7CD813D612E600F59B62 /* CoreAudioAEEventThread.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CoreAudioAEEventThread.cpp; sourceTree = "<group>"; };
-		322D7CD913D612E600F59B62 /* CoreAudioAEEventThread.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CoreAudioAEEventThread.h; sourceTree = "<group>"; };
 		322D7CDA13D612E600F59B62 /* CoreAudioAEHALIOS.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CoreAudioAEHALIOS.cpp; sourceTree = "<group>"; };
 		322D7CDB13D612E600F59B62 /* CoreAudioAEHALIOS.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CoreAudioAEHALIOS.h; sourceTree = "<group>"; };
 		322D7CDE13D612E600F59B62 /* CoreAudioAESound.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CoreAudioAESound.cpp; sourceTree = "<group>"; };
@@ -1012,8 +1014,15 @@
 		322D7D1413D612E600F59B62 /* AEUtil.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AEUtil.h; sourceTree = "<group>"; };
 		322D7D1513D612E600F59B62 /* AEWAVLoader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = AEWAVLoader.cpp; sourceTree = "<group>"; };
 		322D7D1613D612E600F59B62 /* AEWAVLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AEWAVLoader.h; sourceTree = "<group>"; };
+<<<<<<< HEAD
 		32D6D47A1423A9D8003641AC /* JpegIO.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = JpegIO.cpp; sourceTree = "<group>"; };
 		32D6D47B1423A9D8003641AC /* JpegIO.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = JpegIO.h; sourceTree = "<group>"; };
+=======
+		32EC074913DF422F00339EC7 /* AEChannelInfo.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = AEChannelInfo.cpp; sourceTree = "<group>"; };
+		32EC074A13DF422F00339EC7 /* AEChannelInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AEChannelInfo.h; sourceTree = "<group>"; };
+		32F4F11E13F7F2EB00F575D8 /* CoreAudioAEHAL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CoreAudioAEHAL.cpp; sourceTree = "<group>"; };
+		32F4F11F13F7F2EB00F575D8 /* CoreAudioAEHAL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CoreAudioAEHAL.h; sourceTree = "<group>"; };
+>>>>>>> [AE/iOS/OSX] AE meats CoreAudio :D
 		4D5D2E121301753F006ABC13 /* CFNetwork.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CFNetwork.framework; path = System/Library/Frameworks/CFNetwork.framework; sourceTree = SDKROOT; };
 		7C0A7ECB13A5DBF900AFC2BD /* AppParamParser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = AppParamParser.cpp; sourceTree = "<group>"; };
 		7C0A7ECC13A5DBF900AFC2BD /* AppParamParser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AppParamParser.h; sourceTree = "<group>"; };
@@ -3063,10 +3072,10 @@
 		322D7CD513D612E600F59B62 /* Engines */ = {
 			isa = PBXGroup;
 			children = (
+				32F4F11E13F7F2EB00F575D8 /* CoreAudioAEHAL.cpp */,
+				32F4F11F13F7F2EB00F575D8 /* CoreAudioAEHAL.h */,
 				322D7CD613D612E600F59B62 /* CoreAudioAE.cpp */,
 				322D7CD713D612E600F59B62 /* CoreAudioAE.h */,
-				322D7CD813D612E600F59B62 /* CoreAudioAEEventThread.cpp */,
-				322D7CD913D612E600F59B62 /* CoreAudioAEEventThread.h */,
 				322D7CDA13D612E600F59B62 /* CoreAudioAEHALIOS.cpp */,
 				322D7CDB13D612E600F59B62 /* CoreAudioAEHALIOS.h */,
 				322D7CDE13D612E600F59B62 /* CoreAudioAESound.cpp */,
@@ -7015,7 +7024,6 @@
 				322D7D1813D612E600F59B62 /* AESinkFactory.cpp in Sources */,
 				322D7D1913D612E600F59B62 /* AEEncoderFFmpeg.cpp in Sources */,
 				322D7D1A13D612E600F59B62 /* CoreAudioAE.cpp in Sources */,
-				322D7D1B13D612E600F59B62 /* CoreAudioAEEventThread.cpp in Sources */,
 				322D7D1C13D612E600F59B62 /* CoreAudioAEHALIOS.cpp in Sources */,
 				322D7D1E13D612E600F59B62 /* CoreAudioAESound.cpp in Sources */,
 				322D7D1F13D612E600F59B62 /* CoreAudioAEStream.cpp in Sources */,
@@ -7026,6 +7034,11 @@
 				322D7D3313D612E600F59B62 /* AEStreamInfo.cpp in Sources */,
 				322D7D3413D612E600F59B62 /* AEUtil.cpp in Sources */,
 				322D7D3513D612E600F59B62 /* AEWAVLoader.cpp in Sources */,
+<<<<<<< HEAD
+=======
+				32EC074B13DF422F00339EC7 /* AEChannelInfo.cpp in Sources */,
+				32F4F12013F7F2EB00F575D8 /* CoreAudioAEHAL.cpp in Sources */,
+>>>>>>> [AE/iOS/OSX] AE meats CoreAudio :D
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

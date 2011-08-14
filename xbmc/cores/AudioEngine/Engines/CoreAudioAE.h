@@ -27,13 +27,14 @@
 
 #include "system.h"
 
-#include "AE.h"
+#include "Interfaces/AE.h"
+#include "ICoreAudioAEHAL.h"
+#include "ICoreAudioSource.h"
 #include "CoreAudioAEStream.h"
 #include "CoreAudioAESound.h"
-#include "CoreAudioAEEventThread.h"
 #include "threads/CriticalSection.h"
 
-#ifdef __arm__
+#if defined(TARGET_DARWIN_IOS)
 #include "CoreAudioAEHALIOS.h"
 #else
 #include "CoreAudioAEHALOSX.h"
@@ -41,27 +42,28 @@
 
 #define COREAUDIO_IS_RAW(x) ((x) == AE_FMT_AC3 || (x) == AE_FMT_DTS || (x) == AE_FMT_EAC3)
 
+#if defined(TARGET_DARWIN_IOS)
+# define CCoreAudioAEHAL CCoreAudioAEHALIOS
+#else
+# define CCoreAudioAEHAL CCoreAudioAEHALOSX
+#endif
+
 class CCoreAudioAEStream;
 class CCoreAudioAESound;
 class CCoreAudioAEEventThread;
 
-class CCoreAudioAE : public IAE
+class CCoreAudioAE : public IAE, public ICoreAudioSource
 {
 protected:
   /* Give the HAL access to the engine */
-#ifdef __arm__
-  friend class CCoreAudioAEHALIOS;
-  CCoreAudioAEHALIOS  *HAL;
-#else
-  friend class CCoreAudioAEHALOSX;
-  CCoreAudioAEHALOSX  *HAL;
-#endif
+  friend class CCoreAudioAEHAL;
+  CCoreAudioAEHAL  *HAL;
   
-  CCoreAudioAEEventThread *m_reinitTrigger;
 public:
   /* this should NEVER be called directly, use CAEFactory */
   CCoreAudioAE();
   virtual ~CCoreAudioAE();
+  virtual void Shutdown();
 
   virtual bool  Initialize();
   virtual void  OnSettingsChange(CStdString setting);
@@ -78,17 +80,19 @@ public:
 
   virtual bool SupportsRaw();
   
+  CCoreAudioAEHAL  *GetHAL();
+  
   /* returns a new stream for data in the specified format */
-  virtual IAEStream *GetStream(enum AEDataFormat dataFormat, 
+  virtual IAEStream *MakeStream(enum AEDataFormat dataFormat, 
                                unsigned int sampleRate, 
                                CAEChannelInfo channelLayout, 
                                unsigned int options = 0);
   
   virtual IAEStream *FreeStream(IAEStream *stream);
-  void Reinit();
     
   /* returns a new sound object */
-  virtual IAESound *GetSound(CStdString file);
+  virtual IAESound *MakeSound(CStdString file);
+  void StopAllSounds();
   virtual void FreeSound(IAESound *sound);
   virtual void PlaySound(IAESound *sound);
   virtual void StopSound(IAESound *sound);
@@ -99,13 +103,14 @@ public:
 
   virtual void EnumerateOutputDevices(AEDeviceList &devices, bool passthrough);
 
-#ifdef __SSE__
-  inline static void SSEMulAddArray(float *data, float *add, const float mul, uint32_t count);
-  inline static void SSEMulArray   (float *data, const float mul, uint32_t count);
-#endif
+  virtual OSStatus Render(AudioUnitRenderActionFlags* actionFlags, 
+                          const AudioTimeStamp* pTimeStamp, 
+                          UInt32 busNumber, 
+                          UInt32 frameCount, 
+                          AudioBufferList* pBufList);
+  
 
 private:
-  CCriticalSection  m_Mutex;
   CCriticalSection  m_streamLock;
   CCriticalSection  m_soundLock;
   CCriticalSection  m_soundSampleLock;
@@ -128,15 +133,8 @@ private:
   bool              m_Initialized; // Prevent multiple init/deinit
     
   AEAudioFormat     m_format;
+  unsigned int      m_chLayoutCount;
   bool              m_rawPassthrough;
-  
-  float            *m_OutputBuffer;
-  int               m_OutputBufferSize;
-  uint8_t          *m_StreamBuffer;
-  int               m_StreamBufferSize;
-  bool              m_guiSoundWhilePlayback;
-  
-  CAEConvert::AEConvertFrFn m_convertFn;
 
   enum AEStdChLayout m_stdChLayout;
   
@@ -145,46 +143,12 @@ private:
   void Deinitialize();
   void Start();
   void Stop();
-  
-  void ReorderSmpteToCA(void *buf, uint frames, AEDataFormat dataFormat);
 
-  OSStatus OnRenderCallback(AudioUnitRenderActionFlags *ioActionFlags, 
-                            const AudioTimeStamp *inTimeStamp, 
-                            UInt32 inBusNumber, 
-                            UInt32 inNumberFrames, 
-                            AudioBufferList *ioData);
-  
-  static OSStatus RenderCallback(void *inRefCon, 
-                                 AudioUnitRenderActionFlags *ioActionFlags, 
-                                 const AudioTimeStamp *inTimeStamp, 
-                                 UInt32 inBusNumber, 
-                                 UInt32 inNumberFrames, 
-                                 AudioBufferList *ioData);
-  
-#ifndef __arm__  
-  OSStatus OnRenderCallbackDirect( AudioDeviceID inDevice,
-                                  const AudioTimeStamp * inNow,
-                                  const void * inInputData,
-                                  const AudioTimeStamp * inInputTime,
-                                  AudioBufferList * outOutputData,
-                                  const AudioTimeStamp * inOutputTime,
-                                  void * threadGlobals );
-  static OSStatus RenderCallbackDirect(AudioDeviceID inDevice, 
-                                       const AudioTimeStamp* inNow, 
-                                       const AudioBufferList* inInputData, 
-                                       const AudioTimeStamp* inInputTime, 
-                                       AudioBufferList* outOutputData, 
-                                       const AudioTimeStamp* inOutputTime, 
-                                       void* inClientData);
-#endif  
+  OSStatus OnRender(AudioUnitRenderActionFlags *actionFlags, 
+                    const AudioTimeStamp *inTimeStamp, 
+                    UInt32 inBusNumber, 
+                    UInt32 inNumberFrames, 
+                    AudioBufferList *ioData);
   float m_volume;
 };
-
-// Helper Functions
-char* UInt32ToFourCC(UInt32* val);
-const char* StreamDescriptionToString(AudioStreamBasicDescription desc, CStdString& str);
-void CheckOutputBufferSize(void **buffer, int *oldSize, int newSize);
-
-#define CONVERT_OSSTATUS(x) UInt32ToFourCC((UInt32*)&ret)
-
 #endif

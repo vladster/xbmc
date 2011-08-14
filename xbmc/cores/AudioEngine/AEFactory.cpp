@@ -38,7 +38,7 @@ bool CAEFactory::LoadEngine()
 
   CStdString engine;
 
-#if defined(__LINUX__) || defined(__APPLE__)
+#if defined(__LINUX__) && !defined(__APPLE__)
   if (getenv("AE_ENGINE"))
   {
     engine = ((CStdString)getenv("AE_ENGINE")).ToUpper();

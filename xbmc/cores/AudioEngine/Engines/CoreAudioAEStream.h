@@ -25,26 +25,40 @@
 #include <samplerate.h>
 #include <list>
 
-#include "AEStream.h"
+#include "Interfaces/AEStream.h"
 #include "AEAudioFormat.h"
 #include "AEConvert.h"
 #include "AERemap.h"
 #include "CoreAudioRingBuffer.h"
 #include "threads/CriticalSection.h"
+#include <AudioUnit/AudioUnit.h>
+#include "ICoreAudioSource.h"
 
-class CCoreAudioAEStream : public IAEStream
+#if defined(TARGET_DARWIN_IOS)
+# include "CoreAudioAEHALIOS.h"
+#else
+# include "CoreAudioAEHALOSX.h"
+#endif
+
+class CCoreAudioAEStream : public IAEStream, public ICoreAudioSource
 {
 protected:
   friend class CCoreAudioAE;
   CCoreAudioAEStream(enum AEDataFormat format, unsigned int sampleRate, CAEChannelInfo channelLayout, unsigned int options);
   virtual ~CCoreAudioAEStream();
+  
+  CAUOutputDevice    *m_outputUnit;
 
 public:
-  void Initialize(AEAudioFormat &outputFormat);
+  void ReinitConverter();
+  void CloseConverter();
+  void OpenConverter();
+
+  void Initialize();
   void InitializeRemap();
   virtual void Destroy();
 
-  virtual unsigned int GetFrameSize() const;
+  virtual const unsigned int GetFrameSize() const;
   virtual unsigned int GetSpace();
   virtual unsigned int AddData(void *data, unsigned int size);
   unsigned int GetFrames(uint8_t *buffer, unsigned int size);
@@ -68,10 +82,10 @@ public:
   virtual void  SetVolume(float volume);
   virtual void  SetReplayGain(float factor);
 
-  virtual unsigned int      GetChannelCount() const;
-  virtual unsigned int      GetSampleRate() const;
-  virtual enum AEDataFormat GetDataFormat() const;
-  virtual bool              IsRaw();
+  virtual const unsigned int      GetChannelCount() const;
+  virtual const unsigned int      GetSampleRate() const;
+  virtual const enum AEDataFormat GetDataFormat() const;
+  virtual const bool              IsRaw() const;
 
   /* for dynamic sample rate changes (smoothvideo) */
   virtual double GetResampleRatio();
@@ -83,13 +97,24 @@ public:
   virtual void FadeVolume(float from, float to, unsigned int time);
   virtual bool IsFading();
   
+  OSStatus Render(AudioUnitRenderActionFlags* actionFlags, 
+                  const AudioTimeStamp* pTimeStamp, 
+                  UInt32 busNumber, 
+                  UInt32 frameCount, 
+                  AudioBufferList* pBufList);
+  OSStatus OnRender(AudioUnitRenderActionFlags *ioActionFlags, 
+                    const AudioTimeStamp *inTimeStamp, 
+                    UInt32 inBusNumber, 
+                    UInt32 inNumberFrames, 
+                    AudioBufferList *ioData);
+
 private:
   void InternalFlush();
 
-  CCriticalSection        m_MutexStream;
-
   AEAudioFormat           m_OutputFormat;
+  unsigned int            m_chLayoutCountOutput;
   AEAudioFormat           m_StreamFormat;
+  unsigned int            m_chLayoutCountStream;
   unsigned int            m_StreamBytesPerSample;
   unsigned int            m_OutputBytesPerSample;
 
@@ -101,7 +126,6 @@ private:
   CAERemap                m_remap;         /* the remapper */
   float                   m_volume;        /* the volume level */
   float                   m_rgain;         /* replay gain level */
-  unsigned int            m_waterlevel;    /* stream filling waterlevel */
 
   CAEConvert::AEConvertToFn m_convertFn;
 
@@ -126,12 +150,15 @@ private:
   IAudioCallback         *m_audioCallback;
 
   /* fade values */
-  bool               m_fadeRunning;
-  bool               m_fadeDirUp;
-  float              m_fadeStep;
-  float              m_fadeTarget;
-  unsigned int       m_fadeTime;
-  bool               m_bufferFull;
+  bool              m_fadeRunning;
+  bool              m_fadeDirUp;
+  float             m_fadeStep;
+  float             m_fadeTarget;
+  unsigned int      m_fadeTime;
+  bool              m_isRaw;
+  unsigned int      m_frameSize;
+  bool              m_doRemap;
+  void              ReorderSmpteToCA(void *buf, uint frames, AEDataFormat dataFormat);
 };
 
 #endif

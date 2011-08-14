@@ -1,5 +1,3 @@
-#ifndef __COREAUDIOAEEVENTTHREAD_H__
-#define __COREAUDIOAEEVENTTHREAD_H__
 /*
  *      Copyright (C) 2005-2010 Team XBMC
  *      http://xbmc.org
@@ -21,28 +19,21 @@
  *
  */
 
-#include "CoreAudioAE.h"
-#include "threads/Event.h"
-#include "threads/Thread.h"
-#include "threads/CriticalSection.h"
+#ifndef __COREAUDIOHALAE_H__
+#define __COREAUDIOHALAE_H__
 
-class CCoreAudioAE;
-class CCoreAudioAEEventThread : public IRunnable
-{
-public:
-  virtual void Run();
-  CCoreAudioAEEventThread(CCoreAudioAE *engine);
-  virtual ~CCoreAudioAEEventThread();
-  void Trigger();
+#include <list>
+#include "utils/StdString.h"
+#include <AudioUnit/AudioUnit.h>
+#include <AudioToolbox/AudioToolbox.h>
+#ifdef TARGET_OSX
+#include <CoreAudio/CoreAudio.h>
+#endif
 
-private:
-  bool                 m_run;
-  CCoreAudioAE        *m_engine;
-  CEvent               m_event;
-  CThread              m_thread;
-  CCriticalSection     m_lock;
-  CCriticalSection     m_lockEvent;
-
-};
+// Helper Functions
+CStdString GetError(OSStatus error);
+char* UInt32ToFourCC(UInt32* val);
+const char* StreamDescriptionToString(AudioStreamBasicDescription desc, CStdString& str);
+void CheckOutputBufferSize(void **buffer, int *oldSize, int newSize);
 
 #endif

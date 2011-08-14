@@ -29,6 +29,7 @@ public:
 
   bool Initialize(CAEChannelInfo input, CAEChannelInfo output, bool finalStage, bool forceNormalize = false);
   void Remap(float * const in, float * const out, const unsigned int frames) const;
+  void Remap16(int16_t * const in, int16_t * const out, const unsigned int frames) const;
 
 private:
   typedef struct {

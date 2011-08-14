@@ -313,3 +313,53 @@ void CAERemap::Remap(float * const in, float * const out, const unsigned int fra
   }
 }
 
+void CAERemap::Remap16(int16_t * const in, int16_t * const out, const unsigned int frames) const
+{
+  const unsigned int frameBlocks = frames & ~0x3;
+  
+  for(int o = 0; o < m_outChannels; ++o)
+  {
+    const AEMixInfo *info = &m_mixInfo[m_output[o]];
+    /* if there is only 1 source, just copy it so we dont break DPL */
+    if (info->srcCount == 1)
+    {
+      unsigned int f = 0;
+      /* the compiler has a better chance of optimizing this if it is done in parallel */
+      for(; f < frameBlocks; f += 4)
+      {
+        out[((f + 0) * m_outChannels) + o] = in[((f + 0) * m_inChannels) + info->srcIndex[0].index];
+        out[((f + 1) * m_outChannels) + o] = in[((f + 1) * m_inChannels) + info->srcIndex[0].index];
+        out[((f + 2) * m_outChannels) + o] = in[((f + 2) * m_inChannels) + info->srcIndex[0].index];
+        out[((f + 3) * m_outChannels) + o] = in[((f + 3) * m_inChannels) + info->srcIndex[0].index];
+      }
+      
+      for(; f < frames; ++f)
+        out[(f * m_outChannels) + o] = in[(f * m_inChannels) + info->srcIndex[0].index];
+    }
+    else
+    {
+      for(unsigned int f = 0; f < frames; ++f)
+      {
+        int16_t *outOffset = out + (f * m_outChannels) + o;
+        int16_t *inOffset  = in  + (f * m_inChannels);
+        *outOffset = 0;
+        
+        int i = 0;
+        /* the compiler has a better chance of optimizing this if it is done in parallel */
+        int blocks = info->srcCount & 0x3;
+        for(; i < blocks; i += 4)
+        {
+          *outOffset += inOffset[info->srcIndex[i + 0].index] * info->srcIndex[i + 0].level;
+          *outOffset += inOffset[info->srcIndex[i + 1].index] * info->srcIndex[i + 1].level;
+          *outOffset += inOffset[info->srcIndex[i + 2].index] * info->srcIndex[i + 2].level;
+          *outOffset += inOffset[info->srcIndex[i + 3].index] * info->srcIndex[i + 3].level;
+        }
+        
+        for(; i < info->srcCount; ++i)
+          *outOffset += inOffset[info->srcIndex[i].index] * info->srcIndex[i].level;
+      }
+    }
+  }
+}
+
+

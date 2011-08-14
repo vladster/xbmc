@@ -19,36 +19,35 @@
  *
  */
 
-#ifndef __COREAUDIOAEHAL_H__
-#define __COREAUDIOAEHAL_H__
+#ifndef __COREAUDIOSOURCE_H__
+#define __COREAUDIOSOURCE_H__
 
 #include "AEAudioFormat.h"
 #include "Interfaces/AE.h"
+#include "utils/StdString.h"
 #include <AudioUnit/AudioUnit.h>
-#include "ICoreAudioSource.h"
 
-class ICoreAudioAEHAL;
-class CAUOutputDevice;
+class ICoreAudioSource;
 
 /**
- * ICoreAudioAEHAL Interface
+ * ICoreAudioSource Interface
  */
-class ICoreAudioAEHAL
+class ICoreAudioSource
 {
-protected:  
-  ICoreAudioAEHAL() {}
-  virtual ~ICoreAudioAEHAL() {}
-
+private:
+  CStdString        m_inputName;
+  AudioUnitElement  m_inputBus;
 public:
-  virtual bool  Initialize(ICoreAudioSource *ae, bool passThrough, AEAudioFormat &format, CStdString &device) = 0;
-  virtual void  Deinitialize() = 0;
-  virtual void  EnumerateOutputDevices(AEDeviceList &devices, bool passthrough) = 0;
-  //virtual CAUOutputDevice *DestroyUnit(CAUOutputDevice *outputUnit);
-  //virtual CAUOutputDevice *CreateUnit(ICoreAudioSource *pSource, AEAudioFormat &format);
-  //virtual void  SetDirectInput(ICoreAudioSource *pSource, AEAudioFormat &format);
-  virtual void  Stop() = 0;
-  virtual bool  Start() = 0;
-  virtual float GetDelay() = 0;
-  virtual void  SetVolume(float volume) = 0;
+  // Function to request rendered data from a data source
+  virtual OSStatus Render(AudioUnitRenderActionFlags* actionFlags, 
+                          const AudioTimeStamp* pTimeStamp, 
+                          UInt32 busNumber, 
+                          UInt32 frameCount, 
+                          AudioBufferList* pBufList) = 0;
+  //CStdString InputName() { return m_inputName; };
+  //void InputName(CStdString inputName) { m_inputName = inputName; };
+
+  //AudioUnitElement InputBus() { return m_inputBus; };
+  //void InputBus(AudioUnitElement inputBus) { m_inputBus = m_inputBus; };
 };
 #endif

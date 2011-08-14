@@ -19,7 +19,7 @@
  *
  */
 
-#include "AESound.h"
+#include "Interfaces/AESound.h"
 
 #include <samplerate.h>
 #include "threads/SingleLock.h"
@@ -47,10 +47,10 @@ typedef struct
 
 CCoreAudioAESound::CCoreAudioAESound(const CStdString &filename) :
   IAESound         (filename),
+  m_filename       (filename),
   m_volume         (1.0f    ),
   m_inUse          (0       )
 {
-  m_filename = filename;
 }
 
 CCoreAudioAESound::~CCoreAudioAESound()
@@ -69,14 +69,12 @@ void CCoreAudioAESound::DeInitialize()
   m_wavLoader.DeInitialize();
 }
 
-bool CCoreAudioAESound::Initialize(AEAudioFormat &outputFormat)
+bool CCoreAudioAESound::Initialize()
 {
   
   DeInitialize();
   
-  int sampleRate = outputFormat.m_sampleRate;
-
-  if (!m_wavLoader.Initialize(m_filename, sampleRate))
+  if (!m_wavLoader.Initialize(m_filename, AE.GetSampleRate()))
     return false;
 
   return m_wavLoader.Remap(AE.GetChannelLayout());
@@ -94,51 +92,33 @@ float CCoreAudioAESound::GetVolume()
 
 unsigned int CCoreAudioAESound::GetSampleCount()
 {
-  m_sampleLock.lock_shared();
-  int sampleCount = 0;
+  CSingleLock cs(m_critSection);
   if (m_wavLoader.IsValid())
-    sampleCount = m_wavLoader.GetSampleCount();
-  m_sampleLock.unlock_shared();
-  return sampleCount;
+    return m_wavLoader.GetSampleCount();
+  return 0;
 }
 
 float* CCoreAudioAESound::GetSamples()
 {
-  m_sampleLock.lock_shared();
+  CSingleLock cs(m_critSection);
   if (!m_wavLoader.IsValid())
-  {
-    m_sampleLock.unlock_shared();
     return NULL;
-  }
 
   ++m_inUse;
-  
   return m_wavLoader.GetSamples();
-}
-
-void CCoreAudioAESound::Lock()
-{
-  m_sampleLock.lock();
-}
-
-void CCoreAudioAESound::UnLock()
-{
-  m_sampleLock.unlock();
 }
 
 void CCoreAudioAESound::ReleaseSamples()
 {
+  CSingleLock cs(m_critSection);
+  ASSERT(m_inUse > 0);
   --m_inUse;
-  m_sampleLock.unlock_shared();
 }
 
 bool CCoreAudioAESound::IsPlaying()
 {
-  m_sampleLock.lock_shared();
-  bool playing = m_inUse > 0;
-  m_sampleLock.unlock_shared();
-
-  return playing;
+  CSingleLock cs(m_critSection);
+  return (m_inUse > 0);
 }
 
 void CCoreAudioAESound::Play()

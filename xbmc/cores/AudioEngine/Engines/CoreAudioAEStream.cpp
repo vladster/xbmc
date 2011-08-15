@@ -415,7 +415,7 @@ unsigned int CCoreAudioAEStream::AddData(void *data, unsigned int size)
 unsigned int CCoreAudioAEStream::GetFrames(uint8_t *buffer, unsigned int size)
 {  
   /* if we have been deleted */
-  if (!m_valid || m_delete || !m_Buffer)
+  if (!m_valid || m_delete || !m_Buffer || m_paused)
   {
     return 0;
   }
@@ -680,7 +680,7 @@ OSStatus CCoreAudioAEStream::OnRender(AudioUnitRenderActionFlags *ioActionFlags,
   unsigned outputBufferIndex = AE.GetHAL()->GetBufferIndex();
   
   // if we have no valid data output silence
-  if (!m_valid || m_delete || !m_Buffer || m_firstInput)
+  if (!m_valid || m_delete || !m_Buffer || m_firstInput || m_paused)
   {
   	for(UInt32 i = 0; i < ioData->mNumberBuffers; i++)
       bzero(ioData->mBuffers[i].mData, ioData->mBuffers[i].mDataByteSize);	

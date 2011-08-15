@@ -344,6 +344,7 @@ void PAPlayer::Process()
     float delay = 1.0f;
     float buffer = 1.0f;
     ProcessStreams(delay, buffer);
+#ifndef TARGET_DARWIN_IOS
     if (buffer > 0.2)
     {
       /* try to keep the buffer 75% full */
@@ -351,6 +352,7 @@ void PAPlayer::Process()
       delay = delay * mul;
       Sleep(MathUtils::round_int(delay));
     }
+#endif
   }
   
   m_callback.OnPlayBackEnded();

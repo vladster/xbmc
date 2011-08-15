@@ -54,7 +54,8 @@ CCoreAudioAE::CCoreAudioAE() :
   m_Initialized        (false  ),
   m_rawPassthrough     (false  ),
   m_volume             (1.0f   ),
-  m_chLayoutCount      (0      )
+  m_chLayoutCount      (0      ),
+  m_callbackRunning    (false  )
 {
   m_volume    = g_settings.m_fVolumeLevel;
   HAL         = new CCoreAudioAEHAL;
@@ -107,7 +108,8 @@ bool CCoreAudioAE::Initialize()
 }
 
 bool CCoreAudioAE::OpenCoreAudio(unsigned int sampleRate, bool forceRaw, enum AEDataFormat rawFormat)
-{  
+{
+
   /* remove any deleted streams */
   CSingleLock streamLock(m_streamLock);
   for(StreamList::iterator itt = m_streams.begin(); itt != m_streams.end();)
@@ -265,10 +267,17 @@ void CCoreAudioAE::Deinitialize()
     (*itt)->CloseConverter();
   streamLock.Leave();
 
-  HAL->Deinitialize();
-    
   m_Initialized = false;
   
+  CSingleLock callbackLock(m_callbackLock);
+
+  /*
+  while(m_callbackRunning)
+    Sleep(100);
+  */
+  
+  HAL->Deinitialize();
+    
   CLog::Log(LOGINFO, "CCoreAudioAE::Deinitialize: Audio device has been closed.");
 }
 
@@ -363,7 +372,7 @@ IAEStream *CCoreAudioAE::MakeStream(enum AEDataFormat dataFormat,
             );
 
   CSingleLock streamLock(m_streamLock);
-  bool wasEmpty = m_streams.empty();
+  //bool wasEmpty = m_streams.empty();
   CCoreAudioAEStream *stream = new CCoreAudioAEStream(dataFormat, sampleRate, channelLayout, options);
   m_streams.push_back(stream);
   streamLock.Leave();
@@ -375,7 +384,7 @@ IAEStream *CCoreAudioAE::MakeStream(enum AEDataFormat dataFormat,
     Deinitialize();
     m_Initialized = OpenCoreAudio(sampleRate, true, dataFormat);
   }
-  else if (wasEmpty || m_rawPassthrough)
+  else if(/* wasEmpty || */ m_rawPassthrough)
   {
     Deinitialize();
     m_Initialized = OpenCoreAudio(sampleRate);
@@ -417,7 +426,7 @@ IAEStream *CCoreAudioAE::FreeStream(IAEStream *stream)
   
   printf("CCoreAudioAE::FreeStream m_streams.empty %d m_rawPassthrough %d\n", m_streams.empty(), m_rawPassthrough);
   // When we have been in passthrough mode, reinit the hardware to come back to anlog out
-  if(m_streams.empty() || m_rawPassthrough)
+  if(/*m_streams.empty() || */ m_rawPassthrough)
   {
     printf("CCoreAudioAE::FreeStream reinit\n");
     CLog::Log(LOGINFO, "CCoreAudioAE::FreeStream Reinit, no streams left" );
@@ -572,7 +581,6 @@ OSStatus CCoreAudioAE::OnRender(AudioUnitRenderActionFlags *actionFlags,
                                             UInt32 inNumberFrames, 
                                             AudioBufferList *ioData)
 {
-
   UInt32 frames = inNumberFrames;
 
   unsigned int rSamples = frames * m_chLayoutCount;
@@ -583,7 +591,14 @@ OSStatus CCoreAudioAE::OnRender(AudioUnitRenderActionFlags *actionFlags,
     bzero(ioData->mBuffers[i].mData, ioData->mBuffers[i].mDataByteSize);	
   
   if(!m_Initialized)
+  {
+    m_callbackRunning = false;
     return noErr;
+  }
+
+  CSingleLock callbackLock(m_callbackLock);
+
+  m_callbackRunning = true;
   
   /*
   CSingleLock streamLock(m_streamLock);
@@ -614,6 +629,8 @@ OSStatus CCoreAudioAE::OnRender(AudioUnitRenderActionFlags *actionFlags,
     if(!size && actionFlags)
       *actionFlags |=  kAudioUnitRenderAction_OutputIsSilence;
   }
+
+  m_callbackRunning = false;
 
   return noErr;
 }

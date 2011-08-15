@@ -110,6 +110,8 @@ bool CCoreAudioUnit::Open(AUGraph audioGraph, AudioComponentDescription desc)
   m_audioGraph  = audioGraph;
   m_Initialized = true;
   
+  Start();
+  
   return true;
 }
 
@@ -131,7 +133,11 @@ void CCoreAudioUnit::Close()
   
   if(m_renderProc)
     SetInputSource(NULL);
-  
+
+  Sleep(100);
+
+  Stop();
+
   if(m_busNumber != INVALID_BUS)
   {
     OSStatus ret = AUGraphDisconnectNodeInput(m_audioGraph, m_audioNode, m_busNumber);
@@ -348,6 +354,36 @@ bool CCoreAudioUnit::SetSampleRate(Float64 sampleRate, AudioUnitScope scope, Aud
   if (ret)
   {
     CLog::Log(LOGERROR, "CCoreAudioUnit::SetSampleRate: Unable to set AudioUnit format. Bus : %d Scope : %d : Error = %s", (int)scope, (int)bus, GetError(ret).c_str());
+    return false;
+  }
+  return true;  
+}
+
+bool CCoreAudioUnit::Stop()
+{
+  if(!m_audioUnit)
+    return false;
+  
+  OSStatus ret;
+  ret = AudioOutputUnitStop(m_audioUnit);
+  if (ret)
+  {
+    CLog::Log(LOGERROR, "CCoreAudioUnit::Stop: Unable to stop autput unit. Error = %s", GetError(ret).c_str());
+    return false;
+  }
+  return true;  
+}
+
+bool CCoreAudioUnit::Start()
+{
+  if(!m_audioUnit)
+    return false;
+  
+  OSStatus ret;
+  ret = AudioOutputUnitStart(m_audioUnit);
+  if (ret)
+  {
+    CLog::Log(LOGERROR, "CCoreAudioUnit::Stop: Unable to start autput unit. Error = %s", GetError(ret).c_str());
     return false;
   }
   return true;  
@@ -769,9 +805,9 @@ bool CCoreAudioGraph::Close()
   OSStatus ret;
   
   Stop();
-  
+    
   SetInputSource(NULL);
-  
+
   while(!m_auUnitList.empty())
   {
     CAUOutputDevice *d = m_auUnitList.front();
@@ -840,6 +876,14 @@ bool CCoreAudioGraph::Start()
   }
   if(!isRunning)
   {
+
+    if(m_audioUnit)
+      m_audioUnit->Start();
+    if(m_mixerUnit)
+      m_mixerUnit->Start();
+    if(m_inputUnit)
+      m_inputUnit->Start();
+    
     ret = AUGraphStart(m_audioGraph);
     if(ret)
     {
@@ -867,6 +911,14 @@ bool CCoreAudioGraph::Stop()
   }
   if(isRunning)
   {
+
+    if(m_inputUnit)
+      m_inputUnit->Stop();
+    if(m_mixerUnit)
+      m_mixerUnit->Stop();
+    if(m_audioUnit)
+      m_audioUnit->Stop();
+  
     ret = AUGraphStop(m_audioGraph);
     if(ret)
     {
@@ -910,7 +962,6 @@ CAUOutputDevice *CCoreAudioGraph::DestroyUnit(CAUOutputDevice *outputUnit)
     }
   
   ReleaseBus(outputUnit->GetBus());
-  outputUnit->SetInputSource(NULL);
   outputUnit->Close();
   delete outputUnit;
   outputUnit = NULL;

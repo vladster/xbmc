@@ -77,6 +77,8 @@ public:
   virtual void GetFormatDesc(AEAudioFormat format, AudioStreamBasicDescription *streamDesc);
   virtual float GetLatency();
   virtual bool SetSampleRate(Float64 sampleRate, AudioUnitScope scope, AudioUnitElement bus);
+  virtual bool Stop();
+  virtual bool Start();
   virtual AudioUnit   GetUnit  (){return m_audioUnit;}
   virtual AUGraph     GetGraph (){return m_audioGraph;}
   virtual AUNode      GetNode  (){return m_audioNode;}

@@ -394,13 +394,25 @@ IAEStream *CCoreAudioAE::FreeStream(IAEStream *stream)
 {
   CSingleLock streamLock(m_streamLock);
   /* ensure the stream still exists */
-  for(StreamList::iterator itt = m_streams.begin(); itt != m_streams.end(); ++itt)
+  for(StreamList::iterator itt = m_streams.begin(); itt != m_streams.end(); )
+  {
+    CCoreAudioAEStream *del = *itt;
     if (*itt == stream)
     {
-      m_streams.erase(itt);
+      itt = m_streams.erase(itt);
       delete (CCoreAudioAEStream *)stream;
-      break;
     }
+    else if(del->IsDestroyed())
+    {
+      itt = m_streams.erase(itt);
+      delete del;
+    }
+    else 
+    {
+      ++itt;
+    }
+
+  }
   streamLock.Leave();
   
   printf("CCoreAudioAE::FreeStream m_streams.empty %d m_rawPassthrough %d\n", m_streams.empty(), m_rawPassthrough);
@@ -560,28 +572,28 @@ OSStatus CCoreAudioAE::OnRender(AudioUnitRenderActionFlags *actionFlags,
                                             UInt32 inNumberFrames, 
                                             AudioBufferList *ioData)
 {
-  CSingleLock streamLock(m_streamLock);
 
   UInt32 frames = inNumberFrames;
 
   unsigned int rSamples = frames * m_chLayoutCount;
   int size = frames * m_format.m_frameSize;
   //int size = frames * HAL->m_BytesPerFrame;
-  
-  ioData->mBuffers[0].mDataByteSize = 0;
+
+  for(UInt32 i = 0; i < ioData->mNumberBuffers; i++)
+    bzero(ioData->mBuffers[i].mData, ioData->mBuffers[i].mDataByteSize);	
   
   if(!m_Initialized)
-    goto out;
+    return noErr;
   
+  /*
+  CSingleLock streamLock(m_streamLock);
   // Remove any destroyed stream
   if (!m_streams.empty()) 
   {
-    /* mix in any running streams */
     for(StreamList::iterator itt = m_streams.begin(); itt != m_streams.end();)
     {
       CCoreAudioAEStream *stream = *itt;
       
-      /* skip streams that are flagged for deletion */
       if (stream->IsDestroyed())
       {
         itt = m_streams.erase(itt);
@@ -592,18 +604,17 @@ OSStatus CCoreAudioAE::OnRender(AudioUnitRenderActionFlags *actionFlags,
     }
   }
   streamLock.Leave();
-
+  */
+  
   // when not in passthrough output mix sounds
   if(!m_rawPassthrough)
   {
-    memset((unsigned char *)ioData->mBuffers[0].mData, 0x0, size);
     MixSounds((float *)ioData->mBuffers[0].mData, rSamples);
     ioData->mBuffers[0].mDataByteSize = size;
     if(!size && actionFlags)
       *actionFlags |=  kAudioUnitRenderAction_OutputIsSilence;
   }
 
-out:
   return noErr;
 }
 

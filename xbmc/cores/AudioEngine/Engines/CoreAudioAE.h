@@ -111,6 +111,7 @@ public:
   
 
 private:
+  CCriticalSection  m_callbackLock;
   CCriticalSection  m_streamLock;
   CCriticalSection  m_soundLock;
   CCriticalSection  m_soundSampleLock;
@@ -131,6 +132,7 @@ private:
   SoundStateList m_playing_sounds;
   
   bool              m_Initialized; // Prevent multiple init/deinit
+  bool              m_callbackRunning;
     
   AEAudioFormat     m_format;
   unsigned int      m_chLayoutCount;

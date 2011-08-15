@@ -85,7 +85,8 @@ CCoreAudioAEStream::CCoreAudioAEStream(enum AEDataFormat dataFormat, unsigned in
   m_fadeRunning     (false),
   m_outputUnit      (NULL ),
   m_frameSize       (0    ),
-  m_doRemap         (true )
+  m_doRemap         (true ),
+  m_firstInput      (true )
 {
   m_ssrcData.data_out             = NULL;
 
@@ -676,17 +677,19 @@ OSStatus CCoreAudioAEStream::OnRender(AudioUnitRenderActionFlags *ioActionFlags,
   unsigned outputBufferIndex = AE.GetHAL()->GetBufferIndex();
   
   // if we have no valid data output silence
-  if (!m_valid || m_delete || !m_Buffer)
+  if (!m_valid || m_delete || !m_Buffer || m_firstInput)
   {
-    ioData->mBuffers[outputBufferIndex].mDataByteSize = 0;
+  	for(UInt32 i = 0; i < ioData->mNumberBuffers; i++)
+      bzero(ioData->mBuffers[i].mData, ioData->mBuffers[i].mDataByteSize);	
     if(ioActionFlags)
       *ioActionFlags |= kAudioUnitRenderAction_OutputIsSilence;
+    m_firstInput = false;
     return noErr;
   }
-
+  
   unsigned int size = inNumberFrames * m_OutputFormat.m_frameSize;
   //unsigned int size = inNumberFrames * m_StreamFormat.m_frameSize;
-  
+
   ioData->mBuffers[outputBufferIndex].mDataByteSize  = GetFrames((unsigned char *)ioData->mBuffers[outputBufferIndex].mData, size);
   if(!ioData->mBuffers[outputBufferIndex].mDataByteSize && ioActionFlags)
     *ioActionFlags |= kAudioUnitRenderAction_OutputIsSilence;

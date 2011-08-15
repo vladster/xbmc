@@ -159,6 +159,7 @@ private:
   unsigned int      m_frameSize;
   bool              m_doRemap;
   void              ReorderSmpteToCA(void *buf, uint frames, AEDataFormat dataFormat);
+  bool              m_firstInput;
 };
 
 #endif

@@ -187,7 +187,10 @@ void CCoreAudioAEStream::OpenConverter()
   if(m_outputUnit)
     m_outputUnit = (CAUOutputDevice *) AE.GetHAL()->DestroyUnit(m_outputUnit);
 
-  m_outputUnit = (CAUOutputDevice *) AE.GetHAL()->CreateUnit(this, m_OutputFormat);
+  AEAudioFormat format = m_OutputFormat;
+  
+  format.m_sampleRate = m_StreamFormat.m_sampleRate;
+  m_outputUnit = (CAUOutputDevice *) AE.GetHAL()->CreateUnit(this, format);
 
   // it is save to register any direct input. the HAL takes care about it.
   AE.GetHAL()->SetDirectInput(this, m_OutputFormat);
@@ -249,7 +252,7 @@ void CCoreAudioAEStream::Initialize()
 
   m_convert       = m_StreamFormat.m_dataFormat != AE_FMT_FLOAT && !m_isRaw;
 #if defined(TARGET_DARWIN_OSX)
-  m_resample      = (m_StreamFormat.m_sampleRate != m_OutputFormat.m_sampleRate) && !m_isRaw;
+  m_resample      = false; //(m_StreamFormat.m_sampleRate != m_OutputFormat.m_sampleRate) && !m_isRaw;
 #else
   m_resample      = false;
 #endif
@@ -291,7 +294,7 @@ void CCoreAudioAEStream::Initialize()
     delete m_Buffer;
   
   m_Buffer = new CoreAudioRingBuffer(m_AvgBytesPerSec);
-
+  
   m_fadeRunning = false;
 
   OpenConverter();

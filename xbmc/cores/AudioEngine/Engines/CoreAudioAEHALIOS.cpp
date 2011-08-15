@@ -982,6 +982,7 @@ CAUOutputDevice *CCoreAudioGraph::CreateUnit(AEAudioFormat &format)
   if (!m_audioUnit || !m_mixerUnit)
     return NULL;
   
+  CStdString formatString;
   AudioStreamBasicDescription inputFormat;
   AudioStreamBasicDescription outputFormat;
   
@@ -1002,10 +1003,10 @@ CAUOutputDevice *CCoreAudioGraph::CreateUnit(AEAudioFormat &format)
   if(!m_mixerUnit->GetFormat(&outputFormat, kAudioUnitScope_Input, kOutputBus))
     goto error;
   
-  if(!outputUnit->SetFormat(&inputFormat, kAudioUnitScope_Input, kOutputBus))
+  if(!outputUnit->SetFormat(&outputFormat, kAudioUnitScope_Output, kOutputBus))
     goto error;
   
-  if(!outputUnit->SetFormat(&outputFormat, kAudioUnitScope_Output, kOutputBus))
+  if(!outputUnit->SetFormat(&inputFormat, kAudioUnitScope_Input, kOutputBus))
     goto error;
   
   ret = AUGraphConnectNodeInput(m_audioGraph, outputUnit->GetNode(), 0, m_mixerUnit->GetNode(), busNumber);
@@ -1025,6 +1026,9 @@ CAUOutputDevice *CCoreAudioGraph::CreateUnit(AEAudioFormat &format)
   ShowGraph();
   printf("\n");
   
+  CLog::Log(LOGINFO, "CCoreAudioGraph::Open: Input Stream Format  %s", StreamDescriptionToString(inputFormat, formatString));
+  CLog::Log(LOGINFO, "CCoreAudioGraph::Open: Output Stream Format %s", StreamDescriptionToString(outputFormat, formatString));    
+
   m_auUnitList.push_back(outputUnit);
   
   return outputUnit;

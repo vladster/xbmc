@@ -379,7 +379,6 @@ unsigned int CCoreAudioAEStream::AddData(void *data, unsigned int size)
   //  ReorderSmpteToCA(adddata, addsize / m_StreamFormat.m_frameSize, m_StreamFormat.m_dataFormat);
 
   unsigned int room = m_Buffer->GetWriteSize();
-  
   /*
   while(addsize > room)
   {
@@ -393,7 +392,6 @@ unsigned int CCoreAudioAEStream::AddData(void *data, unsigned int size)
     room = m_Buffer->GetWriteSize();
   }
   */
-
   if(addsize > room)
   {
     //CLog::Log(LOGDEBUG, "CCoreAudioAEStream::AddData failed : free size %d add size %d", room, addsize);

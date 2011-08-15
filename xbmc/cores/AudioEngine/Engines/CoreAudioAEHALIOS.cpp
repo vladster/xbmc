@@ -618,10 +618,10 @@ bool CCoreAudioGraph::Open(ICoreAudioSource *pSource, AEAudioFormat &format, boo
   
   if(!allowMixing)
   {    
-    if(!m_audioUnit->SetFormat(&outputFormat, kAudioUnitScope_Input, kOutputBus))
+    if(!m_audioUnit->SetFormat(&inputFormat, kAudioUnitScope_Input, kOutputBus))
       return false;
     
-    if (!m_audioUnit->SetFormat(&outputFormat, kAudioUnitScope_Output, kInputBus))
+    if (!m_audioUnit->SetFormat(&inputFormat, kAudioUnitScope_Output, kInputBus))
       return false;
   }
 
@@ -751,8 +751,10 @@ bool CCoreAudioGraph::Open(ICoreAudioSource *pSource, AEAudioFormat &format, boo
   UInt32 bufferFrames = m_audioUnit->GetBufferFrameSize();
   
   m_audioUnit->SetMaxFramesPerSlice(bufferFrames);
-  m_mixerUnit->SetMaxFramesPerSlice(bufferFrames);
-  m_inputUnit->SetMaxFramesPerSlice(bufferFrames);
+  if(m_mixerUnit)
+    m_mixerUnit->SetMaxFramesPerSlice(bufferFrames);
+  if(m_inputUnit)
+    m_inputUnit->SetMaxFramesPerSlice(bufferFrames);
   
   SetInputSource(pSource);
   

@@ -40,7 +40,7 @@
 #include "CoreAudioAEHALOSX.h"
 #endif
 
-#define COREAUDIO_IS_RAW(x) ((x) == AE_FMT_AC3 || (x) == AE_FMT_DTS || (x) == AE_FMT_EAC3)
+#define COREAUDIO_IS_RAW(x) ((x) == AE_FMT_AC3 || (x) == AE_FMT_DTS)
 
 #if defined(TARGET_DARWIN_IOS)
 # define CCoreAudioAEHAL CCoreAudioAEHALIOS

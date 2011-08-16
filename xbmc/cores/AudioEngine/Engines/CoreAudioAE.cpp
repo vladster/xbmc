@@ -180,11 +180,7 @@ bool CCoreAudioAE::OpenCoreAudio(unsigned int sampleRate, bool forceRaw, enum AE
       case AE_FMT_AC3:
       case AE_FMT_DTS:
         m_format.m_channelLayout = CAEChannelInfo(AE_CH_LAYOUT_2_0);
-        m_format.m_sampleRate   = 48000;        
-        break;
-      case AE_FMT_EAC3:
-        m_format.m_channelLayout = CAEChannelInfo(AE_CH_LAYOUT_2_0);
-        m_format.m_sampleRate   = 192000;
+        m_format.m_sampleRate   = 48000;
         break;
     }
     m_format.m_dataFormat   = AE_FMT_S16NE;
@@ -535,11 +531,10 @@ void CCoreAudioAE::MixSounds(float *buffer, unsigned int samples)
       continue;
     }
     
-    float volume = ss->owner->GetVolume();
     unsigned int mixSamples = std::min(ss->sampleCount, samples);
-    
+
     for(unsigned int i = 0; i < mixSamples; ++i)
-      buffer[i] = (buffer[i] + (ss->samples[i] * volume));
+      buffer[i] = (buffer[i] + ss->samples[i]);
 
     ss->sampleCount -= mixSamples;
     ss->samples     += mixSamples;

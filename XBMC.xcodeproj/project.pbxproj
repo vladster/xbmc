@@ -408,6 +408,8 @@
 		32D9D39D13DF236D00CA3F7F /* AEChannelInfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 32D9D39A13DF236D00CA3F7F /* AEChannelInfo.cpp */; };
 		32EC152713E9AF9B00339EC7 /* CoreAudioAEHAL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 32EC152513E9AF9B00339EC7 /* CoreAudioAEHAL.cpp */; };
 		32EC152813E9AF9B00339EC7 /* CoreAudioAEHAL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 32EC152513E9AF9B00339EC7 /* CoreAudioAEHAL.cpp */; };
+		32F4F29813F9A27D00F575D8 /* DVDAudioCodecPassthroughFFmpeg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 32F4F29613F9A27D00F575D8 /* DVDAudioCodecPassthroughFFmpeg.cpp */; };
+		32F4F29913F9A27D00F575D8 /* DVDAudioCodecPassthroughFFmpeg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 32F4F29613F9A27D00F575D8 /* DVDAudioCodecPassthroughFFmpeg.cpp */; };
 		3802709A13D5A653009493DD /* SystemClock.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3802709813D5A653009493DD /* SystemClock.cpp */; };
 		3802709B13D5A653009493DD /* SystemClock.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3802709813D5A653009493DD /* SystemClock.cpp */; };
 		384718D81325BA04000486D6 /* XBDateTime.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 384718D61325BA04000486D6 /* XBDateTime.cpp */; };
@@ -2303,6 +2305,8 @@
 		32EC10DE13E725CE00339EC7 /* ICoreAudioSource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ICoreAudioSource.h; sourceTree = "<group>"; };
 		32EC152513E9AF9B00339EC7 /* CoreAudioAEHAL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CoreAudioAEHAL.cpp; sourceTree = "<group>"; };
 		32EC152613E9AF9B00339EC7 /* CoreAudioAEHAL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CoreAudioAEHAL.h; sourceTree = "<group>"; };
+		32F4F29613F9A27D00F575D8 /* DVDAudioCodecPassthroughFFmpeg.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DVDAudioCodecPassthroughFFmpeg.cpp; sourceTree = "<group>"; };
+		32F4F29713F9A27D00F575D8 /* DVDAudioCodecPassthroughFFmpeg.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DVDAudioCodecPassthroughFFmpeg.h; sourceTree = "<group>"; };
 		3802709713D5A62D009493DD /* ThreadLocal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ThreadLocal.h; sourceTree = "<group>"; };
 		3802709813D5A653009493DD /* SystemClock.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SystemClock.cpp; sourceTree = "<group>"; };
 		3802709913D5A653009493DD /* SystemClock.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SystemClock.h; sourceTree = "<group>"; };
@@ -5366,6 +5370,8 @@
 		E38E15010D25F9F900618676 /* Audio */ = {
 			isa = PBXGroup;
 			children = (
+				32F4F29613F9A27D00F575D8 /* DVDAudioCodecPassthroughFFmpeg.cpp */,
+				32F4F29713F9A27D00F575D8 /* DVDAudioCodecPassthroughFFmpeg.h */,
 				322D793D13D52D7400F59B62 /* DVDAudioCodecPassthrough.cpp */,
 				322D793E13D52D7400F59B62 /* DVDAudioCodecPassthrough.h */,
 				E38E15050D25F9F900618676 /* DllLibMad.h */,
@@ -8183,6 +8189,7 @@
 				322D793F13D52D7400F59B62 /* DVDAudioCodecPassthrough.cpp in Sources */,
 				32D9D39C13DF236D00CA3F7F /* AEChannelInfo.cpp in Sources */,
 				32EC152713E9AF9B00339EC7 /* CoreAudioAEHAL.cpp in Sources */,
+				32F4F29813F9A27D00F575D8 /* DVDAudioCodecPassthroughFFmpeg.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -9085,6 +9092,7 @@
 				322D794013D52D7400F59B62 /* DVDAudioCodecPassthrough.cpp in Sources */,
 				32D9D39D13DF236D00CA3F7F /* AEChannelInfo.cpp in Sources */,
 				32EC152813E9AF9B00339EC7 /* CoreAudioAEHAL.cpp in Sources */,
+				32F4F29913F9A27D00F575D8 /* DVDAudioCodecPassthroughFFmpeg.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -41,6 +41,9 @@
 #include "Audio/DVDAudioCodecLibMad.h"
 #include "Audio/DVDAudioCodecPcm.h"
 #include "Audio/DVDAudioCodecLPcm.h"
+#if defined(TARGET_DARWIN_OSX) || defined(TARGET_DARWIN_IOS)
+#include "Audio/DVDAudioCodecPassthroughFFmpeg.h"
+#endif
 #include "Audio/DVDAudioCodecPassthrough.h"
 #include "Overlay/DVDOverlayCodecSSA.h"
 #include "Overlay/DVDOverlayCodecText.h"
@@ -256,11 +259,23 @@ CDVDAudioCodec* CDVDFactoryCodec::CreateAudioCodec( CDVDStreamInfo &hint, bool p
 {
   CDVDAudioCodec* pCodec = NULL;
   CDVDCodecOptions options;
-
+  
   if (passthrough)
   {
-    pCodec = OpenCodec( new CDVDAudioCodecPassthrough(), hint, options );
-    if( pCodec ) return pCodec;
+    switch(hint.codec)
+    {
+#if defined(TARGET_DARWIN_OSX) || defined(TARGET_DARWIN_IOS)
+      case CODEC_ID_AC3:
+      case CODEC_ID_DTS:
+        pCodec = OpenCodec( new CDVDAudioCodecPassthroughFFmpeg(), hint, options );
+        if( pCodec ) return pCodec;
+        break;
+#endif
+      default:
+        pCodec = OpenCodec( new CDVDAudioCodecPassthrough(), hint, options );
+        if( pCodec ) return pCodec;
+        break;
+    }
   }
 
   switch (hint.codec)

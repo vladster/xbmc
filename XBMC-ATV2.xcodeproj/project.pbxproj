@@ -36,7 +36,11 @@
 =======
 		32EC074B13DF422F00339EC7 /* AEChannelInfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 32EC074913DF422F00339EC7 /* AEChannelInfo.cpp */; };
 		32F4F12013F7F2EB00F575D8 /* CoreAudioAEHAL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 32F4F11E13F7F2EB00F575D8 /* CoreAudioAEHAL.cpp */; };
+<<<<<<< HEAD
 >>>>>>> [AE/iOS/OSX] AE meats CoreAudio :D
+=======
+		32F4F31213F9AFFF00F575D8 /* DVDAudioCodecPassthroughFFmpeg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 32F4F31013F9AFFF00F575D8 /* DVDAudioCodecPassthroughFFmpeg.cpp */; };
+>>>>>>> [AE/iOS/OSX] use old ffmpeg passthrough on osx/ios until AE dts
 		4D5D2E131301753F006ABC13 /* CFNetwork.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4D5D2E121301753F006ABC13 /* CFNetwork.framework */; };
 		7C0A7ECD13A5DBF900AFC2BD /* AppParamParser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7C0A7ECB13A5DBF900AFC2BD /* AppParamParser.cpp */; };
 		7C0A7FC813A9E75400AFC2BD /* DirtyRegionSolvers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7C0A7FC413A9E75400AFC2BD /* DirtyRegionSolvers.cpp */; };
@@ -1022,7 +1026,12 @@
 		32EC074A13DF422F00339EC7 /* AEChannelInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AEChannelInfo.h; sourceTree = "<group>"; };
 		32F4F11E13F7F2EB00F575D8 /* CoreAudioAEHAL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CoreAudioAEHAL.cpp; sourceTree = "<group>"; };
 		32F4F11F13F7F2EB00F575D8 /* CoreAudioAEHAL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CoreAudioAEHAL.h; sourceTree = "<group>"; };
+<<<<<<< HEAD
 >>>>>>> [AE/iOS/OSX] AE meats CoreAudio :D
+=======
+		32F4F31013F9AFFF00F575D8 /* DVDAudioCodecPassthroughFFmpeg.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DVDAudioCodecPassthroughFFmpeg.cpp; sourceTree = "<group>"; };
+		32F4F31113F9AFFF00F575D8 /* DVDAudioCodecPassthroughFFmpeg.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DVDAudioCodecPassthroughFFmpeg.h; sourceTree = "<group>"; };
+>>>>>>> [AE/iOS/OSX] use old ffmpeg passthrough on osx/ios until AE dts
 		4D5D2E121301753F006ABC13 /* CFNetwork.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CFNetwork.framework; path = System/Library/Frameworks/CFNetwork.framework; sourceTree = SDKROOT; };
 		7C0A7ECB13A5DBF900AFC2BD /* AppParamParser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = AppParamParser.cpp; sourceTree = "<group>"; };
 		7C0A7ECC13A5DBF900AFC2BD /* AppParamParser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AppParamParser.h; sourceTree = "<group>"; };
@@ -3752,7 +3761,14 @@
 		F56C7255131EC151000AD0F6 /* Audio */ = {
 			isa = PBXGroup;
 			children = (
+<<<<<<< HEAD
 				F56C7266131EC151000AD0F6 /* libmad */,
+=======
+				32F4F31013F9AFFF00F575D8 /* DVDAudioCodecPassthroughFFmpeg.cpp */,
+				32F4F31113F9AFFF00F575D8 /* DVDAudioCodecPassthroughFFmpeg.h */,
+				322D7CB413D612AC00F59B62 /* DVDAudioCodecPassthrough.cpp */,
+				322D7CB513D612AC00F59B62 /* DVDAudioCodecPassthrough.h */,
+>>>>>>> [AE/iOS/OSX] use old ffmpeg passthrough on osx/ios until AE dts
 				F56C7256131EC151000AD0F6 /* DllLibMad.h */,
 				F56C7257131EC151000AD0F6 /* DVDAudioCodec.h */,
 				F56C7258131EC151000AD0F6 /* DVDAudioCodecFFmpeg.cpp */,
@@ -7038,7 +7054,11 @@
 =======
 				32EC074B13DF422F00339EC7 /* AEChannelInfo.cpp in Sources */,
 				32F4F12013F7F2EB00F575D8 /* CoreAudioAEHAL.cpp in Sources */,
+<<<<<<< HEAD
 >>>>>>> [AE/iOS/OSX] AE meats CoreAudio :D
+=======
+				32F4F31213F9AFFF00F575D8 /* DVDAudioCodecPassthroughFFmpeg.cpp in Sources */,
+>>>>>>> [AE/iOS/OSX] use old ffmpeg passthrough on osx/ios until AE dts
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

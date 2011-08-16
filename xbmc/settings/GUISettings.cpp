@@ -443,7 +443,8 @@ void CGUISettings::Initialize()
   AddBool(ao, "audiooutput.dontnormalizelevels", 346, true);
 
 #if (defined(__APPLE__) && defined(__arm__))
-  CSettingsCategory* aocat = g_sysinfo.IsAppleTV2() ? ao : NULL;
+  AddBool(ao, "audiooutput.ac3passthrough", 364, false);
+  AddBool(ao, "audiooutput.dtspassthrough", 254, false);
 #else
   CSettingsCategory* aocat = ao;
 #endif

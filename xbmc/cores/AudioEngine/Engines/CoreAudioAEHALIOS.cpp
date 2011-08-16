@@ -134,8 +134,6 @@ void CCoreAudioUnit::Close()
   if(m_renderProc)
     SetInputSource(NULL);
 
-  Sleep(100);
-
   Stop();
 
   if(m_busNumber != INVALID_BUS)
@@ -257,6 +255,8 @@ bool CCoreAudioUnit::RemoveRenderProc()
   
   m_renderProc = NULL;
   
+  Sleep(100);
+
   return true;
 }
 
@@ -364,13 +364,8 @@ bool CCoreAudioUnit::Stop()
   if(!m_audioUnit)
     return false;
   
-  OSStatus ret;
-  ret = AudioOutputUnitStop(m_audioUnit);
-  if (ret)
-  {
-    CLog::Log(LOGERROR, "CCoreAudioUnit::Stop: Unable to stop autput unit. Error = %s", GetError(ret).c_str());
-    return false;
-  }
+  AudioOutputUnitStop(m_audioUnit);
+
   return true;  
 }
 
@@ -379,13 +374,8 @@ bool CCoreAudioUnit::Start()
   if(!m_audioUnit)
     return false;
   
-  OSStatus ret;
-  ret = AudioOutputUnitStart(m_audioUnit);
-  if (ret)
-  {
-    CLog::Log(LOGERROR, "CCoreAudioUnit::Stop: Unable to start autput unit. Error = %s", GetError(ret).c_str());
-    return false;
-  }
+  AudioOutputUnitStart(m_audioUnit);
+
   return true;  
 }
 

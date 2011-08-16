@@ -583,8 +583,11 @@ bool CCoreAudioDevice::RemoveIOProc()
   else
     CLog::Log(LOGDEBUG, "CCoreAudioDevice::RemoveIOProc: IOProc 0x%08x removed for device 0x%04x", m_IoProc, m_DeviceId);
   m_IoProc = NULL; // Clear the reference no matter what
-  
+    
   m_pSource = NULL;  
+
+  Sleep(100);
+
   return true;
 }
 
@@ -1271,6 +1274,8 @@ void CCoreAudioUnit::Close()
   if(m_renderProc)
     SetInputSource(NULL);
   
+  Stop();
+  
   if(m_busNumber != INVALID_BUS)
   {
     OSStatus ret = AUGraphDisconnectNodeInput(m_audioGraph, m_audioNode, m_busNumber);
@@ -1420,6 +1425,7 @@ bool CCoreAudioUnit::RemoveRenderProc()
   CLog::Log(LOGDEBUG, "CCoreAudioUnit::RemoveRenderProc: Remove RenderProc 0x%08x for unit 0x%08x.", m_renderProc, m_audioUnit);
 
   m_renderProc = NULL;
+  Sleep(100);
   
   return true;
 }
@@ -1517,6 +1523,9 @@ void CCoreAudioUnit::GetFormatDesc(AEAudioFormat format,
 
 float CCoreAudioUnit::GetLatency()
 {
+  if(!m_audioUnit)
+    return 0.0f;
+
   Float64 latency;
   UInt32 size = sizeof(latency);
   
@@ -1529,6 +1538,26 @@ float CCoreAudioUnit::GetLatency()
   }
   
   return latency;
+}
+
+bool CCoreAudioUnit::Stop()
+{
+  if(!m_audioUnit)
+    return false;
+  
+  AudioOutputUnitStop(m_audioUnit);
+
+  return true;
+}
+
+bool CCoreAudioUnit::Start()
+{
+  if(!m_audioUnit)
+    return false;
+  
+  AudioOutputUnitStart(m_audioUnit);
+
+  return true;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2607,6 +2636,14 @@ bool CCoreAudioGraph::Start()
   }
   if(!isRunning)
   {
+
+    if(m_audioUnit)
+      m_audioUnit->Start();
+    if(m_mixerUnit)
+      m_mixerUnit->Start();
+    if(m_inputUnit)
+      m_inputUnit->Start();
+    
     ret = AUGraphStart(m_audioGraph);
     if(ret)
     {
@@ -2629,6 +2666,14 @@ bool CCoreAudioGraph::Stop()
   ret = AUGraphIsRunning(m_audioGraph, &isRunning);
   if(ret)
   {
+
+    if(m_inputUnit)
+      m_inputUnit->Stop();
+    if(m_mixerUnit)
+      m_mixerUnit->Stop();
+    if(m_audioUnit)
+      m_audioUnit->Stop();
+
     CLog::Log(LOGERROR, "CCoreAudioGraph::Stop: Audio graph not running. Error = %s", GetError(ret).c_str());
     return false;
   }

@@ -194,6 +194,8 @@ public:
                              AudioStreamBasicDescription *streamDesc,
                              AudioStreamBasicDescription *coreaudioDesc);
   virtual float GetLatency();
+  virtual bool Stop();
+  virtual bool Start();
   virtual AudioUnit   GetUnit  (){return m_audioUnit;}
   virtual AUGraph     GetGraph (){return m_audioGraph;}
   virtual AUNode      GetNode  (){return m_audioNode;}

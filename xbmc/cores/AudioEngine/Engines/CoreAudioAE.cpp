@@ -532,9 +532,10 @@ void CCoreAudioAE::MixSounds(float *buffer, unsigned int samples)
     }
     
     unsigned int mixSamples = std::min(ss->sampleCount, samples);
+    float volume = ss->owner->GetVolume();
 
     for(unsigned int i = 0; i < mixSamples; ++i)
-      buffer[i] = (buffer[i] + ss->samples[i]);
+      buffer[i] = (buffer[i] + (ss->samples[i] * volume));
 
     ss->sampleCount -= mixSamples;
     ss->samples     += mixSamples;

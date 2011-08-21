@@ -40,7 +40,7 @@
 #include "CoreAudioAEHALOSX.h"
 #endif
 
-#define COREAUDIO_IS_RAW(x) ((x) == AE_FMT_AC3 || (x) == AE_FMT_DTS)
+#define COREAUDIO_IS_RAW(x) ((x) == AE_FMT_AC3 || (x) == AE_FMT_DTS || (x) == AE_FMT_LPCM || (x) == AE_FMT_EAC3 || (x) == AE_FMT_DTSHD || (x) == AE_FMT_TRUEHD)
 
 #if defined(TARGET_DARWIN_IOS)
 # define CCoreAudioAEHAL CCoreAudioAEHALIOS
@@ -140,7 +140,7 @@ private:
 
   enum AEStdChLayout m_stdChLayout;
   
-  bool OpenCoreAudio(unsigned int sampleRate = 44100, bool forceRaw = false, enum AEDataFormat rawFormat = AE_FMT_AC3);
+  bool OpenCoreAudio(unsigned int sampleRate = 44100, bool forceRaw = false, enum AEDataFormat rawDataFormat = AE_FMT_AC3);
   
   void Deinitialize();
   void Start();

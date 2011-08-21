@@ -32,8 +32,12 @@
 		322D7D3413D612E600F59B62 /* AEUtil.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 322D7D1313D612E600F59B62 /* AEUtil.cpp */; };
 		322D7D3513D612E600F59B62 /* AEWAVLoader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 322D7D1513D612E600F59B62 /* AEWAVLoader.cpp */; };
 <<<<<<< HEAD
+<<<<<<< HEAD
 		32D6D47C1423A9D8003641AC /* JpegIO.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 32D6D47A1423A9D8003641AC /* JpegIO.cpp */; };
 =======
+=======
+		327C95C213FF8B6B005AA601 /* DVDAudioCodecFFmpegLpcm.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 327C95C013FF8B6B005AA601 /* DVDAudioCodecFFmpegLpcm.cpp */; };
+>>>>>>> [AE/iOS/OSX] add HDMI multichanneloutput on osx
 		32EC074B13DF422F00339EC7 /* AEChannelInfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 32EC074913DF422F00339EC7 /* AEChannelInfo.cpp */; };
 		32F4F12013F7F2EB00F575D8 /* CoreAudioAEHAL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 32F4F11E13F7F2EB00F575D8 /* CoreAudioAEHAL.cpp */; };
 <<<<<<< HEAD
@@ -1019,9 +1023,14 @@
 		322D7D1513D612E600F59B62 /* AEWAVLoader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = AEWAVLoader.cpp; sourceTree = "<group>"; };
 		322D7D1613D612E600F59B62 /* AEWAVLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AEWAVLoader.h; sourceTree = "<group>"; };
 <<<<<<< HEAD
+<<<<<<< HEAD
 		32D6D47A1423A9D8003641AC /* JpegIO.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = JpegIO.cpp; sourceTree = "<group>"; };
 		32D6D47B1423A9D8003641AC /* JpegIO.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = JpegIO.h; sourceTree = "<group>"; };
 =======
+=======
+		327C95C013FF8B6B005AA601 /* DVDAudioCodecFFmpegLpcm.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DVDAudioCodecFFmpegLpcm.cpp; sourceTree = "<group>"; };
+		327C95C113FF8B6B005AA601 /* DVDAudioCodecFFmpegLpcm.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DVDAudioCodecFFmpegLpcm.h; sourceTree = "<group>"; };
+>>>>>>> [AE/iOS/OSX] add HDMI multichanneloutput on osx
 		32EC074913DF422F00339EC7 /* AEChannelInfo.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = AEChannelInfo.cpp; sourceTree = "<group>"; };
 		32EC074A13DF422F00339EC7 /* AEChannelInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AEChannelInfo.h; sourceTree = "<group>"; };
 		32F4F11E13F7F2EB00F575D8 /* CoreAudioAEHAL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CoreAudioAEHAL.cpp; sourceTree = "<group>"; };
@@ -3762,8 +3771,13 @@
 			isa = PBXGroup;
 			children = (
 <<<<<<< HEAD
+<<<<<<< HEAD
 				F56C7266131EC151000AD0F6 /* libmad */,
 =======
+=======
+				327C95C013FF8B6B005AA601 /* DVDAudioCodecFFmpegLpcm.cpp */,
+				327C95C113FF8B6B005AA601 /* DVDAudioCodecFFmpegLpcm.h */,
+>>>>>>> [AE/iOS/OSX] add HDMI multichanneloutput on osx
 				32F4F31013F9AFFF00F575D8 /* DVDAudioCodecPassthroughFFmpeg.cpp */,
 				32F4F31113F9AFFF00F575D8 /* DVDAudioCodecPassthroughFFmpeg.h */,
 				322D7CB413D612AC00F59B62 /* DVDAudioCodecPassthrough.cpp */,
@@ -7058,7 +7072,11 @@
 >>>>>>> [AE/iOS/OSX] AE meats CoreAudio :D
 =======
 				32F4F31213F9AFFF00F575D8 /* DVDAudioCodecPassthroughFFmpeg.cpp in Sources */,
+<<<<<<< HEAD
 >>>>>>> [AE/iOS/OSX] use old ffmpeg passthrough on osx/ios until AE dts
+=======
+				327C95C213FF8B6B005AA601 /* DVDAudioCodecFFmpegLpcm.cpp in Sources */,
+>>>>>>> [AE/iOS/OSX] add HDMI multichanneloutput on osx
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

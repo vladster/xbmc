@@ -303,6 +303,8 @@ void CCoreAudioUnit::GetFormatDesc(AEAudioFormat format,
     case AE_FMT_S16NE:
     case AE_FMT_AC3:
     case AE_FMT_DTS:
+    case AE_FMT_DTSHD:
+    case AE_FMT_TRUEHD:
     case AE_FMT_EAC3:
       streamDesc->mFormatFlags |= kAudioFormatFlagsNativeEndian;
       streamDesc->mFormatFlags |= kAudioFormatFlagIsSignedInteger;
@@ -1146,12 +1148,8 @@ bool CCoreAudioAEHALIOS::InitializePCMEncoded(ICoreAudioSource *pSource, AEAudio
   return true;  
 }
 
-bool CCoreAudioAEHALIOS::Initialize(ICoreAudioSource *ae, bool passThrough, AEAudioFormat &format, CStdString &device)
+bool CCoreAudioAEHALIOS::Initialize(ICoreAudioSource *ae, bool passThrough, AEAudioFormat &format, AEDataFormat rawDataFormat, CStdString &device)
 { 
-  // Reset all the devices to a default 'non-hog' and mixable format.
-  // If we don't do this we may be unable to find the Default Output device.
-  // (e.g. if we crashed last time leaving it stuck in AC-3 mode)
-
   m_ae = (CCoreAudioAE *)ae;
   
   if(!m_ae)
@@ -1161,7 +1159,8 @@ bool CCoreAudioAEHALIOS::Initialize(ICoreAudioSource *ae, bool passThrough, AEAu
   m_Passthrough         = passThrough;
   m_encoded             = false;
   m_OutputBufferIndex   = 0;
-  
+  m_rawDataFormat       = rawDataFormat;
+
   if (format.m_channelLayout.Count() == 0)
   {
     CLog::Log(LOGERROR, "CCoreAudioAEHALIOS::Initialize - Unable to open the requested channel layout");

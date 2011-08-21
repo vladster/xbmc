@@ -346,6 +346,7 @@ protected:
   AEAudioFormat     m_initformat;
   bool              m_allowMixing;
   bool              m_encoded;
+  AEDataFormat      m_rawDataFormat;
 public:
   unsigned int      m_NumLatencyFrames;
   unsigned int      m_OutputBufferIndex;
@@ -357,7 +358,7 @@ public:
   virtual bool  InitializePCM(ICoreAudioSource *pSource, AEAudioFormat &format, bool allowMixing, AudioDeviceID outputDevice);
   virtual bool  InitializePCMEncoded(ICoreAudioSource *pSource, AEAudioFormat &format, AudioDeviceID outputDevice);
   virtual bool  InitializeEncoded(AudioDeviceID outputDevice, AEAudioFormat &format);
-  virtual bool  Initialize(ICoreAudioSource *ae, bool passThrough, AEAudioFormat &format, CStdString &device);
+  virtual bool  Initialize(ICoreAudioSource *ae, bool passThrough, AEAudioFormat &format, AEDataFormat rawDataFormat, CStdString &device);
   virtual void  Deinitialize();
   virtual void  EnumerateOutputDevices(AEDeviceList &devices, bool passthrough);
   virtual void  SetDirectInput(ICoreAudioSource *pSource, AEAudioFormat &format);

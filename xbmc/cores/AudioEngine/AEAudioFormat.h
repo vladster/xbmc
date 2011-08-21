@@ -59,6 +59,7 @@ enum AEDataFormat
   AE_FMT_EAC3,
   AE_FMT_TRUEHD,
   AE_FMT_DTSHD,
+  AE_FMT_LPCM,
 
   AE_FMT_MAX
 };

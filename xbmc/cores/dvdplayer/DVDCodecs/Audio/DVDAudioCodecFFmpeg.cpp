@@ -220,6 +220,8 @@ void CDVDAudioCodecFFmpeg::BuildChannelMap()
     layout = m_dllAvCodec.avcodec_guess_channel_layout(m_pCodecContext->channels, m_pCodecContext->codec_id, NULL);
   }
 
+  m_channelLayout.Reset();
+
   if (layout & AV_CH_FRONT_LEFT           ) m_channelLayout += AE_CH_FL  ;
   if (layout & AV_CH_FRONT_RIGHT          ) m_channelLayout += AE_CH_FR  ;
   if (layout & AV_CH_FRONT_CENTER         ) m_channelLayout += AE_CH_FC  ;

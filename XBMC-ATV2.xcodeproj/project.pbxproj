@@ -31,6 +31,7 @@
 		322D7D3313D612E600F59B62 /* AEStreamInfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 322D7D1113D612E600F59B62 /* AEStreamInfo.cpp */; };
 		322D7D3413D612E600F59B62 /* AEUtil.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 322D7D1313D612E600F59B62 /* AEUtil.cpp */; };
 		322D7D3513D612E600F59B62 /* AEWAVLoader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 322D7D1513D612E600F59B62 /* AEWAVLoader.cpp */; };
+		327C95C213FF8B6B005AA601 /* DVDAudioCodecFFmpegLpcm.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 327C95C013FF8B6B005AA601 /* DVDAudioCodecFFmpegLpcm.cpp */; };
 		32EC074B13DF422F00339EC7 /* AEChannelInfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 32EC074913DF422F00339EC7 /* AEChannelInfo.cpp */; };
 		32F4F12013F7F2EB00F575D8 /* CoreAudioAEHAL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 32F4F11E13F7F2EB00F575D8 /* CoreAudioAEHAL.cpp */; };
 		32F4F31213F9AFFF00F575D8 /* DVDAudioCodecPassthroughFFmpeg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 32F4F31013F9AFFF00F575D8 /* DVDAudioCodecPassthroughFFmpeg.cpp */; };
@@ -990,6 +991,8 @@
 		322D7D1413D612E600F59B62 /* AEUtil.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AEUtil.h; sourceTree = "<group>"; };
 		322D7D1513D612E600F59B62 /* AEWAVLoader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = AEWAVLoader.cpp; sourceTree = "<group>"; };
 		322D7D1613D612E600F59B62 /* AEWAVLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AEWAVLoader.h; sourceTree = "<group>"; };
+		327C95C013FF8B6B005AA601 /* DVDAudioCodecFFmpegLpcm.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DVDAudioCodecFFmpegLpcm.cpp; sourceTree = "<group>"; };
+		327C95C113FF8B6B005AA601 /* DVDAudioCodecFFmpegLpcm.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DVDAudioCodecFFmpegLpcm.h; sourceTree = "<group>"; };
 		32EC074913DF422F00339EC7 /* AEChannelInfo.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = AEChannelInfo.cpp; sourceTree = "<group>"; };
 		32EC074A13DF422F00339EC7 /* AEChannelInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AEChannelInfo.h; sourceTree = "<group>"; };
 		32F4F11E13F7F2EB00F575D8 /* CoreAudioAEHAL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CoreAudioAEHAL.cpp; sourceTree = "<group>"; };
@@ -3693,6 +3696,8 @@
 		F56C7255131EC151000AD0F6 /* Audio */ = {
 			isa = PBXGroup;
 			children = (
+				327C95C013FF8B6B005AA601 /* DVDAudioCodecFFmpegLpcm.cpp */,
+				327C95C113FF8B6B005AA601 /* DVDAudioCodecFFmpegLpcm.h */,
 				32F4F31013F9AFFF00F575D8 /* DVDAudioCodecPassthroughFFmpeg.cpp */,
 				32F4F31113F9AFFF00F575D8 /* DVDAudioCodecPassthroughFFmpeg.h */,
 				322D7CB413D612AC00F59B62 /* DVDAudioCodecPassthrough.cpp */,
@@ -6854,6 +6859,7 @@
 				32EC074B13DF422F00339EC7 /* AEChannelInfo.cpp in Sources */,
 				32F4F12013F7F2EB00F575D8 /* CoreAudioAEHAL.cpp in Sources */,
 				32F4F31213F9AFFF00F575D8 /* DVDAudioCodecPassthroughFFmpeg.cpp in Sources */,
+				327C95C213FF8B6B005AA601 /* DVDAudioCodecFFmpegLpcm.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

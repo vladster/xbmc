@@ -460,7 +460,11 @@ void CGUISettings::Initialize()
   AddBool(NULL, "audiooutput.passthroughmp3", 302, false);
 
 #if defined __APPLE__
+#if defined(TARGET_DARWIN_OSX)
+  AddBool(ao, "audiooutput.multichannellpcm", 348, true);
+#else
   AddBool(NULL, "audiooutput.multichannellpcm", 348, false);
+#endif
   AddBool(NULL, "audiooutput.truehdpassthrough", 349, false);
   AddBool(NULL, "audiooutput.dtshdpassthrough", 407, false);
 #else

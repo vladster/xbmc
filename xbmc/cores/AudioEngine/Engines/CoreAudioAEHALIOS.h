@@ -168,38 +168,6 @@ public:
   float GetLatency();
 };
 
-/*
-class CCoreAudioAEHALIOS : public ICoreAudioAEHAL
-{
-protected:
-  CIOSCoreAudioDevice  *m_AudioDevice;
-  bool                  m_Initialized;
-  bool                  m_Passthrough;
-public:
-
-  AEAudioFormat     m_format;
-  //unsigned int      m_BytesPerFrame;
-  unsigned int      m_BytesPerSec;
-  unsigned int      m_NumLatencyFrames;
-  unsigned int      m_OutputBufferIndex;
-  CCoreAudioAE     *m_ae;
-
-  CCoreAudioAEHALIOS();
-  virtual ~CCoreAudioAEHALIOS();
-
-  virtual bool  Initialize(ICoreAudioSource *ae, bool passThrough, AEAudioFormat &format, CStdString &device);
-  virtual void  Deinitialize();
-  virtual void  EnumerateOutputDevices(AEDeviceList &devices, bool passthrough);
-  virtual bool  SetDirectInput(ICoreAudioSource *pSource, AEAudioFormat &format);
-  virtual void  Stop();
-  virtual bool  Start();
-  virtual float GetDelay();
-  virtual void  SetVolume(float volume);
-  virtual void *CreateConverterUnit(AEAudioFormat &format, ICoreAudioSource *pSource);
-  virtual void *DestroyConverterUnit(void *converterUnit);
-};
-*/
-
 class CCoreAudioAEHALIOS : public ICoreAudioAEHAL
 {
 protected:
@@ -209,6 +177,7 @@ protected:
   AEAudioFormat     m_initformat;
   bool              m_allowMixing;
   bool              m_encoded;
+  AEDataFormat      m_rawDataFormat;
 public:
   unsigned int      m_NumLatencyFrames;
   unsigned int      m_OutputBufferIndex;
@@ -219,7 +188,7 @@ public:
   
   virtual bool  InitializePCM(ICoreAudioSource *pSource, AEAudioFormat &format, bool allowMixing);
   virtual bool  InitializePCMEncoded(ICoreAudioSource *pSource, AEAudioFormat &format);
-  virtual bool  Initialize(ICoreAudioSource *ae, bool passThrough, AEAudioFormat &format, CStdString &device);
+  virtual bool  Initialize(ICoreAudioSource *ae, bool passThrough, AEAudioFormat &format, AEDataFormat rawDataFormat, CStdString &device);
   virtual void  Deinitialize();
   virtual void  EnumerateOutputDevices(AEDeviceList &devices, bool passthrough);
   virtual void  SetDirectInput(ICoreAudioSource *pSource, AEAudioFormat &format);

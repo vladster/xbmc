@@ -111,6 +111,8 @@ public:
 private:
   void InternalFlush();
 
+  AEDataFormat            m_rawDataFormat;
+  
   AEAudioFormat           m_OutputFormat;
   unsigned int            m_chLayoutCountOutput;
   AEAudioFormat           m_StreamFormat;
@@ -119,7 +121,7 @@ private:
   unsigned int            m_OutputBytesPerSample;
 
   bool                    m_forceResample; /* true if we are to force resample even when the rates match */
-  bool                    m_resample;      /* true if the audio needs to be resampled  */
+  //bool                    m_resample;      /* true if the audio needs to be resampled  */
   bool                    m_convert;       /* true if the bitspersample needs converting */
   bool                    m_valid;         /* true if the stream is valid */
   bool                    m_delete;        /* true if CCoreAudioAE is to free this object */
@@ -132,8 +134,10 @@ private:
   CoreAudioRingBuffer    *m_Buffer;
   float                  *m_convertBuffer;      /* buffer for converted data */
   int                     m_convertBufferSize;
-  float                  *m_resampleBuffer;     /* buffer for resample data */
-  int                     m_resampleBufferSize;
+  //float                  *m_resampleBuffer;     /* buffer for resample data */
+  //int                     m_resampleBufferSize;
+  uint8_t                *m_upmixBuffer;        /* buffer for remap data */
+  int                     m_upmixBufferSize;
   uint8_t                *m_remapBuffer;        /* buffer for remap data */
   int                     m_remapBufferSize;
   uint8_t                *m_vizRemapBuffer;     /* buffer for remap data */
@@ -158,7 +162,7 @@ private:
   bool              m_isRaw;
   unsigned int      m_frameSize;
   bool              m_doRemap;
-  void              ReorderSmpteToCA(void *buf, uint frames, AEDataFormat dataFormat);
+  void              Upmix(void *input, unsigned int channelsInput, void *output, unsigned int channelsOutput, unsigned int frames, AEDataFormat dataFormat);
   bool              m_firstInput;
 };
 

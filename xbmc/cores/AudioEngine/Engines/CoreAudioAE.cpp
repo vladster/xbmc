@@ -19,15 +19,6 @@
  *
  */
 
-/*
- Fix 7.1 channel order in CoreAudio (mac).
- 
- To activate 7.1 audio (using either HDMI or DisplayPort); make sure to first launch the 
- Audio MIDI Setup in /Application/Utilities and configure HDMI audio as 8 channels-24 bits (the default is just stereo). 
- It is recommended to disable DTS and AC3 passthrough as it would reset the hdmi audio in two channels mode, 
- which would break future multi-channels playback.
- */
-
 #define __STDC_LIMIT_MACROS
 
 #include "system.h"
@@ -107,7 +98,7 @@ bool CCoreAudioAE::Initialize()
   return ret;
 }
 
-bool CCoreAudioAE::OpenCoreAudio(unsigned int sampleRate, bool forceRaw, enum AEDataFormat rawFormat)
+bool CCoreAudioAE::OpenCoreAudio(unsigned int sampleRate, bool forceRaw, enum AEDataFormat rawDataFormat)
 {
 
   /* remove any deleted streams */
@@ -175,15 +166,31 @@ bool CCoreAudioAE::OpenCoreAudio(unsigned int sampleRate, bool forceRaw, enum AE
 
   if(m_rawPassthrough)
   {
-    switch(rawFormat)
+    switch(rawDataFormat)
     {
       case AE_FMT_AC3:
       case AE_FMT_DTS:
         m_format.m_channelLayout = CAEChannelInfo(AE_CH_LAYOUT_2_0);
         m_format.m_sampleRate   = 48000;
+        m_format.m_dataFormat   = AE_FMT_S16NE;
+        break;
+      case AE_FMT_EAC3:
+        m_format.m_channelLayout = CAEChannelInfo(AE_CH_LAYOUT_2_0);
+        m_format.m_sampleRate   = 192000;
+        m_format.m_dataFormat   = AE_FMT_S16NE;
+        break;
+      case AE_FMT_DTSHD:
+      case AE_FMT_TRUEHD:
+        m_format.m_channelLayout = CAEChannelInfo(AE_CH_LAYOUT_7_1);
+        m_format.m_sampleRate   = 192000;
+        m_format.m_dataFormat   = AE_FMT_S16NE;
+        break;
+      case AE_FMT_LPCM:
+        m_format.m_channelLayout = CAEChannelInfo(AE_CH_LAYOUT_7_1);
+        m_format.m_sampleRate   = sampleRate;
+        m_format.m_dataFormat   = AE_FMT_FLOAT;
         break;
     }
-    m_format.m_dataFormat   = AE_FMT_S16NE;
   }
   else 
   {
@@ -198,7 +205,7 @@ bool CCoreAudioAE::OpenCoreAudio(unsigned int sampleRate, bool forceRaw, enum AE
   AEAudioFormat initformat = m_format;
 
   // initialize audio hardware
-  m_Initialized = HAL->Initialize(this, m_rawPassthrough, initformat, m_outputDevice);
+  m_Initialized = HAL->Initialize(this, m_rawPassthrough, initformat, rawDataFormat, m_outputDevice);
   
   unsigned int bps         = CAEUtil::DataFormatToBits(m_format.m_dataFormat);
   m_chLayoutCount          = m_format.m_channelLayout.Count();
@@ -339,6 +346,9 @@ float CCoreAudioAE::GetVolume()
 
 void CCoreAudioAE::SetVolume(float volume)
 {
+  if(m_rawPassthrough)
+    return;
+  
   g_settings.m_fVolumeLevel = volume;
   m_volume = volume;
   

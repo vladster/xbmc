@@ -1468,12 +1468,14 @@ void CCoreAudioUnit::GetFormatDesc(AEAudioFormat format,
   streamDesc->mFormatFlags = kLinearPCMFormatFlagIsPacked;
   switch(format.m_dataFormat) {
     case AE_FMT_FLOAT:
+    case AE_FMT_LPCM:
       streamDesc->mFormatFlags |= kAudioFormatFlagsNativeEndian;
       streamDesc->mFormatFlags |= kAudioFormatFlagIsFloat;
       break;
-    case AE_FMT_S16NE:
     case AE_FMT_AC3:
     case AE_FMT_DTS:
+    case AE_FMT_DTSHD:
+    case AE_FMT_TRUEHD:
     case AE_FMT_EAC3:
       streamDesc->mFormatFlags |= kAudioFormatFlagsNativeEndian;
       streamDesc->mFormatFlags |= kAudioFormatFlagIsSignedInteger;
@@ -2382,7 +2384,7 @@ bool CCoreAudioGraph::Open(ICoreAudioSource *pSource, AEAudioFormat &format, Aud
     if(m_mixMap || m_mixMap->IsValid())
     {
       // maximum input channel ber input bus
-      // fmt.mChannelsPerFrame = MAXIMUM_MIXER_CHANNELS;
+      //fmt.mChannelsPerFrame = MAXIMUM_MIXER_CHANNELS;
       
       // get output unit
       if(m_inputUnit)
@@ -2980,12 +2982,29 @@ bool CCoreAudioAEHALOSX::InitializeEncoded(AudioDeviceID outputDevice, AEAudioFo
     {
       AudioStreamRangedDescription& desc = physicalFormats.front();
       CLog::Log(LOGDEBUG, "CCoreAudioAEHALOSX::InitializeEncoded:    Considering Physical Format: %s", StreamDescriptionToString(desc.mFormat, formatString));
-      if (desc.mFormat.mFormatID == kAudioFormat60958AC3 || desc.mFormat.mFormatID == 'IAC3')
+
+      if(m_rawDataFormat == AE_FMT_LPCM || m_rawDataFormat == AE_FMT_DTSHD || 
+         m_rawDataFormat == AE_FMT_TRUEHD || m_rawDataFormat == AE_FMT_EAC3)
       {
-        outputFormat = desc.mFormat; // Select this format
-        m_OutputBufferIndex = streamIndex;
-        outputStream = stream.GetId();
-        break;
+        unsigned int bps = CAEUtil::DataFormatToBits(AE_FMT_S16NE);
+        if (desc.mFormat.mChannelsPerFrame == m_initformat.m_channelLayout.Count() && desc.mFormat.mBitsPerChannel == bps && 
+            desc.mFormat.mSampleRate == m_initformat.m_sampleRate )
+        {
+          outputFormat = desc.mFormat; // Select this format
+          m_OutputBufferIndex = streamIndex;
+          outputStream = stream.GetId();
+          break;
+        }
+      }
+      else
+      {
+        if (desc.mFormat.mFormatID == kAudioFormat60958AC3 || desc.mFormat.mFormatID == 'IAC3')
+        {
+          outputFormat = desc.mFormat; // Select this format
+          m_OutputBufferIndex = streamIndex;
+          outputStream = stream.GetId();
+          break;
+        }
       }
       physicalFormats.pop_front();
     }
@@ -3047,7 +3066,7 @@ bool CCoreAudioAEHALOSX::InitializeEncoded(AudioDeviceID outputDevice, AEAudioFo
   return true;
 }
 
-bool CCoreAudioAEHALOSX::Initialize(ICoreAudioSource *ae, bool passThrough, AEAudioFormat &format, CStdString &device)
+bool CCoreAudioAEHALOSX::Initialize(ICoreAudioSource *ae, bool passThrough, AEAudioFormat &format, AEDataFormat rawDataFormat, CStdString &device)
 { 
   // Reset all the devices to a default 'non-hog' and mixable format.
   // If we don't do this we may be unable to find the Default Output device.
@@ -3061,6 +3080,7 @@ bool CCoreAudioAEHALOSX::Initialize(ICoreAudioSource *ae, bool passThrough, AEAu
     return false;
   
   m_initformat          = format;
+  m_rawDataFormat       = rawDataFormat;
   m_Passthrough         = passThrough;
   m_encoded             = false;
   m_OutputBufferIndex   = 0;
@@ -3272,8 +3292,10 @@ float CCoreAudioAEHALOSX::GetDelay()
 
 void  CCoreAudioAEHALOSX::SetVolume(float volume)
 {
-  if(!m_encoded)
-    m_audioGraph->SetCurrentVolume(volume);
+  if(m_encoded || m_Passthrough)
+    return;
+
+  m_audioGraph->SetCurrentVolume(volume);
 }
 
 unsigned int CCoreAudioAEHALOSX::GetBufferIndex()

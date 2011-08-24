@@ -120,7 +120,7 @@ private:
   unsigned int            m_StreamBytesPerSample;
   unsigned int            m_OutputBytesPerSample;
 
-  bool                    m_forceResample; /* true if we are to force resample even when the rates match */
+  //bool                    m_forceResample; /* true if we are to force resample even when the rates match */
   //bool                    m_resample;      /* true if the audio needs to be resampled  */
   bool                    m_convert;       /* true if the bitspersample needs converting */
   bool                    m_valid;         /* true if the stream is valid */

@@ -105,7 +105,7 @@ CCoreAudioAEStream::CCoreAudioAEStream(enum AEDataFormat dataFormat, unsigned in
   m_OutputFormat                  = AE.GetAudioFormat();
   m_chLayoutCountOutput           = m_OutputFormat.m_channelLayout.Count();
   
-  m_forceResample                 = (options & AESTREAM_FORCE_RESAMPLE) != 0;
+  //m_forceResample                 = (options & AESTREAM_FORCE_RESAMPLE) != 0;
   m_paused                        = (options & AESTREAM_PAUSED) != 0;
 
   m_vizRemapBufferSize            = m_remapBufferSize = /*m_resampleBufferSize = */ m_upmixBufferSize = m_convertBufferSize = 16*1024;
@@ -466,10 +466,10 @@ unsigned int CCoreAudioAEStream::GetFrames(uint8_t *buffer, unsigned int size)
 //#endif
 
   /* if we are fading */
-  if (m_fadeRunning)
+  if (m_fadeRunning && !m_isRaw)
   {
     // TODO: check if we correctly respect the amount of our blockoperation
-    m_volume += (m_fadeStep * ((float)readsize / (float)m_StreamFormat.m_frameSize));
+    m_volume += (m_fadeStep * ((float)readsize / (float)m_OutputFormat.m_frameSize));
     m_volume = std::min(1.0f, std::max(0.0f, m_volume));
     if (m_fadeDirUp)
     {
@@ -537,7 +537,7 @@ bool CCoreAudioAEStream::IsPaused()
   return m_paused;
 }
 
-bool CCoreAudioAEStream::IsDraining () 
+bool CCoreAudioAEStream::IsDraining() 
 {
   return m_draining;
 }

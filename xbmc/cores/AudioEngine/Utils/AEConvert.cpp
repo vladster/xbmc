@@ -139,6 +139,82 @@ unsigned int CAEConvert::S8_Float(uint8_t *data, const unsigned int samples, flo
   return samples;
 }
 
+unsigned int CAEConvert::S16LE_Float(uint8_t* data, const unsigned int samples, float *dest)
+{
+  static const float mul = 1.0f / (INT16_MAX + 0.5f);
+  
+#ifdef __arm__  
+  for (int i = 0; i < samples; i++)
+  {
+    __asm__ __volatile__ (
+                          "ldrsh r1,[%[in]]       \n\t" // Read a halfword from the source address
+#ifdef __BIG_ENDIAN__
+                          "revsh r1,r1           \n\t" // Swap byte order
+#endif
+                          "vmov s1,r1             \n\t" // Copy input into a fp working register
+                          "fsitos s1,s1           \n\t" // Convert from signed int to float (single)
+                          "vmul.F32 s1,s1,%[mul]  \n\t" // Scale
+                          "vstr.32 s1, [%[out]]   \n\t" // Transfer the result from the coprocessor
+                          :                                                      // Outputs
+                          : [in] "r" (data), [out] "r" (dest), [mul] "w" (mul)   // Inputs
+                          : "s1","r1"                                            // Clobbers
+                          );
+    data+=2;
+    dest++;
+  }
+#else
+  for(unsigned int i = 0; i < samples; ++i, data += 2, ++dest)
+  {
+#ifndef __BIG_ENDIAN__
+    *dest = *(int16_t*)data * mul;
+#else
+    int16_t value = Endian_Swap16(*(int16_t*)data);
+    *dest = value * mul;
+#endif
+  }  
+#endif
+  
+  return samples;
+}
+
+unsigned int CAEConvert::S16BE_Float(uint8_t* data, const unsigned int samples, float *dest)
+{
+  static const float mul = 1.0f / (INT16_MAX + 0.5f);
+  
+#ifdef __arm__  
+  for (int i = 0; i < samples; i++)
+  {
+    __asm__ __volatile__ (
+                          "ldrsh r1,[%[in]]      \n\t" // Read a halfword from the source address
+#ifndef __BIG_ENDIAN__
+                          "revsh r1,r1           \n\t" // Swap byte order
+#endif
+                          "vmov s1,r1            \n\t" // Copy input into a fp working register
+                          "fsitos s1,s1          \n\t" // Convert from signed int to float (single)
+                          "vmul.F32 s1,s1,%[mul] \n\t" // Scale
+                          "vstr.32 s1, [%[out]]  \n\t" // Transfer the result from the coprocessor
+                          :                                                     // Outputs
+                          : [in] "r" (data), [out] "r" (dest), [mul] "w" (mul)  // Inputs
+                          : "s1","r1"                                           // Clobbers
+                          );
+    data+=2;
+    dest++;
+  }
+#else
+  for(unsigned int i = 0; i < samples; ++i, data += 2, ++dest)
+  {
+#ifdef __BIG_ENDIAN__
+    *dest = *(int16_t*)data * mul;
+#else
+    int16_t value = Endian_Swap16(*(int16_t*)data);
+    *dest = value * mul;
+#endif  
+  }
+#endif  
+  return samples;
+}
+
+/*
 unsigned int CAEConvert::S16LE_Float(uint8_t *data, const unsigned int samples, float *dest)
 {
   const float mul = 1.0f / (INT16_MAX + 0.5f);
@@ -173,6 +249,7 @@ unsigned int CAEConvert::S16BE_Float(uint8_t *data, const unsigned int samples, 
 
   return samples;
 }
+*/
 
 unsigned int CAEConvert::S24LE4_Float(uint8_t *data, const unsigned int samples, float *dest)
 {

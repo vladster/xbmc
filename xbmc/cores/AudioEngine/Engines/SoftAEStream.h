@@ -99,6 +99,8 @@ private:
 
   bool                    m_forceResample; /* true if we are to force resample even when the rates match */
   bool                    m_resample;      /* true if the audio needs to be resampled  */
+  double                  m_resampleRatio; /* user specified resample ratio */
+  double                  m_internalRatio; /* internal resample ratio */ 
   bool                    m_convert;       /* true if the bitspersample needs converting */
   float                  *m_convertBuffer; /* buffer for converted data */
   bool                    m_valid;         /* true if the stream is valid */

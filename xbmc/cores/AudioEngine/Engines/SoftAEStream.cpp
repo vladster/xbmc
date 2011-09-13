@@ -42,6 +42,8 @@ CSoftAEStream::CSoftAEStream(enum AEDataFormat dataFormat, unsigned int sampleRa
   m_convertBuffer   (NULL ),
   m_valid           (false),
   m_delete          (false),
+  m_resampleRatio   (1.0  ),
+  m_internalRatio   (1.0  ),
   m_volume          (1.0f ),
   m_rgain           (1.0f ),
   m_refillBuffer    (0    ),
@@ -185,7 +187,8 @@ void CSoftAEStream::Initialize()
     int err;
     m_ssrc                   = src_new(SRC_SINC_MEDIUM_QUALITY, m_initChannelLayout.Count(), &err);
     m_ssrcData.data_in       = m_convertBuffer;
-    m_ssrcData.src_ratio     = (double)AE.GetSampleRate() / (double)m_initSampleRate;
+    m_internalRatio          = (double)AE.GetSampleRate() / (double)m_initSampleRate;
+    m_ssrcData.src_ratio     = m_internalRatio;
     m_ssrcData.data_out      = (float*)_aligned_malloc(m_format.m_frameSamples * std::ceil(m_ssrcData.src_ratio) * sizeof(float), 16);
     m_ssrcData.output_frames = m_format.m_frames * std::ceil(m_ssrcData.src_ratio);
     m_ssrcData.end_of_input  = 0;
@@ -548,8 +551,10 @@ void CSoftAEStream::SetResampleRatio(double ratio)
 
   int oldRatioInt = std::ceil(m_ssrcData.src_ratio);
 
-  src_set_ratio(m_ssrc, ratio);
-  m_ssrcData.src_ratio = ratio;
+  m_resampleRatio = ratio;
+
+  src_set_ratio(m_ssrc, m_resampleRatio * m_internalRatio);
+  m_ssrcData.src_ratio = m_resampleRatio * m_internalRatio;
 
   //Check the resample buffer size and resize if necessary.
   if(oldRatioInt < std::ceil(m_ssrcData.src_ratio))

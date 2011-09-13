@@ -700,8 +700,8 @@ void CSoftAE::StopAllSounds()
   while(!m_playing_sounds.empty())
   {
     SoundState *ss = &(*m_playing_sounds.begin());
-    m_playing_sounds.pop_front();
     ss->owner->ReleaseSamples();
+    m_playing_sounds.pop_front();
   }
 }
 

@@ -170,6 +170,26 @@ bool CBaseTexture::LoadFromFile(const CStdString& texturePath, unsigned int maxW
     return false;
   }
 
+  //ImageLib is sooo sloow for jpegs. Try our own decoder first. If it fails, fall back to normal decode
+  if (URIUtils::GetExtension(texturePath).Equals(".jpg") || URIUtils::GetExtension(texturePath).Equals(".tbn"))
+  {
+    CJpegIO jpegfile;
+    if (jpegfile.Open(texturePath))
+    {
+      if (jpegfile.Width() > 0 && jpegfile.Height() > 0)
+      {
+        Allocate(jpegfile.Width(), jpegfile.Height(), XB_FMT_RGB8);
+        if (jpegfile.Decode(m_pixels))
+        {
+          if (autoRotate && jpegfile.Orientation())
+            m_orientation = jpegfile.Orientation() - 1;
+          m_hasAlpha=false;
+          return true;
+        }
+      }
+    }
+  }
+
 #if defined(__APPLE__) && defined(__arm__)
   XFILE::CFile file;
   UInt8 *imageBuff      = NULL;
@@ -299,25 +319,6 @@ bool CBaseTexture::LoadFromFile(const CStdString& texturePath, unsigned int maxW
   CFRelease(cfdata);
   delete [] imageBuff;
 #else
-  //ImageLib is sooo sloow for jpegs. Try our own decoder first. If it fails, fall back to ImageLib.
-  if (URIUtils::GetExtension(texturePath).Equals(".jpg") || URIUtils::GetExtension(texturePath).Equals(".tbn"))
-  {
-    CJpegIO jpegfile;
-    if (jpegfile.Open(texturePath))
-    {
-      if (jpegfile.Width() > 0 && jpegfile.Height() > 0)
-      {
-        Allocate(jpegfile.Width(), jpegfile.Height(), XB_FMT_RGB8);
-        if (jpegfile.Decode(m_pixels))
-        {
-          if (autoRotate && jpegfile.Orientation())
-            m_orientation = jpegfile.Orientation() - 1;
-          m_hasAlpha=false;
-          return true;
-        }
-      }
-    }
-  }
 
   DllImageLib dll;
   if (!dll.Load())

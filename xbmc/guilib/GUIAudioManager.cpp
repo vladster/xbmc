@@ -46,10 +46,6 @@ CGUIAudioManager::~CGUIAudioManager()
 
 void CGUIAudioManager::Initialize()
 {
-  if (g_guiSettings.GetString("lookandfeel.soundskin")=="OFF")
-    return;
-
-  CSingleLock lock(m_cs);
 }
 
 void CGUIAudioManager::DeInitialize()

@@ -44,6 +44,9 @@
 #if defined __APPLE__ && !defined __arm__
 #include "CoreAudioAEHALOSX.h"
 #endif
+#include "guilib/GUIFontManager.h"
+#include "utils/Weather.h"
+#include "LangInfo.h"
 #if defined(__APPLE__)
   #include "osx/DarwinUtils.h"
 #endif
@@ -88,7 +91,7 @@ void CSettingBool::FromString(const CStdString &strValue)
   m_bData = (strValue == "true");
 }
 
-CStdString CSettingBool::ToString()
+CStdString CSettingBool::ToString() const
 {
   return m_bData ? "true" : "false";
 }
@@ -112,7 +115,7 @@ void CSettingFloat::FromString(const CStdString &strValue)
   SetData((float)atof(strValue.c_str()));
 }
 
-CStdString CSettingFloat::ToString()
+CStdString CSettingFloat::ToString() const
 {
   CStdString strValue;
   strValue.Format("%f", m_fData);
@@ -165,7 +168,7 @@ void CSettingInt::FromString(const CStdString &strValue)
   SetData(id);
 }
 
-CStdString CSettingInt::ToString()
+CStdString CSettingInt::ToString() const
 {
   CStdString strValue;
   strValue.Format("%i", m_iData);
@@ -179,7 +182,7 @@ void CSettingHex::FromString(const CStdString &strValue)
     SetData(iHexValue);
 }
 
-CStdString CSettingHex::ToString()
+CStdString CSettingHex::ToString() const
 {
   CStdString strValue;
   strValue.Format("%x", m_iData);
@@ -199,7 +202,7 @@ void CSettingString::FromString(const CStdString &strValue)
   m_strData = strValue;
 }
 
-CStdString CSettingString::ToString()
+CStdString CSettingString::ToString() const
 {
   return m_strData;
 }
@@ -243,7 +246,7 @@ void CGUISettings::Initialize()
   AddBool(pic, "pictures.usetags", 14082, true);
   AddBool(pic,"pictures.generatethumbs",13360,true);
   AddBool(pic, "pictures.useexifrotation", 20184, true);
-  AddBool(pic, "pictures.showvideos", 22022, false);
+  AddBool(pic, "pictures.showvideos", 22022, true);
   // FIXME: hide this setting until it is properly respected. In the meanwhile, default to AUTO.
   AddInt(NULL, "pictures.displayresolution", 169, (int)RES_AUTORES, (int)RES_AUTORES, 1, (int)RES_AUTORES, SPIN_CONTROL_TEXT);
 
@@ -259,12 +262,8 @@ void CGUISettings::Initialize()
   AddGroup(2, 8);
   CSettingsCategory* wea = AddCategory(2, "weather", 16000);
   AddInt(NULL, "weather.currentlocation", 0, 1, 1, 1, 3, SPIN_CONTROL_INT_PLUS);
-  AddString(wea, "weather.areacode1", 14019, "USNY0996 - New York, NY", BUTTON_CONTROL_STANDARD);
-  AddString(wea, "weather.areacode2", 14020, "UKXX0085 - London, United Kingdom", BUTTON_CONTROL_STANDARD);
-  AddString(wea, "weather.areacode3", 14021, "JAXX0085 - Tokyo, Japan", BUTTON_CONTROL_STANDARD);
-  AddSeparator(wea, "weather.sep1");
-  AddDefaultAddon(wea, "weather.script", 24027, DEFAULT_WEATHER_ADDON, ADDON_SCRIPT_WEATHER);
-  AddString(wea, "weather.scriptsettings", 21417, "", BUTTON_CONTROL_STANDARD, true);
+  AddDefaultAddon(wea, "weather.addon", 24027, "weather.wunderground", ADDON_SCRIPT_WEATHER);
+  AddString(wea, "weather.addonsettings", 21417, "", BUTTON_CONTROL_STANDARD, true);
 
   // My Music Settings
   AddGroup(3, 2);
@@ -276,7 +275,7 @@ void CGUISettings::Initialize()
   AddDefaultAddon(ml, "musiclibrary.albumsscraper", 20193, "metadata.albums.allmusic.com", ADDON_SCRAPER_ALBUMS);
   AddDefaultAddon(ml, "musiclibrary.artistsscraper", 20194, "metadata.artists.allmusic.com", ADDON_SCRAPER_ARTISTS);
   AddBool(ml, "musiclibrary.updateonstartup", 22000, false);
-  AddBool(NULL, "musiclibrary.backgroundupdate", 22001, false);
+  AddBool(ml, "musiclibrary.backgroundupdate", 22001, false);
   AddSeparator(ml,"musiclibrary.sep2");
   AddString(ml, "musiclibrary.cleanup", 334, "", BUTTON_CONTROL_STANDARD);
   AddString(ml, "musiclibrary.export", 20196, "", BUTTON_CONTROL_STANDARD);
@@ -439,43 +438,25 @@ void CGUISettings::Initialize()
 
   map<int,int> channelLayout;
   for(int layout = AE_CH_LAYOUT_2_0; layout < AE_CH_LAYOUT_MAX; ++layout)
-    channelLayout.insert(make_pair(34100+layout, layout));
-#if (defined(__APPLE__) && defined(__arm__))
-  AddInt(NULL, "audiooutput.channellayout", 34100, AE_CH_LAYOUT_2_0, channelLayout, SPIN_CONTROL_TEXT);
-#else
+    channelLayout.insert(make_pair(34101+layout, layout));
   AddInt(ao, "audiooutput.channellayout", 34100, AE_CH_LAYOUT_2_0, channelLayout, SPIN_CONTROL_TEXT);
-#endif
   AddBool(ao, "audiooutput.dontnormalizelevels", 346, true);
 
 #if (defined(__APPLE__) && defined(__arm__))
-  //if (g_sysinfo.IsAppleTV2())
-  //{
-    AddBool(ao, "audiooutput.ac3passthrough", 364, false);
-    AddBool(ao, "audiooutput.dtspassthrough", 254, false);
-  //}
-  //else
-  //{
-  //  AddBool(NULL, "audiooutput.ac3passthrough", 364, false);
-  //  AddBool(NULL, "audiooutput.dtspassthrough", 254, false);
-  //}
+  CSettingsCategory* aocat = g_sysinfo.IsAppleTV2() ? ao : NULL;
 #else
-  AddBool(ao, "audiooutput.ac3passthrough", 364, true);
-  AddBool(ao, "audiooutput.dtspassthrough", 254, true);
+  CSettingsCategory* aocat = ao;
 #endif
-  AddBool(NULL, "audiooutput.passthroughaac", 299, false);
-  AddBool(NULL, "audiooutput.passthroughmp1", 300, false);
-  AddBool(NULL, "audiooutput.passthroughmp2", 301, false);
-  AddBool(NULL, "audiooutput.passthroughmp3", 302, false);
 
-#if defined __APPLE__
-  AddBool(NULL, "audiooutput.multichannellpcm", 348, false);
-  AddBool(NULL, "audiooutput.truehdpassthrough", 349, false);
-  AddBool(NULL, "audiooutput.dtshdpassthrough", 407, false);
-#else
-  AddBool(ao, "audiooutput.multichannellpcm", 348, true);
-  AddBool(ao, "audiooutput.truehdpassthrough", 349, true);
-  AddBool(ao, "audiooutput.dtshdpassthrough", 407, true);
-#endif
+  AddBool(aocat, "audiooutput.ac3passthrough"   , 364, true);
+  AddBool(aocat, "audiooutput.dtspassthrough"   , 254, true);
+  AddBool(aocat, "audiooutput.passthroughaac"   , 299, false);
+  AddBool(aocat, "audiooutput.passthroughmp1"   , 300, false);
+  AddBool(aocat, "audiooutput.passthroughmp2"   , 301, false);
+  AddBool(aocat, "audiooutput.passthroughmp3"   , 302, false);
+  AddBool(aocat, "audiooutput.multichannellpcm" , 348, true );
+  AddBool(aocat, "audiooutput.truehdpassthrough", 349, true );
+  AddBool(aocat, "audiooutput.dtshdpassthrough" , 407, true );
 
 #if defined __APPLE__
 #if defined __arm__
@@ -505,6 +486,7 @@ void CGUISettings::Initialize()
   AddBool(ao, "audiooutput.guisoundwhileplayback", 34120, true);
 
   CSettingsCategory* in = AddCategory(4, "input", 14094);
+  AddString(in, "input.peripherals", 35000, "", BUTTON_CONTROL_STANDARD);
 #if defined(__APPLE__)
   map<int,int> remotemode;
   remotemode.insert(make_pair(13610,APPLE_REMOTE_DISABLED));
@@ -521,7 +503,7 @@ void CGUISettings::Initialize()
   AddSeparator(in, "input.sep1");
 #endif
   AddBool(in, "input.remoteaskeyboard", 21449, false);
-#if (defined(__APPLE__) && defined(__arm_))
+#if defined(TARGET_DARWIN_IOS)
   AddBool(NULL, "input.enablemouse", 21369, true);
 #else
   AddBool(in, "input.enablemouse", 21369, true);
@@ -585,7 +567,13 @@ void CGUISettings::Initialize()
   AddBool(vdl, "videolibrary.showunwatchedplots", 20369, true);
   AddBool(NULL, "videolibrary.seasonthumbs", 20382, true);
   AddBool(vdl, "videolibrary.actorthumbs", 20402, true);
-  AddInt(vdl, "videolibrary.flattentvshows", 20412, 1, 0, 1, 2, SPIN_CONTROL_TEXT);
+
+  map<int, int> flattenTVShowOptions;
+  flattenTVShowOptions.insert(make_pair(20420, 0));
+  flattenTVShowOptions.insert(make_pair(20421, 1));
+  flattenTVShowOptions.insert(make_pair(20422, 2));
+  AddInt(vdl, "videolibrary.flattentvshows", 20412, 1, flattenTVShowOptions, SPIN_CONTROL_TEXT);
+
   AddBool(NULL, "videolibrary.flattenmoviesets", 22002, false);
   AddBool(vdl, "videolibrary.updateonstartup", 22000, false);
   AddBool(vdl, "videolibrary.backgroundupdate", 22001, false);
@@ -600,6 +588,8 @@ void CGUISettings::Initialize()
   renderers.insert(make_pair(13416, RENDER_METHOD_AUTO));
 
 #ifdef HAS_DX
+  if (g_sysinfo.IsVistaOrHigher())
+    renderers.insert(make_pair(16319, RENDER_METHOD_DXVA));
   renderers.insert(make_pair(13431, RENDER_METHOD_D3D_PS));
   renderers.insert(make_pair(13419, RENDER_METHOD_SOFTWARE));
 #endif
@@ -618,7 +608,7 @@ void CGUISettings::Initialize()
   AddBool(vp, "videoplayer.usevaapi", 13426, true);
 #endif
 #ifdef HAS_DX
-  AddBool(g_sysinfo.IsVistaOrHigher() ? vp: NULL, "videoplayer.usedxva2", 13427, false);
+  AddBool(g_sysinfo.IsVistaOrHigher() ? vp: NULL, "videoplayer.usedxva2", 13427, g_sysinfo.IsVistaOrHigher() ? true : false);
 #endif
 #ifdef HAVE_LIBCRYSTALHD
   AddBool(CCrystalHD::GetInstance()->DevicePresent() ? vp: NULL, "videoplayer.usechd", 13428, true);
@@ -654,9 +644,20 @@ void CGUISettings::Initialize()
   #define SYNCSETTINGS 1
 #endif
   AddBool(SYNCSETTINGS ? vp : NULL, "videoplayer.usedisplayasclock", 13510, false);
-  AddInt(SYNCSETTINGS ? vp : NULL, "videoplayer.synctype", 13500, SYNC_RESAMPLE, SYNC_DISCON, 1, SYNC_RESAMPLE, SPIN_CONTROL_TEXT);
+
+  map<int, int> syncTypes;
+  syncTypes.insert(make_pair(13501, SYNC_DISCON));
+  syncTypes.insert(make_pair(13502, SYNC_SKIPDUP));
+  syncTypes.insert(make_pair(13503, SYNC_RESAMPLE));
+  AddInt(SYNCSETTINGS ? vp : NULL, "videoplayer.synctype", 13500, SYNC_RESAMPLE, syncTypes, SPIN_CONTROL_TEXT);
   AddFloat(NULL, "videoplayer.maxspeedadjust", 13504, 5.0f, 0.0f, 0.1f, 10.0f);
-  AddInt(NULL, "videoplayer.resamplequality", 13505, RESAMPLE_MID, RESAMPLE_LOW, 1, RESAMPLE_REALLYHIGH, SPIN_CONTROL_TEXT);
+
+  map<int, int> resampleQualities;
+  resampleQualities.insert(make_pair(13506, RESAMPLE_LOW));
+  resampleQualities.insert(make_pair(13507, RESAMPLE_MID));
+  resampleQualities.insert(make_pair(13508, RESAMPLE_HIGH));
+  resampleQualities.insert(make_pair(13509, RESAMPLE_REALLYHIGH));
+  AddInt(NULL, "videoplayer.resamplequality", 13505, RESAMPLE_MID, resampleQualities, SPIN_CONTROL_TEXT);
   AddInt(vp, "videoplayer.errorinaspect", 22021, 0, 0, 1, 20, SPIN_CONTROL_INT_PLUS, MASK_PERCENT, TEXT_NONE);
 
   map<int,int> stretch;
@@ -679,20 +680,43 @@ void CGUISettings::Initialize()
   AddBool(vp, "videoplayer.teletextenabled", 23050, true);
 
   CSettingsCategory* vid = AddCategory(5, "myvideos", 14081);
-  AddInt(vid, "myvideos.selectaction", 22079, SELECT_ACTION_PLAY_OR_RESUME, SELECT_ACTION_CHOOSE, 1, SELECT_ACTION_INFO, SPIN_CONTROL_TEXT);
+
+  map<int, int> myVideosSelectActions;
+  myVideosSelectActions.insert(make_pair(22080, SELECT_ACTION_CHOOSE));
+  myVideosSelectActions.insert(make_pair(208,   SELECT_ACTION_PLAY_OR_RESUME));
+  myVideosSelectActions.insert(make_pair(13404, SELECT_ACTION_RESUME));
+  myVideosSelectActions.insert(make_pair(22081, SELECT_ACTION_INFO));
+  
+  AddInt(vid, "myvideos.selectaction", 22079, SELECT_ACTION_PLAY_OR_RESUME, myVideosSelectActions, SPIN_CONTROL_TEXT);
   AddBool(NULL, "myvideos.treatstackasfile", 20051, true);
   AddBool(vid, "myvideos.extractflags",20433, true);
-  AddBool(vid, "myvideos.cleanstrings", 20418, false);
+  AddBool(vid, "myvideos.filemetadata", 20419, true);
   AddBool(NULL, "myvideos.extractthumb",20433, true);
 
   CSettingsCategory* sub = AddCategory(5, "subtitles", 287);
   AddString(sub, "subtitles.font", 14089, "arial.ttf", SPIN_CONTROL_TEXT);
   AddInt(sub, "subtitles.height", 289, 28, 16, 2, 74, SPIN_CONTROL_TEXT); // use text as there is a disk based lookup needed
-  AddInt(sub, "subtitles.style", 736, FONT_STYLE_BOLD, FONT_STYLE_NORMAL, 1, FONT_STYLE_BOLD_ITALICS, SPIN_CONTROL_TEXT);
+
+  map<int, int> fontStyles;
+  fontStyles.insert(make_pair(738, FONT_STYLE_NORMAL));
+  fontStyles.insert(make_pair(739, FONT_STYLE_BOLD));
+  fontStyles.insert(make_pair(740, FONT_STYLE_ITALICS));
+  fontStyles.insert(make_pair(741, FONT_STYLE_BOLD_ITALICS));
+
+  AddInt(sub, "subtitles.style", 736, FONT_STYLE_BOLD, fontStyles, SPIN_CONTROL_TEXT);
   AddInt(sub, "subtitles.color", 737, SUBTITLE_COLOR_START + 1, SUBTITLE_COLOR_START, 1, SUBTITLE_COLOR_END, SPIN_CONTROL_TEXT);
   AddString(sub, "subtitles.charset", 735, "DEFAULT", SPIN_CONTROL_TEXT);
+  AddBool(sub,"subtitles.overrideassfonts", 21368, false);
   AddSeparator(sub, "subtitles.sep1");
   AddPath(sub, "subtitles.custompath", 21366, "", BUTTON_CONTROL_PATH_INPUT, false, 657);
+
+  map<int, int> subtitleAlignments;
+  subtitleAlignments.insert(make_pair(21461, SUBTITLE_ALIGN_MANUAL));
+  subtitleAlignments.insert(make_pair(21462, SUBTITLE_ALIGN_BOTTOM_INSIDE));
+  subtitleAlignments.insert(make_pair(21463, SUBTITLE_ALIGN_BOTTOM_OUTSIDE));
+  subtitleAlignments.insert(make_pair(21464, SUBTITLE_ALIGN_TOP_INSIDE));
+  subtitleAlignments.insert(make_pair(21465, SUBTITLE_ALIGN_TOP_OUTSIDE));
+  AddInt(sub, "subtitles.align", 21460, SUBTITLE_ALIGN_MANUAL, subtitleAlignments, SPIN_CONTROL_TEXT);
 
   CSettingsCategory* dvd = AddCategory(5, "dvds", 14087);
   AddBool(dvd, "dvds.autorun", 14088, false);
@@ -701,13 +725,15 @@ void CGUISettings::Initialize()
 
   AddDefaultAddon(NULL, "scrapers.moviesdefault", 21413, "metadata.themoviedb.org", ADDON_SCRAPER_MOVIES);
   AddDefaultAddon(NULL, "scrapers.tvshowsdefault", 21414, "metadata.tvdb.com", ADDON_SCRAPER_TVSHOWS);
-  AddDefaultAddon(NULL, "scrapers.musicvideosdefault", 21415, "metadata.mtv.com", ADDON_SCRAPER_MUSICVIDEOS);
+  AddDefaultAddon(NULL, "scrapers.musicvideosdefault", 21415, "metadata.yahoomusic.com", ADDON_SCRAPER_MUSICVIDEOS);
   AddBool(NULL, "scrapers.langfallback", 21416, false);
 
   // network settings
   AddGroup(6, 705);
 
   CSettingsCategory* srv = AddCategory(6, "services", 14036);
+  AddString(srv,"services.devicename", 1271, "XBMC", EDIT_CONTROL_INPUT);
+  AddSeparator(srv,"services.sep4");
   AddBool(srv, "services.upnpserver", 21360, false);
   AddBool(srv, "services.upnprenderer", 21881, false);
   AddSeparator(srv,"services.sep3");
@@ -734,7 +760,19 @@ void CGUISettings::Initialize()
 #endif
 #ifdef HAS_ZEROCONF
   AddSeparator(srv, "services.sep2");
+#ifdef TARGET_WINDOWS
+  AddBool(srv, "services.zeroconf", 1260, false);
+#else
   AddBool(srv, "services.zeroconf", 1260, true);
+#endif
+#endif
+
+#ifdef HAS_AIRPLAY
+  AddSeparator(srv, "services.sep5");
+  AddBool(srv, "services.airplay", 1270, false);
+  AddBool(srv, "services.useairplaypassword", 1272, false);
+  AddString(srv, "services.airplaypassword", 733, "", EDIT_CONTROL_HIDDEN_INPUT, false, 733);
+  AddSeparator(srv, "services.sep6");  
 #endif
 
 #ifndef _WIN32
@@ -748,14 +786,25 @@ void CGUISettings::Initialize()
   {
 #ifndef __APPLE__
     AddString(NULL, "network.interface",775,"", SPIN_CONTROL_TEXT);
-    AddInt(NULL, "network.assignment", 715, NETWORK_DHCP, NETWORK_DHCP, 1, NETWORK_DISABLED, SPIN_CONTROL_TEXT);
+
+    map<int, int> networkAssignments;
+    networkAssignments.insert(make_pair(716, NETWORK_DHCP));
+    networkAssignments.insert(make_pair(717, NETWORK_STATIC));
+    networkAssignments.insert(make_pair(787, NETWORK_DISABLED));
+    AddInt(NULL, "network.assignment", 715, NETWORK_DHCP, networkAssignments, SPIN_CONTROL_TEXT);
     AddString(NULL, "network.ipaddress", 719, "0.0.0.0", EDIT_CONTROL_IP_INPUT);
     AddString(NULL, "network.subnet", 720, "255.255.255.0", EDIT_CONTROL_IP_INPUT);
     AddString(NULL, "network.gateway", 721, "0.0.0.0", EDIT_CONTROL_IP_INPUT);
     AddString(NULL, "network.dns", 722, "0.0.0.0", EDIT_CONTROL_IP_INPUT);
     AddString(NULL, "network.dnssuffix", 22002, "", EDIT_CONTROL_INPUT, true);
     AddString(NULL, "network.essid", 776, "0.0.0.0", BUTTON_CONTROL_STANDARD);
-    AddInt(NULL, "network.enc", 778, ENC_NONE, ENC_NONE, 1, ENC_WPA2, SPIN_CONTROL_TEXT);
+
+    map<int, int> networkEncapsulations;
+    networkEncapsulations.insert(make_pair(780, ENC_NONE));
+    networkEncapsulations.insert(make_pair(781, ENC_WEP));
+    networkEncapsulations.insert(make_pair(782, ENC_WPA));
+    networkEncapsulations.insert(make_pair(783, ENC_WPA2));
+    AddInt(NULL, "network.enc", 778, ENC_NONE, networkEncapsulations, SPIN_CONTROL_TEXT);
     AddString(NULL, "network.key", 777, "0.0.0.0", EDIT_CONTROL_INPUT);
 #ifndef _WIN32
     AddString(NULL, "network.save", 779, "", BUTTON_CONTROL_STANDARD);
@@ -1061,7 +1110,7 @@ void CGUISettings::AddDefaultAddon(CSettingsCategory* cat, const char *strSettin
   settingsMap.insert(pair<CStdString, CSetting*>(CStdString(strSetting).ToLower(), pSetting));
 }
 
-const CStdString &CGUISettings::GetString(const char *strSetting, bool bPrompt) const
+const CStdString &CGUISettings::GetString(const char *strSetting, bool bPrompt /* = true */) const
 {
   ASSERT(settingsMap.size());
   constMapIter it = settingsMap.find(CStdString(strSetting).ToLower());
@@ -1160,16 +1209,15 @@ void CGUISettings::LoadXML(TiXmlElement *pRootElement, bool hideSettings /* = fa
   // Get hardware based stuff...
   CLog::Log(LOGNOTICE, "Getting hardware information now...");
   // FIXME: Check if the hardware supports it (if possible ;)
+  //SetBool("audiooutput.ac3passthrough", g_audioConfig.GetAC3Enabled());
+  //SetBool("audiooutput.dtspassthrough", g_audioConfig.GetDTSEnabled());
   CLog::Log(LOGINFO, "Using %s output", GetInt("audiooutput.mode") == AUDIO_ANALOG ? "analog" : "digital");
-  CLog::Log(LOGINFO, "AC3 pass through is %s" , GetBool("audiooutput.ac3passthrough") ? "enabled" : "disabled");
-  CLog::Log(LOGINFO, "DTS pass through is %s" , GetBool("audiooutput.dtspassthrough") ? "enabled" : "disabled");
-  CLog::Log(LOGINFO, "AAC pass through is %s" , GetBool("audiooutput.passthroughaac") ? "enabled" : "disabled");
-  CLog::Log(LOGINFO, "MP1 pass through is %s" , GetBool("audiooutput.passthroughmp1") ? "enabled" : "disabled");
-  CLog::Log(LOGINFO, "MP2 pass through is %s" , GetBool("audiooutput.passthroughmp2") ? "enabled" : "disabled");
-  CLog::Log(LOGINFO, "MP3 pass through is %s" , GetBool("audiooutput.passthroughmp3") ? "enabled" : "disabled");
-  CLog::Log(LOGINFO, "Multichannel LPCM is %s", GetBool("audiooutput.multichannellpcm") ? "enabled" : "disabled");
-  CLog::Log(LOGINFO, "TrueHD pass through is %s", GetBool("audiooutput.truehdpassthrough") ? "enabled" : "disabled");
-  CLog::Log(LOGINFO, "dtsHD pass through is %s", GetBool("audiooutput.dtshdpassthrough") ? "enabled" : "disabled");
+  CLog::Log(LOGINFO, "AC3 pass through is %s", GetBool("audiooutput.ac3passthrough") ? "enabled" : "disabled");
+  CLog::Log(LOGINFO, "DTS pass through is %s", GetBool("audiooutput.dtspassthrough") ? "enabled" : "disabled");
+  CLog::Log(LOGINFO, "AAC pass through is %s", GetBool("audiooutput.passthroughaac") ? "enabled" : "disabled");
+  CLog::Log(LOGINFO, "MP1 pass through is %s", GetBool("audiooutput.passthroughmp1") ? "enabled" : "disabled");
+  CLog::Log(LOGINFO, "MP2 pass through is %s", GetBool("audiooutput.passthroughmp2") ? "enabled" : "disabled");
+  CLog::Log(LOGINFO, "MP3 pass through is %s", GetBool("audiooutput.passthroughmp3") ? "enabled" : "disabled");
 
   g_guiSettings.m_LookAndFeelResolution = GetResolution();
 #ifdef __APPLE__
@@ -1355,4 +1403,41 @@ void CGUISettings::SetResolution(RESOLUTION res)
   }
   SetString("videoscreen.screenmode", mode);
   m_LookAndFeelResolution = res;
+}
+
+bool CGUISettings::SetLanguage(const CStdString &strLanguage)
+{
+  CStdString strPreviousLanguage = GetString("locale.language");
+  CStdString strNewLanguage = strLanguage;
+  if (strNewLanguage != strPreviousLanguage)
+  {
+    CStdString strLangInfoPath;
+    strLangInfoPath.Format("special://xbmc/language/%s/langinfo.xml", strNewLanguage.c_str());
+    if (!g_langInfo.Load(strLangInfoPath))
+      return false;
+
+    if (g_langInfo.ForceUnicodeFont() && !g_fontManager.IsFontSetUnicode())
+    {
+      CLog::Log(LOGINFO, "Language needs a ttf font, loading first ttf font available");
+      CStdString strFontSet;
+      if (g_fontManager.GetFirstFontSetUnicode(strFontSet))
+        strNewLanguage = strFontSet;
+      else
+        CLog::Log(LOGERROR, "No ttf font found but needed: %s", strFontSet.c_str());
+    }
+    SetString("locale.language", strNewLanguage);
+
+    g_charsetConverter.reset();
+
+    CStdString strLanguagePath;
+    strLanguagePath.Format("special://xbmc/language/%s/strings.xml", strNewLanguage.c_str());
+    if (!g_localizeStrings.Load(strLanguagePath))
+      return false;
+
+    // also tell our weather and skin to reload as these are localized
+    g_weatherManager.Refresh();
+    g_application.ReloadSkin();
+  }
+
+  return true;
 }

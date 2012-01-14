@@ -101,6 +101,11 @@ public:
   virtual enum AEDataFormat GetDataFormat() = 0;
 
   /*
+   * should return the average input bit rate 
+   */
+  virtual int GetBitRate() { return 0; }
+
+  /*
    * returns if the codec requests to use passtrough
    */
   virtual bool NeedPassthrough() { return false; }

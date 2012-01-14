@@ -55,7 +55,8 @@ public:
   CDVDAudio(volatile bool& bStop);
   ~CDVDAudio();
 
-  void SetVolume(float volume);
+  void SetVolume(float fVolume);
+  float GetCurrentAttenuation();
   void Pause();
   void Resume();
   bool Create(const DVDAudioFrame &audioframe, CodecID codec, bool needresampler);

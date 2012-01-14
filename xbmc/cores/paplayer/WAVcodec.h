@@ -37,8 +37,9 @@ public:
   virtual bool CanInit();
 
 private:
-  long m_iDataStart;
-  long m_iDataLen;
+  bool m_bHasFloat;
+  uint32_t m_iDataStart;
+  uint32_t m_iDataLen;
   DWORD m_ChannelMask;
 };
 

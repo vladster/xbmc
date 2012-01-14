@@ -38,6 +38,7 @@
 
 class CDVDPlayer;
 class CDVDAudioCodec;
+class IAudioCallback;
 class CDVDAudioCodec;
 
 #define PROPORTIONAL 20.0
@@ -116,11 +117,11 @@ public:
   bool AcceptsData()                                    { return !m_messageQueue.IsFull(); }
   void SendMessage(CDVDMsg* pMsg, int priority = 0)     { m_messageQueue.Put(pMsg, priority); }
 
-  void SetVolume(float volume)                          { m_dvdAudio.SetVolume(volume); }
-
   //! Switch codec if needed. Called when the sample rate gotten from the
   //! codec changes, in which case we may want to switch passthrough on/off.
   bool SwitchCodecIfNeeded();
+
+  void SetVolume(float fVolume)                         { m_dvdAudio.SetVolume(fVolume); }
 
   std::string GetPlayerInfo();
   int GetAudioBitrate();

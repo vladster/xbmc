@@ -27,6 +27,7 @@
 #include "DVDCodecs/DVDCodecs.h"
 #include "DVDPlayerAudio.h"
 #include "cores/AudioEngine/AEFactory.h"
+#include "settings/Settings.h"
 
 using namespace std;
 
@@ -48,7 +49,6 @@ CDVDAudio::CDVDAudio(volatile bool &bStop)
 CDVDAudio::~CDVDAudio()
 {
   CSingleLock lock (m_critSection);
-
   if (m_pAudioStream)
     CAEFactory::AE->FreeStream(m_pAudioStream);
 
@@ -161,7 +161,7 @@ DWORD CDVDAudio::AddPackets(const DVDAudioFrame &audioframe)
   if (m_iBufferSize > 0) // See if there are carryover bytes from the last call. need to add them 1st.
   {
     copied = std::min(m_dwPacketSize - m_iBufferSize % m_dwPacketSize, len); // Smaller of either the data provided or the leftover data
-    if (copied)
+    if(copied)
     {
       m_pBuffer = (BYTE*)realloc(m_pBuffer, m_iBufferSize + copied);
       memcpy(m_pBuffer + m_iBufferSize, data, copied); // Tack the caller's data onto the end of the buffer
@@ -233,6 +233,15 @@ void CDVDAudio::SetVolume(float volume)
 {
   CSingleLock lock (m_critSection);
   if (m_pAudioStream) m_pAudioStream->SetVolume(volume);
+}
+
+float CDVDAudio::GetCurrentAttenuation()
+{
+  CSingleLock lock (m_critSection);
+  if (m_pAudioStream)
+    return m_pAudioStream->GetVolume();
+  else
+    return 1.0f;
 }
 
 void CDVDAudio::Pause()

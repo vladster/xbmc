@@ -295,19 +295,16 @@ CStdString CSysInfo::GetXBVerInfo()
 bool CSysInfo::IsAeroDisabled()
 {
 #ifdef _WIN32
-  OSVERSIONINFOEX osvi;
-  ZeroMemory(&osvi, sizeof(OSVERSIONINFOEX));
-  osvi.dwOSVersionInfoSize = sizeof(osvi);
-
-  if (GetVersionEx((OSVERSIONINFO *)&osvi))
+  if (IsVistaOrHigher())
   {
-    if (osvi.dwMajorVersion == 5)
-      return true; // windows XP -> no Aero
-
     BOOL aeroEnabled = FALSE;
     HRESULT res = DwmIsCompositionEnabled(&aeroEnabled);
     if (SUCCEEDED(res))
       return !aeroEnabled;
+  }
+  else
+  {
+    return true;
   }
 #endif
   return false;
@@ -395,10 +392,16 @@ CStdString CSysInfo::GetKernelVersion()
     }
     else if ( osvi.dwMajorVersion == 5 && osvi.dwMinorVersion == 2 )
     {
-      if( osvi.wProductType == VER_NT_WORKSTATION && si.wProcessorArchitecture==PROCESSOR_ARCHITECTURE_AMD64)
-      {
-        strKernel.append("XP Professional x64 Edition");
-      }
+      if( GetSystemMetrics(SM_SERVERR2) )
+        strKernel.append("Windows Server 2003 R2");
+      else if ( osvi.wSuiteMask & VER_SUITE_STORAGE_SERVER )
+        strKernel.append("Windows Storage Server 2003");
+      else if ( osvi.wSuiteMask & VER_SUITE_WH_SERVER )
+        strKernel.append("Windows Home Server");
+      else if( osvi.wProductType == VER_NT_WORKSTATION && si.wProcessorArchitecture==PROCESSOR_ARCHITECTURE_AMD64)
+        strKernel.append("Windows XP Professional x64 Edition");
+      else
+        strKernel.append("Windows Server 2003");
     }
     else if ( osvi.dwMajorVersion == 5 && osvi.dwMinorVersion == 1 )
     {
@@ -442,104 +445,18 @@ CStdString CSysInfo::GetHddSpaceInfo(int drive, bool shortText)
 CStdString CSysInfo::GetHddSpaceInfo(int& percent, int drive, bool shortText)
 {
   int total, totalFree, totalUsed, percentFree, percentused;
-  CStdString strDrive;
-  bool bRet=false;
-  percent = 0;
   CStdString strRet;
-  switch (drive)
-  {
-    case SYSTEM_FREE_SPACE:
-    case SYSTEM_USED_SPACE:
-    case SYSTEM_TOTAL_SPACE:
-    case SYSTEM_FREE_SPACE_PERCENT:
-    case SYSTEM_USED_SPACE_PERCENT:
-      bRet = g_sysinfo.GetDiskSpace("",total, totalFree, totalUsed, percentFree, percentused);
-      break;
-    case LCD_FREE_SPACE_C:
-    case SYSTEM_FREE_SPACE_C:
-    case SYSTEM_USED_SPACE_C:
-    case SYSTEM_TOTAL_SPACE_C:
-    case SYSTEM_FREE_SPACE_PERCENT_C:
-    case SYSTEM_USED_SPACE_PERCENT_C:
-      strDrive = "C";
-      bRet = g_sysinfo.GetDiskSpace("C",total, totalFree, totalUsed, percentFree, percentused);
-      break;
-    case LCD_FREE_SPACE_E:
-    case SYSTEM_FREE_SPACE_E:
-    case SYSTEM_USED_SPACE_E:
-    case SYSTEM_TOTAL_SPACE_E:
-    case SYSTEM_FREE_SPACE_PERCENT_E:
-    case SYSTEM_USED_SPACE_PERCENT_E:
-      strDrive = "E";
-      bRet = g_sysinfo.GetDiskSpace("E",total, totalFree, totalUsed, percentFree, percentused);
-      break;
-    case LCD_FREE_SPACE_F:
-    case SYSTEM_FREE_SPACE_F:
-    case SYSTEM_USED_SPACE_F:
-    case SYSTEM_TOTAL_SPACE_F:
-    case SYSTEM_FREE_SPACE_PERCENT_F:
-    case SYSTEM_USED_SPACE_PERCENT_F:
-      strDrive = "F";
-      bRet = g_sysinfo.GetDiskSpace("F",total, totalFree, totalUsed, percentFree, percentused);
-      break;
-    case LCD_FREE_SPACE_G:
-    case SYSTEM_FREE_SPACE_G:
-    case SYSTEM_USED_SPACE_G:
-    case SYSTEM_TOTAL_SPACE_G:
-    case SYSTEM_FREE_SPACE_PERCENT_G:
-    case SYSTEM_USED_SPACE_PERCENT_G:
-      strDrive = "G";
-      bRet = g_sysinfo.GetDiskSpace("G",total, totalFree, totalUsed, percentFree, percentused);
-      break;
-    case SYSTEM_USED_SPACE_X:
-    case SYSTEM_FREE_SPACE_X:
-    case SYSTEM_TOTAL_SPACE_X:
-      strDrive = "X";
-      bRet = g_sysinfo.GetDiskSpace("X",total, totalFree, totalUsed, percentFree, percentused);
-      break;
-    case SYSTEM_USED_SPACE_Y:
-    case SYSTEM_FREE_SPACE_Y:
-    case SYSTEM_TOTAL_SPACE_Y:
-      strDrive = "Y";
-      bRet = g_sysinfo.GetDiskSpace("Y",total, totalFree, totalUsed, percentFree, percentused);
-      break;
-    case SYSTEM_USED_SPACE_Z:
-    case SYSTEM_FREE_SPACE_Z:
-    case SYSTEM_TOTAL_SPACE_Z:
-      strDrive = "Z";
-      bRet = g_sysinfo.GetDiskSpace("Z",total, totalFree, totalUsed, percentFree, percentused);
-      break;
-  }
-  if (bRet)
+  percent = 0;
+  if (g_sysinfo.GetDiskSpace("", total, totalFree, totalUsed, percentFree, percentused))
   {
     if (shortText)
     {
       switch(drive)
       {
-        case LCD_FREE_SPACE_C:
-        case LCD_FREE_SPACE_E:
-        case LCD_FREE_SPACE_F:
-        case LCD_FREE_SPACE_G:
-          strRet.Format("%iMB", totalFree);
-          break;
         case SYSTEM_FREE_SPACE:
-        case SYSTEM_FREE_SPACE_C:
-        case SYSTEM_FREE_SPACE_E:
-        case SYSTEM_FREE_SPACE_F:
-        case SYSTEM_FREE_SPACE_G:
-        case SYSTEM_FREE_SPACE_X:
-        case SYSTEM_FREE_SPACE_Y:
-        case SYSTEM_FREE_SPACE_Z:
           percent = percentFree;
           break;
         case SYSTEM_USED_SPACE:
-        case SYSTEM_USED_SPACE_C:
-        case SYSTEM_USED_SPACE_E:
-        case SYSTEM_USED_SPACE_F:
-        case SYSTEM_USED_SPACE_G:
-        case SYSTEM_USED_SPACE_X:
-        case SYSTEM_USED_SPACE_Y:
-        case SYSTEM_USED_SPACE_Z:
           percent = percentused;
           break;
       }
@@ -549,60 +466,19 @@ CStdString CSysInfo::GetHddSpaceInfo(int& percent, int drive, bool shortText)
       switch(drive)
       {
       case SYSTEM_FREE_SPACE:
-      case SYSTEM_FREE_SPACE_C:
-      case SYSTEM_FREE_SPACE_E:
-      case SYSTEM_FREE_SPACE_F:
-      case SYSTEM_FREE_SPACE_G:
-      case SYSTEM_FREE_SPACE_X:
-      case SYSTEM_FREE_SPACE_Y:
-      case SYSTEM_FREE_SPACE_Z:
-        if (strDrive.IsEmpty())
-          strRet.Format("%i MB %s", totalFree, g_localizeStrings.Get(160));
-        else
-          strRet.Format("%s: %i MB %s", strDrive, totalFree, g_localizeStrings.Get(160));
+        strRet.Format("%i MB %s", totalFree, g_localizeStrings.Get(160));
         break;
       case SYSTEM_USED_SPACE:
-      case SYSTEM_USED_SPACE_C:
-      case SYSTEM_USED_SPACE_E:
-      case SYSTEM_USED_SPACE_F:
-      case SYSTEM_USED_SPACE_G:
-      case SYSTEM_USED_SPACE_X:
-      case SYSTEM_USED_SPACE_Y:
-      case SYSTEM_USED_SPACE_Z:
-        if (strDrive.IsEmpty())
-          strRet.Format("%i MB %s", totalUsed, g_localizeStrings.Get(20162));
-        else
-          strRet.Format("%s: %i MB %s", strDrive, totalUsed, g_localizeStrings.Get(20162));
+        strRet.Format("%i MB %s", totalUsed, g_localizeStrings.Get(20162));
         break;
       case SYSTEM_TOTAL_SPACE:
-      case SYSTEM_TOTAL_SPACE_C:
-      case SYSTEM_TOTAL_SPACE_E:
-      case SYSTEM_TOTAL_SPACE_F:
-      case SYSTEM_TOTAL_SPACE_G:
-        if (strDrive.IsEmpty())
-          strRet.Format("%i MB %s", total, g_localizeStrings.Get(20161));
-        else
-          strRet.Format("%s: %i MB %s", strDrive, total, g_localizeStrings.Get(20161));
+        strRet.Format("%i MB %s", total, g_localizeStrings.Get(20161));
         break;
       case SYSTEM_FREE_SPACE_PERCENT:
-      case SYSTEM_FREE_SPACE_PERCENT_C:
-      case SYSTEM_FREE_SPACE_PERCENT_E:
-      case SYSTEM_FREE_SPACE_PERCENT_F:
-      case SYSTEM_FREE_SPACE_PERCENT_G:
-        if (strDrive.IsEmpty())
-          strRet.Format("%i %% %s", percentFree, g_localizeStrings.Get(160));
-        else
-          strRet.Format("%s: %i %% %s", strDrive, percentFree, g_localizeStrings.Get(160));
+        strRet.Format("%i %% %s", percentFree, g_localizeStrings.Get(160));
         break;
       case SYSTEM_USED_SPACE_PERCENT:
-      case SYSTEM_USED_SPACE_PERCENT_C:
-      case SYSTEM_USED_SPACE_PERCENT_E:
-      case SYSTEM_USED_SPACE_PERCENT_F:
-      case SYSTEM_USED_SPACE_PERCENT_G:
-        if (strDrive.IsEmpty())
-          strRet.Format("%i %% %s", percentused, g_localizeStrings.Get(20162));
-        else
-          strRet.Format("%s: %i %% %s", strDrive, percentused, g_localizeStrings.Get(20162));
+        strRet.Format("%i %% %s", percentused, g_localizeStrings.Get(20162));
         break;
       }
     }
@@ -611,10 +487,8 @@ CStdString CSysInfo::GetHddSpaceInfo(int& percent, int drive, bool shortText)
   {
     if (shortText)
       strRet = "N/A";
-    else if (strDrive.IsEmpty())
-      strRet = g_localizeStrings.Get(161);
     else
-      strRet.Format("%s: %s", strDrive, g_localizeStrings.Get(161));
+      strRet = g_localizeStrings.Get(161);
   }
   return strRet;
 }
@@ -666,7 +540,14 @@ CStdString CSysInfo::GetUnameVersion()
   {
     char buffer[256] = {'\0'};
     if (fread(buffer, sizeof(char), sizeof(buffer), pipe) > 0 && !ferror(pipe))
+    {
       result = buffer;
+#if defined(TARGET_DARWIN)
+      result.Trim();
+      result += ", "; 
+      result += GetDarwinVersionString();
+#endif
+    }
     else
       CLog::Log(LOGWARNING, "Unable to determine Uname version");
     pclose(pipe);
@@ -676,13 +557,48 @@ CStdString CSysInfo::GetUnameVersion()
 }
 #endif
 
+#if defined(TARGET_WINDOWS)
+CStdString CSysInfo::GetUAWindowsVersion()
+{
+  OSVERSIONINFOEX osvi = {};
+
+  osvi.dwOSVersionInfoSize = sizeof(osvi);
+  CStdString strVersion = "Windows NT";
+
+  if (GetVersionEx((OSVERSIONINFO *)&osvi))
+  {
+    strVersion.AppendFormat(" %d.%d", osvi.dwMajorVersion, osvi.dwMinorVersion);
+  }
+
+  SYSTEM_INFO si = {};
+  GetSystemInfo(&si);
+
+  BOOL bIsWow = FALSE;
+  if (IsWow64Process(GetCurrentProcess(), &bIsWow))
+  {
+    if (bIsWow)
+    {
+      strVersion.append(";WOW64");
+      GetNativeSystemInfo(&si);     // different function to read the info under Wow
+    }
+  }
+
+  if (si.wProcessorArchitecture==PROCESSOR_ARCHITECTURE_AMD64)
+    strVersion.append(";Win64;x64");
+  else if (si.wProcessorArchitecture==PROCESSOR_ARCHITECTURE_IA64)
+    strVersion.append(";Win64;IA64");
+
+  return strVersion;
+}
+#endif
+
+
 CStdString CSysInfo::GetUserAgent()
 {
   CStdString result;
   result = "XBMC/" + g_infoManager.GetLabel(SYSTEM_BUILD_VERSION) + " (";
 #if defined(_WIN32)
-  result += "Windows; ";
-  result += GetKernelVersion();
+  result += GetUAWindowsVersion();
 #elif defined(__APPLE__)
 #if defined(__arm__)
   result += "iOS; ";

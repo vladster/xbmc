@@ -107,6 +107,7 @@ bool MP3Codec::Init(const CStdString &strFile, unsigned int filecache)
   m_lastByteOffset = 0;
   m_eof = false;
   m_CallAgainWithSameBuffer = false;
+  m_readRetries = 5;
 
   CFileItem item(strFile, false);
   CMusicInfoTagLoaderMP3 mp3info;
@@ -263,6 +264,8 @@ int MP3Codec::Read(int size, bool init)
       {
         if (init)
         {
+          if (result == 0 && m_readRetries-- > 0)
+            return Read(size,init);
           // Make sure some data was decoded. Without a valid frame, we cannot determine the audio format
           if (!outputsize)
             return DECODING_ERROR;
@@ -331,6 +334,7 @@ int MP3Codec::Read(int size, bool init)
       return result;
     }
   }
+  m_readRetries = 5;
   return DECODING_SUCCESS;
 }
 

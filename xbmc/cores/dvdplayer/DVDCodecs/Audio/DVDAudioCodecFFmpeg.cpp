@@ -193,6 +193,12 @@ enum AEDataFormat CDVDAudioCodecFFmpeg::GetDataFormat()
   }
 }
 
+int CDVDAudioCodecFFmpeg::GetBitRate()
+{
+  if (m_pCodecContext) return m_pCodecContext->bit_rate;
+  return 0;
+}
+
 static unsigned count_bits(int64_t value)
 {
   unsigned bits = 0;

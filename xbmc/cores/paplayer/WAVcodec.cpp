@@ -187,7 +187,7 @@ bool WAVCodec::Init(const CStdString &strFile, unsigned int filecache)
       // sanity check on the data length
       if (m_iDataLen > length - m_iDataStart)
       {
-        CLog::Log(LOGWARNING, "WAVCodec::Init - Wave has corrupt data length of %ld when it can't be longer then %"PRId64"", m_iDataLen, length - m_iDataStart);
+        CLog::Log(LOGWARNING, "WAVCodec::Init - Wave has corrupt data length of %i when it can't be longer then %"PRId64"", m_iDataLen, length - m_iDataStart);
         m_iDataLen = (long)(length - m_iDataStart);
       }
 
@@ -252,7 +252,7 @@ __int64 WAVCodec::Seek(__int64 iSeekTime)
 int WAVCodec::ReadPCM(BYTE *pBuffer, int size, int *actualsize)
 {
   *actualsize=0;
-  int iPos=(int)m_file.GetPosition();
+  unsigned int iPos=(int)m_file.GetPosition();
   if (iPos >= m_iDataStart+m_iDataLen)
     return READ_EOF;
 

@@ -96,7 +96,8 @@ private:
     int               m_playNextAtFrame;     /* when to start playing the next stream */
     bool              m_playNextTriggered;   /* if this stream has started the next one */
     bool              m_fadeOutTriggered;    /* if the stream has been told to fade out */
-    int               m_seekNextAtFrame;     /* the sample to seek at */
+    int               m_seekNextAtFrame;     /* the FF/RR sample to seek at */
+    int               m_seekFrame;           /* the exact position to seek too, -1 for none */
     
     IAEStream*        m_stream;              /* the playback stream */
     float             m_volume;              /* the initial volume level to set the stream to on creation */

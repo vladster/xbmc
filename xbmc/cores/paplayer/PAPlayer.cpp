@@ -280,6 +280,7 @@ bool PAPlayer::QueueNextFileEx(const CFileItem &file, bool fadeIn/* = true */)
   si->m_finishing          = false;
   si->m_framesSent         = 0;
   si->m_seekNextAtFrame    = 0;
+  si->m_seekFrame          = -1;
   si->m_stream             = NULL;
   si->m_volume             = (fadeIn && m_crossFadeTime) ? 0.0f : 1.0f;
   si->m_fadeOutTriggered   = false;
@@ -486,12 +487,23 @@ inline bool PAPlayer::ProcessStream(StreamInfo *si, float &delay, float &buffer)
   if (!si->m_started && !space)
     return true;
 
-  /* see if it is time yet to seek */
-  if (!si->m_playNextTriggered && m_playbackSpeed != 1 && si->m_framesSent >= si->m_seekNextAtFrame) {
+  /* see if it is time yet to FF/RW or a direct seek */
+  if (!si->m_playNextTriggered && ((m_playbackSpeed != 1 && si->m_framesSent >= si->m_seekNextAtFrame) || si->m_seekFrame > -1))
+  {
+    /* if its a direct seek */
+    if (si->m_seekFrame > -1)
+    {
+      si->m_framesSent = si->m_seekFrame;
+      si->m_seekFrame  = -1;
+    }
+    /* if its FF/RW */
+    else
+    {
+      si->m_framesSent      += si->m_sampleRate * (m_playbackSpeed  - 1);
+      si->m_seekNextAtFrame  = si->m_framesSent + (si->m_framesPerSecond / 2);
+    }
 
-    si->m_framesSent      += si->m_sampleRate * (m_playbackSpeed  - 1);
-    si->m_seekNextAtFrame  = si->m_framesSent + (si->m_framesPerSecond / 2);
-    __int64 time           = si->m_startOffset + ((float)si->m_framesSent / (float)si->m_framesPerSecond * 1000.0f);
+    __int64 time = si->m_startOffset + ((float)si->m_framesSent / (float)si->m_framesPerSecond * 1000.0f);
 
     /* if we are seeking back before the start of the track start normal playback */
     if (time < si->m_startOffset || si->m_framesSent < 0) {
@@ -716,17 +728,32 @@ bool PAPlayer::CanSeek()
 
 void PAPlayer::Seek(bool bPlus, bool bLargeStep)
 {
-
 }
 
 void PAPlayer::SeekTime(__int64 iTime /*=0*/)
 {
+  if (!CanSeek()) return;
 
+  CSharedLock lock(m_streamsLock);
+  if (!m_currentStream)
+    return;
+
+  int seekOffset = iTime - GetTime();
+  if (m_currentStream->m_startOffset)
+    iTime += m_currentStream->m_startOffset;
+
+  if (m_playbackSpeed != 1)
+	ToFFRW(1);
+
+  m_currentStream->m_seekFrame = m_currentStream->m_framesPerSecond * (iTime / 1000);
+  m_callback.OnPlayBackSeek(iTime, seekOffset);
 }
 
 void PAPlayer::SeekPercentage(float fPercent /*=0*/)
 {
-
+  if (fPercent < 0.0f  ) fPercent = 0.0f;
+  if (fPercent > 100.0f) fPercent = 100.0f;
+  SeekTime((__int64)(fPercent * 0.01f * (float)GetTotalTime()));
 }
 
 float PAPlayer::GetPercentage()

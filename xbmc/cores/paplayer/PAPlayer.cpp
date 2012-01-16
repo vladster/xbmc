@@ -273,6 +273,7 @@ bool PAPlayer::QueueNextFileEx(const CFileItem &file, bool fadeIn/* = true */)
   
   /* init the streaminfo struct */
   si->m_decoder.GetDataFormat(&si->m_channelInfo, &si->m_sampleRate, &si->m_dataFormat);
+  si->m_startOffset        = file.m_lStartOffset * 1000 / 75;
   si->m_bytesPerSample     = CAEUtil::DataFormatToBits(si->m_dataFormat) >> 3;
   si->m_samplesPerSecond   = si->m_sampleRate * si->m_channelInfo.Count();
   si->m_started            = false;
@@ -486,16 +487,17 @@ inline bool PAPlayer::ProcessStream(StreamInfo *si, float &delay, float &buffer)
     return true;
 
   /* see if it is time yet to seek */
-  if (m_playbackSpeed != 1 && si->m_samplesSent >= si->m_seekNextAtSample) {
+  if (!si->m_playNextTriggered && m_playbackSpeed != 1 && si->m_samplesSent >= si->m_seekNextAtSample) {
 
     si->m_samplesSent      += si->m_sampleRate  * (m_playbackSpeed  - 1);
-    si->m_seekNextAtSample  = si->m_samplesSent + (si->m_sampleRate / 2);
-    __int64 time            = (float)si->m_samplesSent / (float)si->m_samplesPerSecond * 1000.0f;
+    si->m_seekNextAtSample  = si->m_samplesSent + (si->m_samplesPerSecond / 2);
+    __int64 time            = si->m_startOffset + ((float)si->m_samplesSent / (float)si->m_samplesPerSecond * 1000.0f);
 
     /* if we are seeking back before the start of the track start normal playback */
-    if (time < 0) {
-      time		= 0;
-      si->m_samplesSent	= 0;
+    if (time < si->m_startOffset || si->m_samplesSent < 0) {
+      time		     = si->m_startOffset;
+      si->m_samplesSent	     = 0;
+      si->m_seekNextAtSample = 0;
       ToFFRW(1);
     }
 

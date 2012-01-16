@@ -542,3 +542,16 @@ void MP3Codec::madx_deinit( madx_house *mxhouse )
   m_dll.mad_frame_finish(&mxhouse->frame);
   m_dll.mad_stream_finish(&mxhouse->stream);
 }
+
+CAEChannelInfo MP3Codec::GetChannelInfo()
+{
+  static enum AEChannel map[2][3] = {
+    {AE_CH_FC, AE_CH_NULL},
+    {AE_CH_FL, AE_CH_FR  , AE_CH_NULL}
+  };
+
+  if (m_Channels > 2)
+    return CAEUtil::GuessChLayout(m_Channels);
+
+  return CAEChannelInfo(map[m_Channels - 1]);
+}

@@ -198,9 +198,6 @@ int OGGCodec::ReadPCM(BYTE *pBuffer, int size, int *actualsize)
   else
     *actualsize=lRead;
 
-  if (m_Channels==6)  // Only 6 channel files need remapping
-    RemapChannels((short*)pBuffer, size/2);  // size/2 = 16 bit samples
-
   return READ_SUCCESS;
 }
 
@@ -209,25 +206,21 @@ bool OGGCodec::CanInit()
   return m_dll.CanLoad();
 }
 
-// OGG order    : L, C, R, L", R", LFE
-// Output order : L, R, L", R", C, LFE
-void OGGCodec::RemapChannels(short *SampleBuffer, int samples)
+CAEChannelInfo OGGCodec::GetChannelInfo()
 {
-  short r1, r2, r3, r4, r5, r6;
-  for (int i = 0; i < samples; i += 6)
-  {
-    r1 = SampleBuffer[i];
-    r2 = SampleBuffer[i+1];
-    r3 = SampleBuffer[i+2];
-    r4 = SampleBuffer[i+3];
-    r5 = SampleBuffer[i+4];
-    r6 = SampleBuffer[i+5];
-    SampleBuffer[i] = r1;
-    SampleBuffer[i+1] = r3;
-    SampleBuffer[i+2] = r4;
-    SampleBuffer[i+3] = r5;
-    SampleBuffer[i+4] = r2;
-    SampleBuffer[i+5] = r6;
-  }
-}
+  static enum AEChannel map[8][9] = {
+    {AE_CH_FC, AE_CH_NULL},
+    {AE_CH_FL, AE_CH_FR, AE_CH_NULL},
+    {AE_CH_FL, AE_CH_FC, AE_CH_FR, AE_CH_NULL},
+    {AE_CH_FL, AE_CH_FR, AE_CH_BL, AE_CH_BR, AE_CH_NULL},
+    {AE_CH_FL, AE_CH_FC, AE_CH_FR, AE_CH_BL, AE_CH_BR, AE_CH_NULL},
+    {AE_CH_FL, AE_CH_FC, AE_CH_FR, AE_CH_BL, AE_CH_BR, AE_CH_LFE, AE_CH_NULL},
+    {AE_CH_FL, AE_CH_FC, AE_CH_FR, AE_CH_SL, AE_CH_SR, AE_CH_BL, AE_CH_BR, AE_CH_NULL},
+    {AE_CH_FL, AE_CH_FC, AE_CH_FR, AE_CH_SL, AE_CH_SR, AE_CH_BL, AE_CH_BR, AE_CH_LFE, AE_CH_NULL}
+  };
 
+  if (m_Channels > 8)
+    return CAEUtil::GuessChLayout(m_Channels);
+
+  return CAEChannelInfo(map[m_Channels - 1]);
+}

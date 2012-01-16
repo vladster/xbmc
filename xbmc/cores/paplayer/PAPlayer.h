@@ -85,6 +85,7 @@ private:
     unsigned int      m_sampleRate;          /* sample rate of the stream */
     enum AEDataFormat m_dataFormat;          /* data format of the samples */
     unsigned int      m_bytesPerSample;      /* number of bytes per audio sample */
+    unsigned int      m_samplesPerSecond;    /* sample rate * channel count */
     
     bool              m_started;             /* if playback of this stream has been started */
     bool              m_finishing;           /* if this stream is finishing */
@@ -94,6 +95,7 @@ private:
     unsigned int      m_playNextAtSample;    /* when to start playing the next stream */
     bool              m_playNextTriggered;   /* if this stream has started the next one */
     bool              m_fadeOutTriggered;    /* if the stream has been told to fade out */
+    unsigned int      m_seekNextAtSample;    /* the sample to seek at */
     
     IAEStream*        m_stream;              /* the playback stream */
     float             m_volume;              /* the initial volume level to set the stream to on creation */
@@ -102,6 +104,7 @@ private:
   typedef std::list<StreamInfo*> StreamList;
 
   CCriticalSection       m_threadLock;
+  int                    m_playbackSpeed;    /* the playback speed (1 = normal) */
   bool                   m_isPlaying;
   bool                   m_isPaused;
   bool                   m_isFinished;       /* if there are no more songs in the queue */

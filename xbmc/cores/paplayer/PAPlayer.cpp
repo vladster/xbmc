@@ -45,6 +45,7 @@
 
 PAPlayer::PAPlayer(IPlayerCallback& callback) :
   IPlayer         (callback),
+  m_playbackSpeed (1    ),
   m_isPlaying     (false),
   m_isPaused      (false),
   m_isFinished    (false),
@@ -273,9 +274,11 @@ bool PAPlayer::QueueNextFileEx(const CFileItem &file, bool fadeIn/* = true */)
   /* init the streaminfo struct */
   si->m_decoder.GetDataFormat(&si->m_channels, &si->m_sampleRate, &si->m_dataFormat);
   si->m_bytesPerSample     = CAEUtil::DataFormatToBits(si->m_dataFormat) >> 3;
+  si->m_samplesPerSecond   = si->m_sampleRate * si->m_channels;
   si->m_started            = false;
   si->m_finishing          = false;
   si->m_samplesSent        = 0;
+  si->m_seekNextAtSample   = 0;
   si->m_stream             = NULL;
   si->m_volume             = (fadeIn && m_crossFadeTime) ? 0.0f : 1.0f;
   si->m_fadeOutTriggered   = false;
@@ -387,7 +390,8 @@ inline void PAPlayer::ProcessStreams(float &delay, float &buffer)
     StreamInfo* si = *itt;
     if (!m_currentStream && !si->m_started)
       m_currentStream = si;
-        
+
+    /* if the stream is finishing */
     if ((si->m_fadeOutTriggered && si->m_stream && !si->m_stream->IsFading()) || !PrepareStream(si) || !ProcessStream(si, delay, buffer))
     {
       if (!si->m_prepareTriggered)
@@ -481,6 +485,24 @@ inline bool PAPlayer::ProcessStream(StreamInfo *si, float &delay, float &buffer)
   if (!si->m_started && !space)
     return true;
 
+  /* see if it is time yet to seek */
+  if (m_playbackSpeed != 1 && si->m_samplesSent >= si->m_seekNextAtSample) {
+
+    si->m_samplesSent      += si->m_sampleRate  * (m_playbackSpeed  - 1);
+    si->m_seekNextAtSample  = si->m_samplesSent + (si->m_sampleRate / 2);
+    __int64 time            = (float)si->m_samplesSent / (float)si->m_samplesPerSecond * 1000.0f;
+
+    /* if we are seeking back before the start of the track start normal playback */
+    if (time < 0) {
+      time		= 0;
+      si->m_samplesSent	= 0;
+      ToFFRW(1);
+    }
+
+    si->m_decoder.Seek(time);
+    si->m_stream->Flush();
+  }
+
   int status = si->m_decoder.GetStatus();
   if (status == STATUS_ENDED   ||
       status == STATUS_NO_FILE ||
@@ -522,10 +544,10 @@ inline bool PAPlayer::ProcessStream(StreamInfo *si, float &delay, float &buffer)
   /* update the delay time if we are running */
   if (si->m_started)
   {
-    delay = std::min(delay, cacheTime);
+    delay  = std::min(delay, cacheTime);
     buffer = std::min(buffer, cacheTime / cacheTotalTime);
   }
-  
+
   return true;
 }
 
@@ -593,98 +615,101 @@ void PAPlayer::SetDynamicRangeCompression(long drc)
 
 void PAPlayer::ToFFRW(int iSpeed)
 {
-
+  m_playbackSpeed = iSpeed;
+  m_callback.OnPlayBackSpeedChanged(iSpeed);
 }
 
 __int64 PAPlayer::GetTime()
 {
   CSharedLock lock(m_streamsLock);
-  if (m_currentStream)
-  {
-    float time = (float)m_currentStream->m_samplesSent / (float)(m_currentStream->m_sampleRate * m_currentStream->m_channels) * 1000.0f;
-    if (m_currentStream->m_stream)
-      time -= m_currentStream->m_stream->GetDelay();
-    return time;
-  }
-  return 0;
+  if (!m_currentStream)
+    return 0;
+
+  float time = (float)m_currentStream->m_samplesSent / (float)(m_currentStream->m_samplesPerSecond) * 1000.0f;
+  if (m_currentStream->m_stream)
+    time -= m_currentStream->m_stream->GetDelay();
+  return time;
 }
 
 int PAPlayer::GetTotalTime()
 {
   CSharedLock lock(m_streamsLock);
-  if (m_currentStream)
-    return m_currentStream->m_decoder.TotalTime();
-  return 0;
+  if (!m_currentStream)
+    return 0;
+
+  return m_currentStream->m_decoder.TotalTime();
 }
 
 int PAPlayer::GetCacheLevel() const
 {
   CSharedLock lock(m_streamsLock);
-  if (m_currentStream)
-  {
-    const ICodec* codec = m_currentStream->m_decoder.GetCodec();
-    if (codec)
-      return codec->GetCacheLevel();
-  }
-  
+  if (!m_currentStream)
+    return -1;
+
+  const ICodec* codec = m_currentStream->m_decoder.GetCodec();
+  if (codec)
+    return codec->GetCacheLevel();
   return -1;
 }
 
 int PAPlayer::GetChannels()
 {
   CSharedLock lock(m_streamsLock);
-  if (m_currentStream)
-    return m_currentStream->m_channels;
-  return 0;
+  if (!m_currentStream)
+    return 0;
+
+  return m_currentStream->m_channels;
 }
 
 int PAPlayer::GetBitsPerSample()
 {
   CSharedLock lock(m_streamsLock);
-  if (m_currentStream)
-    return m_currentStream->m_bytesPerSample >> 3;
-  
-  return 0;
+  if (!m_currentStream)
+    return 0;
+
+  return m_currentStream->m_bytesPerSample >> 3;
 }
 
 int PAPlayer::GetSampleRate()
 {
   CSharedLock lock(m_streamsLock);
-  if (m_currentStream)
-    return m_currentStream->m_sampleRate;
-  
-  return 0;
+  if (!m_currentStream)
+    return 0;
+
+  return m_currentStream->m_sampleRate;
 }
 
 CStdString PAPlayer::GetAudioCodecName()
 {
   CSharedLock lock(m_streamsLock);
-  if (m_currentStream)
-  {
-    const ICodec* codec = m_currentStream->m_decoder.GetCodec();
-    if (codec)
-      return codec->m_CodecName;
-  }
-  
+  if (!m_currentStream)
+    return "";
+
+  const ICodec* codec = m_currentStream->m_decoder.GetCodec();
+  if (codec)
+    return codec->m_CodecName;
   return "";
 }
 
 int PAPlayer::GetAudioBitrate()
 {
   CSharedLock lock(m_streamsLock);
-  if (m_currentStream)
-  {
-    const ICodec* codec = m_currentStream->m_decoder.GetCodec();
-    if (codec)
-      return codec->m_Bitrate;
-  }
+  if (!m_currentStream)
+    return 0;
 
+  const ICodec* codec = m_currentStream->m_decoder.GetCodec();
+  if (codec)
+    return codec->m_Bitrate;
   return 0;
 }
 
 bool PAPlayer::CanSeek()
 {
-  return false;
+  CSharedLock lock(m_streamsLock);
+  if (!m_currentStream)
+    return false;
+
+  return m_currentStream->m_decoder.CanSeek();
 }
 
 void PAPlayer::Seek(bool bPlus, bool bLargeStep)

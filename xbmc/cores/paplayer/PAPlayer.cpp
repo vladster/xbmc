@@ -272,9 +272,9 @@ bool PAPlayer::QueueNextFileEx(const CFileItem &file, bool fadeIn/* = true */)
   }
   
   /* init the streaminfo struct */
-  si->m_decoder.GetDataFormat(&si->m_channels, &si->m_sampleRate, &si->m_dataFormat);
+  si->m_decoder.GetDataFormat(&si->m_channelInfo, &si->m_sampleRate, &si->m_dataFormat);
   si->m_bytesPerSample     = CAEUtil::DataFormatToBits(si->m_dataFormat) >> 3;
-  si->m_samplesPerSecond   = si->m_sampleRate * si->m_channels;
+  si->m_samplesPerSecond   = si->m_sampleRate * si->m_channelInfo.Count();
   si->m_started            = false;
   si->m_finishing          = false;
   si->m_samplesSent        = 0;
@@ -285,12 +285,12 @@ bool PAPlayer::QueueNextFileEx(const CFileItem &file, bool fadeIn/* = true */)
   
   if (si->m_decoder.TotalTime() < TIME_TO_CACHE_NEXT_FILE + m_crossFadeTime)
        si->m_prepareNextAtSample = 0;
-  else si->m_prepareNextAtSample = (si->m_decoder.TotalTime() - TIME_TO_CACHE_NEXT_FILE - m_crossFadeTime) * (si->m_sampleRate * si->m_channels) / 1000.0f;
+  else si->m_prepareNextAtSample = (si->m_decoder.TotalTime() - TIME_TO_CACHE_NEXT_FILE - m_crossFadeTime) * (si->m_sampleRate * si->m_channelInfo.Count()) / 1000.0f;
   si->m_prepareTriggered = false;
   
   if (si->m_decoder.TotalTime() < m_crossFadeTime)
-       si->m_playNextAtSample = (si->m_decoder.TotalTime() / 2) * (si->m_sampleRate * si->m_channels) / 1000.0f;
-  else si->m_playNextAtSample = (si->m_decoder.TotalTime() - m_crossFadeTime) * (si->m_sampleRate * si->m_channels) / 1000.0f;
+       si->m_playNextAtSample = (si->m_decoder.TotalTime() / 2) * (si->m_sampleRate * si->m_channelInfo.Count()) / 1000.0f;
+  else si->m_playNextAtSample = (si->m_decoder.TotalTime() - m_crossFadeTime) * (si->m_sampleRate * si->m_channelInfo.Count()) / 1000.0f;
   si->m_playNextTriggered = false;
    
   /* add the stream to the list */
@@ -310,7 +310,7 @@ inline bool PAPlayer::PrepareStream(StreamInfo *si)
   si->m_stream = CAEFactory::AE->MakeStream(
     si->m_dataFormat,
     si->m_sampleRate,
-    CAEUtil::GuessChLayout(si->m_channels), /* FIXME: channelLayout */
+    si->m_channelInfo,
     AESTREAM_PAUSED
   );
 
@@ -658,7 +658,7 @@ int PAPlayer::GetChannels()
   if (!m_currentStream)
     return 0;
 
-  return m_currentStream->m_channels;
+  return m_currentStream->m_channelInfo.Count();
 }
 
 int PAPlayer::GetBitsPerSample()

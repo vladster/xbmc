@@ -81,7 +81,7 @@ protected:
 private:
   typedef struct {
     CAudioDecoder     m_decoder;             /* the stream decoder */
-    unsigned int      m_channels;            /* number of channels in the stream */
+    CAEChannelInfo    m_channelInfo;         /* channel layout information */
     unsigned int      m_sampleRate;          /* sample rate of the stream */
     enum AEDataFormat m_dataFormat;          /* data format of the samples */
     unsigned int      m_bytesPerSample;      /* number of bytes per audio sample */

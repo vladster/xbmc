@@ -25,6 +25,7 @@
 #include "ICodec.h"
 #include "threads/CriticalSection.h"
 #include "utils/RingBuffer.h"
+#include "cores/AudioEngine/Utils/AEChannelInfo.h"
 
 class CFileItem;
 
@@ -68,7 +69,7 @@ public:
   int GetStatus() { return m_status; };
   void SetStatus(int status) { m_status = status; };
 
-  void GetDataFormat(unsigned int *channels, unsigned int *samplerate, enum AEDataFormat *dataFormat);
+  void GetDataFormat(CAEChannelInfo *channelInfo, unsigned int *samplerate, enum AEDataFormat *dataFormat);
   unsigned int GetChannels() { if (m_codec) return m_codec->m_Channels; else return 0; };
   // Data management
   unsigned int GetDataSize();

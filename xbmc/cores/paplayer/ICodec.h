@@ -24,7 +24,9 @@
 #include "ReplayGain.h"
 #include "utils/StdString.h"
 #include "filesystem/File.h"
+
 #include "cores/AudioEngine/AEAudioFormat.h"
+#include "cores/AudioEngine/Utils/AEUtil.h"
 
 #define READ_EOF      -1
 #define READ_SUCCESS   0
@@ -90,11 +92,15 @@ public:
   virtual bool IsCaching()    const    {return false;}
   virtual int GetCacheLevel() const    {return -1;}
 
+  // GetChannelInfo()
+  // Return the channel layout and count information in an CAEChannelInfo object
+  virtual CAEChannelInfo GetChannelInfo() {return CAEUtil::GuessChLayout(this->m_Channels);}
+
   __int64 m_TotalTime;  // time in ms
   int m_SampleRate;
   int m_BitsPerSample;
-  enum AEDataFormat m_DataFormat;
   int m_Channels;
+  enum AEDataFormat m_DataFormat;
   int m_Bitrate;
   CStdString m_CodecName;
   CReplayGain m_replayGain;

@@ -86,17 +86,17 @@ private:
     unsigned int      m_sampleRate;          /* sample rate of the stream */
     enum AEDataFormat m_dataFormat;          /* data format of the samples */
     unsigned int      m_bytesPerSample;      /* number of bytes per audio sample */
-    unsigned int      m_samplesPerSecond;    /* sample rate * channel count */
+    unsigned int      m_framesPerSecond;     /* sample rate * channel count */
     
     bool              m_started;             /* if playback of this stream has been started */
     bool              m_finishing;           /* if this stream is finishing */
-    int               m_samplesSent;         /* number of frames sent to the stream */
-    int               m_prepareNextAtSample; /* when to prepare the next stream */
+    int               m_framesSent;          /* number of frames sent to the stream */
+    int               m_prepareNextAtFrame;  /* when to prepare the next stream */
     bool              m_prepareTriggered;    /* if the next stream has been prepared */
-    int               m_playNextAtSample;    /* when to start playing the next stream */
+    int               m_playNextAtFrame;     /* when to start playing the next stream */
     bool              m_playNextTriggered;   /* if this stream has started the next one */
     bool              m_fadeOutTriggered;    /* if the stream has been told to fade out */
-    int               m_seekNextAtSample;    /* the sample to seek at */
+    int               m_seekNextAtFrame;     /* the sample to seek at */
     
     IAEStream*        m_stream;              /* the playback stream */
     float             m_volume;              /* the initial volume level to set the stream to on creation */

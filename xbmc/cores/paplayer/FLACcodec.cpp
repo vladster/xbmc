@@ -314,6 +314,20 @@ void FLACCodec::DecoderMetadataCallback(const FLAC__StreamDecoder *decoder, cons
 
   if (metadata->type==FLAC__METADATA_TYPE_STREAMINFO)
   {
+    static enum AEChannel map[6][7] = {
+      {AE_CH_FC, AE_CH_NULL},
+      {AE_CH_FL, AE_CH_FR, AE_CH_NULL},
+      {AE_CH_FL, AE_CH_FR, AE_CH_FC, AE_CH_NULL},
+      {AE_CH_FL, AE_CH_FR, AE_CH_BL, AE_CH_BR, AE_CH_NULL},
+      {AE_CH_FL, AE_CH_FR, AE_CH_FC, AE_CH_BL, AE_CH_BR, AE_CH_NULL},
+      {AE_CH_FL, AE_CH_FR, AE_CH_FC, AE_CH_LFE, AE_CH_BL, AE_CH_BR, AE_CH_NULL}
+    };
+
+    /* channel counts greater then 6 are undefined */
+    if (metadata->data.stream_info.channels > 6)
+         pThis->m_ChannelInfo = CAEUtil::GuessChLayout(metadata->data.stream_info.channels);
+    else pThis->m_ChannelInfo = CAEChannelInfo(map[metadata->data.stream_info.channels - 1]);
+
     pThis->m_SampleRate    = metadata->data.stream_info.sample_rate;
     pThis->m_Channels      = metadata->data.stream_info.channels;
     pThis->m_BitsPerSample = metadata->data.stream_info.bits_per_sample;

@@ -94,16 +94,19 @@ public:
 
   // GetChannelInfo()
   // Return the channel layout and count information in an CAEChannelInfo object
-  virtual CAEChannelInfo GetChannelInfo() {return CAEUtil::GuessChLayout(this->m_Channels);}
+  virtual CAEChannelInfo GetChannelInfo() {return CAEUtil::GuessChLayout(m_Channels);}
 
   __int64 m_TotalTime;  // time in ms
   int m_SampleRate;
   int m_BitsPerSample;
-  int m_Channels;
   enum AEDataFormat m_DataFormat;
   int m_Bitrate;
   CStdString m_CodecName;
   CReplayGain m_replayGain;
   XFILE::CFile m_file;
+
+protected:
+  int m_Channels; /* remove this soon, its being deprecated */
+
 };
 

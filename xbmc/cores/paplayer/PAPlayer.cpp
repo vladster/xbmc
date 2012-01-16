@@ -645,13 +645,18 @@ __int64 PAPlayer::GetTime()
   return time;
 }
 
-int PAPlayer::GetTotalTime()
+__int64 PAPlayer::GetTotalTime64()
 {
   CSharedLock lock(m_streamsLock);
   if (!m_currentStream)
     return 0;
 
   return m_currentStream->m_decoder.TotalTime();
+}
+
+int PAPlayer::GetTotalTime()
+{
+  return GetTotalTime64() / 1000;
 }
 
 int PAPlayer::GetCacheLevel() const
@@ -753,12 +758,12 @@ void PAPlayer::SeekPercentage(float fPercent /*=0*/)
 {
   if (fPercent < 0.0f  ) fPercent = 0.0f;
   if (fPercent > 100.0f) fPercent = 100.0f;
-  SeekTime((__int64)(fPercent * 0.01f * (float)GetTotalTime()));
+  SeekTime((__int64)(fPercent * 0.01f * (float)GetTotalTime64()));
 }
 
 float PAPlayer::GetPercentage()
 {
-  return GetTime() * 100.0f / GetTotalTime();
+  return GetTime() * 100.0f / GetTotalTime64();
 }
 
 bool PAPlayer::SkipNext()

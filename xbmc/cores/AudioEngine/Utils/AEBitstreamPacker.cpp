@@ -112,7 +112,7 @@ void CAEBitstreamPacker::PackTrueHD(CAEStreamInfo &info, uint8_t* data, int size
 void CAEBitstreamPacker::PackDTSHD(CAEStreamInfo &info, uint8_t* data, int size)
 {
   static const uint8_t dtshd_start_code[10] = { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xfe, 0xfe };
-  unsigned int period   = (info.GetOutputRate() * (info.GetOutputChannels() / 2)) * (info.GetDTSBlocks() << 5) / info.GetOutputRate();
+  unsigned int period   = (info.GetOutputRate() * (info.GetOutputChannels() / 2)) * (info.GetDTSBlocks() << 5) / info.GetSampleRate();
   unsigned int dataSize = sizeof(dtshd_start_code) + 2 + size;
 
   if (dataSize > m_dtsHDSize)

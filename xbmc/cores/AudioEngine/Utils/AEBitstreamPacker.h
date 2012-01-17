@@ -40,11 +40,11 @@ private:
   void PackDTSHD (CAEStreamInfo &info, uint8_t* data, int size);
 
   /* we keep the trueHD and dtsHD buffers seperate so that we can handle a fast stream switch */
-  unsigned int  m_trueHDPos;
   uint8_t      *m_trueHD;
+  unsigned int  m_trueHDPos;
 
-  unsigned int  m_dtsHDSize;
   uint8_t      *m_dtsHD;
+  unsigned int  m_dtsHDSize;
 
   unsigned int  m_dataSize;
   uint8_t       m_packedBuffer[MAX_IEC61937_PACKET];

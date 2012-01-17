@@ -32,10 +32,12 @@
 #define MAT_MIDDLE_CODE_OFFSET -4
 #define MAT_FRAME_SIZE          61424
 
-CAEBitstreamPacker::CAEBitstreamPacker()
+CAEBitstreamPacker::CAEBitstreamPacker() :
+  m_trueHD   (NULL),
+  m_trueHDPos(0),
+  m_dtsHD    (NULL),
+  m_dtsHDSize(0)
 {
-  m_dtsHD     = NULL;
-  m_dtsHDSize = 0;
 }
 
 CAEBitstreamPacker::~CAEBitstreamPacker()

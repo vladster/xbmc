@@ -31,9 +31,15 @@
 #define DTS_SRATE_COUNT    16
 #define MAX_EAC3_BLOCKS    6
 
+static enum AEChannel OutputMaps[2][9] = {
+  {AE_CH_RAW, AE_CH_RAW, AE_CH_NULL},
+  {AE_CH_RAW, AE_CH_RAW, AE_CH_RAW, AE_CH_RAW, AE_CH_RAW, AE_CH_RAW, AE_CH_RAW, AE_CH_RAW, AE_CH_NULL}
+};
+
 static const uint16_t AC3Bitrates   [] = {32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 384, 448, 512, 576, 640};
 static const uint16_t AC3FSCod      [] = {48000, 44100, 32000, 0};
 static const uint8_t  AC3BlkCod     [] = {1, 2, 3, 6};
+static const uint8_t  AC3Channels   [] = {2, 1, 2, 3, 3, 4, 4, 5};
 
 static const uint32_t DTSSampleRates[DTS_SRATE_COUNT] =
 {
@@ -267,14 +273,17 @@ unsigned int CAEStreamInfo::SyncAC3(uint8_t *data, unsigned int size)
 {
   unsigned int skip = 0;
 
-  for(; size - skip > 6; ++skip, ++data)
+  for(; size - skip > 7; ++skip, ++data)
   {
     /* search for an ac3 sync word */
     if(data[0] != 0x0b || data[1] != 0x77)
       continue;
 
-    uint8_t bsid = data[5] >> 3;
-    if (bsid > 0x11)
+    uint8_t bsid  = data[5] >> 3;
+    uint8_t acmod = data[6] & 0x7;
+    uint8_t lfeon = data[6] & 0x8 ? 1 : 0;
+
+    if (bsid > 0x11 || acmod > 8)
       continue;
 
     if (bsid <= 10)
@@ -314,11 +323,15 @@ unsigned int CAEStreamInfo::SyncAC3(uint8_t *data, unsigned int size)
           continue;
 
       /* if we get here, we can sync */
-      m_hasSync  = true;
-      m_syncFunc = &CAEStreamInfo::SyncAC3;
-      m_dataType = STREAM_TYPE_AC3;
-      m_packFunc = &CAEPackIEC61937::PackAC3;
-      m_repeat   = 1;
+      m_hasSync        = true;
+      m_outputRate     = m_sampleRate;
+      m_outputChannels = 2;
+      m_channelMap     = CAEChannelInfo(OutputMaps[0]);
+      m_channels       = AC3Channels[acmod] + lfeon;
+      m_syncFunc       = &CAEStreamInfo::SyncAC3;
+      m_dataType       = STREAM_TYPE_AC3;
+      m_packFunc       = &CAEPackIEC61937::PackAC3;
+      m_repeat         = 1;
 
       CLog::Log(LOGINFO, "CAEStreamInfo::SyncAC3 - AC3 stream detected (%dHz)", m_sampleRate);
       return skip;
@@ -351,14 +364,21 @@ unsigned int CAEStreamInfo::SyncAC3(uint8_t *data, unsigned int size)
       m_fsize        = framesize << 1;
       m_repeat       = MAX_EAC3_BLOCKS / blocks;
 
+      if (m_sampleRate == 48000 || m_sampleRate == 96000 || m_sampleRate == 192000)
+           m_outputRate = 192000;
+      else m_outputRate = 176400;
+
       if (m_dataType == STREAM_TYPE_EAC3 && m_hasSync && skip == 0)
         return 0;
 
       /* if we get here, we can sync */
-      m_hasSync  = true;
-      m_syncFunc = &CAEStreamInfo::SyncAC3;
-      m_dataType = STREAM_TYPE_EAC3;
-      m_packFunc = &CAEPackIEC61937::PackEAC3;
+      m_hasSync        = true;
+      m_outputChannels = 8;
+      m_channelMap     = CAEChannelInfo(OutputMaps[1]);
+      m_channels       = 8; /* FIXME: this should be read out of the stream */
+      m_syncFunc       = &CAEStreamInfo::SyncAC3;
+      m_dataType       = STREAM_TYPE_EAC3;
+      m_packFunc       = &CAEPackIEC61937::PackEAC3;
 
       CLog::Log(LOGINFO, "CAEStreamInfo::SyncAC3 - E-AC3 stream detected (%dHz)", m_sampleRate);
       return skip;
@@ -494,11 +514,28 @@ unsigned int CAEStreamInfo::SyncDTS(uint8_t *data, unsigned int size)
     unsigned int sampleRate = DTSSampleRates[srate_code];
     if (!m_hasSync || skip || dataType != m_dataType || sampleRate != m_sampleRate)
     {
-      m_hasSync    = true;
-      m_dataType   = dataType;
-      m_sampleRate = sampleRate;
-      m_syncFunc   = &CAEStreamInfo::SyncDTS;
-      m_repeat     = 1;
+      m_hasSync        = true;
+      m_dataType       = dataType;
+      m_sampleRate     = sampleRate;
+      m_outputRate     = (dataType == STREAM_TYPE_DTSHD) ? 192000 : sampleRate;
+      m_outputChannels = (dataType == STREAM_TYPE_DTSHD) ? 8 : 2; 
+      m_syncFunc       = &CAEStreamInfo::SyncDTS;
+      m_repeat         = 1;
+
+      if (dataType == STREAM_TYPE_DTSHD)
+      {
+        m_outputRate     = 192000;
+        m_outputChannels = 8;
+        m_channelMap     = CAEChannelInfo(OutputMaps[1]);
+        m_channels       = 8; /* FIXME: read the amode value */
+      }
+      else
+      {
+        m_outputRate     = m_sampleRate;
+        m_outputChannels = 2;
+        m_channelMap     = CAEChannelInfo(OutputMaps[0]);
+        m_channels       = 2; /* FIXME: read the amode value */
+      }
 
       switch(dataType)
       {
@@ -553,15 +590,22 @@ unsigned int CAEStreamInfo::SyncTrueHD(uint8_t *data, unsigned int size)
       m_sampleRate = (rate & 0x8 ? 44100 : 48000) << (rate & 0x7);
       m_substreams = (data[20] & 0xF0) >> 4;
 
+      if (m_sampleRate == 48000 || m_sampleRate == 96000 || m_sampleRate == 192000)
+           m_outputRate = 192000;
+      else m_outputRate = 176400;
+
       if (!m_hasSync)
         CLog::Log(LOGINFO, "CAEStreamInfo::SyncMLP - TrueHD stream detected (%dHz)", m_sampleRate);
 
-      m_hasSync    = true;
-      m_fsize      = length;
-      m_dataType   = STREAM_TYPE_TRUEHD;
-      m_syncFunc   = &CAEStreamInfo::SyncTrueHD;
-      m_packFunc   = &CAEPackIEC61937::PackTrueHD;
-      m_repeat     = 1;
+      m_hasSync        = true;
+      m_fsize          = length;
+      m_dataType       = STREAM_TYPE_TRUEHD;
+      m_outputChannels = 8;
+      m_channelMap     = CAEChannelInfo(OutputMaps[1]);
+      m_channels       = 8; /* FIXME: parse this value */
+      m_syncFunc       = &CAEStreamInfo::SyncTrueHD;
+      m_packFunc       = &CAEPackIEC61937::PackTrueHD;
+      m_repeat         = 1;
       return skip;
     }
     else

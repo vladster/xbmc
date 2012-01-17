@@ -93,22 +93,7 @@ bool CDVDAudioCodecPassthrough::Open(CDVDStreamInfo &hints, CDVDCodecOptions &op
 
 int CDVDAudioCodecPassthrough::GetSampleRate()
 {
-  int rate = m_info.GetSampleRate();
-
-  switch(m_info.GetDataType())
-  {
-    case CAEStreamInfo::STREAM_TYPE_TRUEHD:
-    case CAEStreamInfo::STREAM_TYPE_EAC3  :
-      if (rate == 48000 || rate == 96000 || rate == 192000)
-        return 192000;
-      return 176400;
-
-    case CAEStreamInfo::STREAM_TYPE_DTSHD:
-      return 192000;
-
-    default:
-      return rate;
-  }
+  return m_info.GetOutputRate();
 }
 
 int CDVDAudioCodecPassthrough::GetEncodedSampleRate()
@@ -145,44 +130,18 @@ enum AEDataFormat CDVDAudioCodecPassthrough::GetDataFormat()
 
 int CDVDAudioCodecPassthrough::GetChannels()
 {
-  switch(m_info.GetDataType())
-  {
-    case CAEStreamInfo::STREAM_TYPE_TRUEHD:
-      return 8;
-
-    /* FIXME: this needs to be detected depending on HR or MA */
-    case CAEStreamInfo::STREAM_TYPE_DTSHD:
-      return 8;
-
-    default:
-      return 2;
-  }
+  return m_info.GetOutputChannels();
 }
 
 int CDVDAudioCodecPassthrough::GetEncodedChannels()
 {
-  return GetChannels();
-  //return m_channels;
+  return m_info.GetChannels();
 }
 
 CAEChannelInfo CDVDAudioCodecPassthrough::GetChannelMap()
 {
-  static enum AEChannel map[2][9] = {
-    {AE_CH_RAW, AE_CH_RAW, AE_CH_NULL},
-    {AE_CH_RAW, AE_CH_RAW, AE_CH_RAW, AE_CH_RAW, AE_CH_RAW, AE_CH_RAW, AE_CH_RAW, AE_CH_RAW, AE_CH_NULL}
-  };
-
-  switch(m_info.GetDataType())
-  {
-    case CAEStreamInfo::STREAM_TYPE_TRUEHD:
-    case CAEStreamInfo::STREAM_TYPE_DTSHD :
-      return map[1];
-
-    default:
-      return map[0];
-  }
+  return m_info.GetChannelMap();
 }
-
 
 void CDVDAudioCodecPassthrough::Dispose()
 {

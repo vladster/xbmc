@@ -21,6 +21,7 @@
  */
 
 #include "AEPackIEC61937.h"
+#include "AEChannelInfo.h"
 #include <stdint.h>
 #include <list>
 
@@ -51,14 +52,18 @@ public:
 
   int AddData(uint8_t *data, unsigned int size, uint8_t **buffer = NULL, unsigned int *bufferSize = 0);
 
-  void                    SetCoreOnly   (bool value) { m_coreOnly = value; }
-  unsigned int            IsValid       () { return m_hasSync   ; }
-  unsigned int            GetSampleRate () { return m_sampleRate; }
-  unsigned int            GetFrameSize  () { return m_fsize     ; }
-  unsigned int            GetDTSBlocks  () { return m_dtsBlocks ; }
-  enum DataType           GetDataType   () { return m_dataType  ; }
-  bool                    IsLittleEndian() { return m_dataIsLE  ; }
-  CAEPackIEC61937::PackFunc GetPackFunc   () { return m_packFunc  ; }
+  void                      SetCoreOnly      (bool value) { m_coreOnly = value; }
+  unsigned int              IsValid          () { return m_hasSync       ; }
+  unsigned int              GetSampleRate    () { return m_sampleRate    ; }
+  unsigned int              GetOutputRate    () { return m_outputRate    ; }
+  unsigned int              GetOutputChannels() { return m_outputChannels; }
+  CAEChannelInfo            GetChannelMap    () { return m_channelMap    ; }
+  unsigned int              GetChannels      () { return m_channels      ; }
+  unsigned int              GetFrameSize     () { return m_fsize         ; }
+  unsigned int              GetDTSBlocks     () { return m_dtsBlocks     ; }
+  enum DataType             GetDataType      () { return m_dataType      ; }
+  bool                      IsLittleEndian   () { return m_dataIsLE      ; }
+  CAEPackIEC61937::PackFunc GetPackFunc      () { return m_packFunc      ; }
 private:
   DllAvUtil m_dllAvUtil;
 
@@ -72,7 +77,11 @@ private:
   unsigned int              m_needBytes;
   ParseFunc                 m_syncFunc;
   bool                      m_hasSync;
-  unsigned int              m_sampleRate;
+  unsigned int              m_sampleRate;       /* the actual sample rate */
+  unsigned int              m_outputRate;       /* the output sample rate */
+  unsigned int              m_outputChannels;   /* the output channel count */
+  CAEChannelInfo            m_channelMap;
+  unsigned int              m_channels;         /* the actual number of channels in the stream */
   unsigned int              m_coreSize;         /* core size for dtsHD */
   unsigned int              m_dtsBlocks;
   unsigned int              m_fsize;

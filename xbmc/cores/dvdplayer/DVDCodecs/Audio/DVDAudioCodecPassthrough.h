@@ -27,7 +27,7 @@
 #include "DVDAudioCodec.h"
 #include "cores/AudioEngine/AEAudioFormat.h"
 #include "cores/AudioEngine/Utils/AEStreamInfo.h"
-#include "cores/AudioEngine/Utils/AEPackIEC61937.h"
+#include "cores/AudioEngine/Utils/AEBitstreamPacker.h"
 
 class CDVDAudioCodecPassthrough : public CDVDAudioCodec
 {
@@ -49,25 +49,9 @@ public:
   virtual bool NeedPassthrough           () { return true;          }
   virtual const char* GetName            () { return "passthrough"; }
 private:
-  CAEStreamInfo m_info;
-
-  unsigned int  m_channels;
-
-  uint8_t      *m_buffer;
-  unsigned int  m_bufferSize;
-
-  /* we keep the trueHD and dtsHD buffers seperate so that we can handle a fast stream switch */
-  unsigned int  m_trueHDPos;
-  uint8_t      *m_trueHD;
-
-  unsigned int  m_dtsHDSize;
-  unsigned int  m_dtsHDPos;
-  uint8_t      *m_dtsHD;
-
-  unsigned int  m_dataSize;
-  uint8_t       m_packedBuffer[MAX_IEC61937_PACKET];
-
-  void PackTrueHD(uint8_t *data, int size);
-  void PackDTSHD (uint8_t *data, int size);
+  CAEStreamInfo      m_info;
+  CAEBitstreamPacker m_packer;
+  uint8_t*           m_buffer;
+  unsigned int       m_bufferSize;
 };
 

@@ -29,15 +29,8 @@
 #include "cores/AudioEngine/AEFactory.h"
 
 CDVDAudioCodecPassthrough::CDVDAudioCodecPassthrough(void) :
-  m_channels  (0),
   m_buffer    (NULL),
-  m_bufferSize(0),
-  m_trueHDPos (0),
-  m_trueHD    (NULL),
-  m_dtsHDSize (0),
-  m_dtsHDPos  (0),
-  m_dtsHD     (NULL),
-  m_dataSize  (0)
+  m_bufferSize(0)
 {
 }
 
@@ -72,8 +65,6 @@ bool CDVDAudioCodecPassthrough::Open(CDVDStreamInfo &hints, CDVDCodecOptions &op
 
   /* only get the dts core from the parser if we don't support dtsHD */
   m_info.SetCoreOnly(!bSupportsDTSHDOut);
-
-  m_channels   = hints.channels;
   m_bufferSize = 0;
 
   if (
@@ -151,14 +142,7 @@ void CDVDAudioCodecPassthrough::Dispose()
     m_buffer = NULL;
   }
 
-  if (m_trueHD)
-  {
-    delete[] m_trueHD;
-    m_trueHD = NULL;
-  }
-
   m_bufferSize = 0;
-  m_trueHDPos  = 0;
 }
 
 int CDVDAudioCodecPassthrough::Decode(BYTE* pData, int iSize)
@@ -171,97 +155,19 @@ int CDVDAudioCodecPassthrough::Decode(BYTE* pData, int iSize)
 
   /* if we have a frame */
   if (size)
-  {
-    switch(m_info.GetDataType())
-    {
-      case CAEStreamInfo::STREAM_TYPE_TRUEHD: PackTrueHD(m_buffer, size); break;
-      case CAEStreamInfo::STREAM_TYPE_DTSHD : PackDTSHD (m_buffer, size); break;
-
-      default:
-        /* pack the data into an IEC61937 frame */
-        CAEPackIEC61937::PackFunc pack = m_info.GetPackFunc();
-        if (pack)
-          m_dataSize = pack(m_buffer, size, m_packedBuffer);
-    }
-  }
+    m_packer.Pack(m_info, m_buffer, size);
 
   return used;
 }
 
 int CDVDAudioCodecPassthrough::GetData(BYTE** dst)
 {
-  int size     = m_dataSize;
-  m_dataSize   = 0;
-  *dst         = m_packedBuffer;
+  int size = m_packer.GetSize();
+  *dst     = m_packer.GetBuffer();
   return size;
 }
 
 void CDVDAudioCodecPassthrough::Reset()
 {
-  m_dataSize = 0;
 }
 
-/* FIXME: this should be moved into a MAT packer class */
-/* we need to pack 24 TrueHD audio units into the unknown MAT format before packing into IEC61937 */
-
-#define BURST_HEADER_SIZE       8
-#define TRUEHD_FRAME_OFFSET     2560
-#define MAT_MIDDLE_CODE_OFFSET -4
-#define MAT_FRAME_SIZE          61424
-
-void CDVDAudioCodecPassthrough::PackTrueHD(uint8_t* data, int size)
-{
-  /* magic MAT format values, meaning is unknown at this point */
-  static const uint8_t mat_start_code [20] = { 0x07, 0x9E, 0x00, 0x03, 0x84, 0x01, 0x01, 0x01, 0x80, 0x00, 0x56, 0xA5, 0x3B, 0xF4, 0x81, 0x83, 0x49, 0x80, 0x77, 0xE0 };
-  static const uint8_t mat_middle_code[12] = { 0xC3, 0xC1, 0x42, 0x49, 0x3B, 0xFA, 0x82, 0x83, 0x49, 0x80, 0x77, 0xE0 };
-  static const uint8_t mat_end_code   [16] = { 0xC3, 0xC2, 0xC0, 0xC4, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x97, 0x11 };
-
-  /* if the buffer has not been setup yet */
-  if (!m_trueHD)
-    m_trueHD = new uint8_t[MAT_FRAME_SIZE];
-
-  /* setup the frame for the data */
-  if (m_trueHDPos == 0)
-  {
-    memset(m_trueHD, 0, MAT_FRAME_SIZE);
-    memcpy(m_trueHD, mat_start_code, sizeof(mat_start_code));
-    memcpy(m_trueHD + (12 * TRUEHD_FRAME_OFFSET) - BURST_HEADER_SIZE + MAT_MIDDLE_CODE_OFFSET, mat_middle_code, sizeof(mat_middle_code));
-    memcpy(m_trueHD + MAT_FRAME_SIZE - sizeof(mat_end_code), mat_end_code, sizeof(mat_end_code));
-  }
-
-  size_t offset;
-       if (m_trueHDPos == 0 ) offset = (m_trueHDPos * TRUEHD_FRAME_OFFSET) + sizeof(mat_start_code);
-  else if (m_trueHDPos == 12) offset = (m_trueHDPos * TRUEHD_FRAME_OFFSET) + sizeof(mat_middle_code) - BURST_HEADER_SIZE + MAT_MIDDLE_CODE_OFFSET;
-  else                        offset = (m_trueHDPos * TRUEHD_FRAME_OFFSET) - BURST_HEADER_SIZE;
-
-  memcpy(m_trueHD + offset, data, size);
-
-  /* if we have a full frame */
-  if (++m_trueHDPos == 24)
-  {
-    m_trueHDPos = 0;
-    m_dataSize  = CAEPackIEC61937::PackTrueHD(m_trueHD, MAT_FRAME_SIZE, m_packedBuffer);
-  }
-}
-
-void CDVDAudioCodecPassthrough::PackDTSHD(uint8_t* data, int size)
-{
-  static const uint8_t dtshd_start_code[10] = { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xfe, 0xfe };
-  unsigned int period   = (GetSampleRate() * (GetChannels() / 2)) * (m_info.GetDTSBlocks() << 5) / m_info.GetSampleRate();
-  unsigned int dataSize = sizeof(dtshd_start_code) + 2 + size;
-
-  if (!m_dtsHD || dataSize > m_dtsHDSize)
-  {
-    if (m_dtsHD)
-      delete[] m_dtsHD;
-    m_dtsHDSize = dataSize;
-    m_dtsHD = new uint8_t[dataSize];
-    memcpy(m_dtsHD, dtshd_start_code, sizeof(dtshd_start_code));
-  }
-
-  m_dtsHD[sizeof(dtshd_start_code) + 0] = ((uint16_t)size & 0xFF00) >> 8;
-  m_dtsHD[sizeof(dtshd_start_code) + 1] = ((uint16_t)size & 0x00FF);
-  memcpy(m_dtsHD + sizeof(dtshd_start_code) + 2, data, size);
-
-  m_dataSize = CAEPackIEC61937::PackDTSHD(m_dtsHD, dataSize, m_packedBuffer, period);
-}

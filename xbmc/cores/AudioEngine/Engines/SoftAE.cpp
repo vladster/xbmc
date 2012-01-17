@@ -192,10 +192,10 @@ bool CSoftAE::OpenSink()
     CLog::Log(LOGINFO, "CSoftAE::OpenSink - Forcing samplerate to %d", newFormat.m_sampleRate);
   }
 
-  if (m_rawPassthrough || m_transcode)
-    newFormat.m_dataFormat = masterStream ? masterStream->GetDataFormat() : AE_FMT_AC3;
-  else
-    newFormat.m_dataFormat = AE_FMT_FLOAT;
+  /* figure out the best possible format */
+       if (m_rawPassthrough) newFormat.m_dataFormat = masterStream->GetDataFormat();
+  else if (m_transcode     ) newFormat.m_dataFormat = AE_FMT_AC3;
+  else                       newFormat.m_dataFormat = AE_FMT_FLOAT;
 
   /* only re-open the sink if its not compatible with what we need */
   if (!m_sink || ((CStdString)m_sink->GetName()).ToUpper() != driver || !m_sink->IsCompatible(newFormat, device))

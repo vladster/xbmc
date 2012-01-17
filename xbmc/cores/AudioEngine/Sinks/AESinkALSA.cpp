@@ -138,6 +138,8 @@ CStdString CAESinkALSA::GetDeviceUse(AEAudioFormat format, CStdString device, bo
 
 bool CAESinkALSA::Initialize(AEAudioFormat &format, CStdString &device)
 {
+  m_initFormat = format;
+
   /* if we are raw, correct the data format */
   if (AE_IS_RAW(format.m_dataFormat))
   {
@@ -174,7 +176,6 @@ bool CAESinkALSA::Initialize(AEAudioFormat &format, CStdString &device)
     return false;
   }
 
-  m_initFormat = format;
   format.m_channelLayout = m_channelLayout;
   
   m_device = device = GetDeviceUse(format, device, m_passthrough);

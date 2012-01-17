@@ -58,6 +58,17 @@ void CAEBitstreamPacker::Pack(CAEStreamInfo &info, uint8_t* data, int size)
   }
 }
 
+unsigned int CAEBitstreamPacker::GetSize()
+{
+  return m_dataSize;
+}
+
+uint8_t* CAEBitstreamPacker::GetBuffer()
+{
+  m_dataSize = 0;
+  return m_packedBuffer;
+}
+
 void CAEBitstreamPacker::PackTrueHD(CAEStreamInfo &info, uint8_t* data, int size)
 {
   /* magic MAT format values, meaning is unknown at this point */

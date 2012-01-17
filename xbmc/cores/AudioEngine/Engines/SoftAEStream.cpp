@@ -381,6 +381,23 @@ uint8_t* CSoftAEStream::GetFrame()
 {
   CSingleLock lock(m_critSection);
 
+  /* if we are fading, this runs even if we have underrun as it is time based */
+  if (m_fadeRunning)
+  {
+    m_volume += m_fadeStep;
+    m_volume = std::min(1.0f, std::max(0.0f, m_volume));
+    if (m_fadeDirUp)
+    {
+      if (m_volume >= m_fadeTarget)
+        m_fadeRunning = false;
+    }
+    else
+    {
+      if (m_volume <= m_fadeTarget)
+        m_fadeRunning = false;
+    }
+  }
+
   /* if we have been deleted or are refilling but not draining */
   if (!m_valid || m_delete || (m_refillBuffer && !m_draining)) return NULL;
 
@@ -425,23 +442,6 @@ uint8_t* CSoftAEStream::GetFrame()
     m_packetPos += m_aeChannelCount * sizeof(float);
     if(vizData)
       m_vizPacketPos += 2;
-
-    /* if we are fading */
-    if (m_fadeRunning)
-    {
-      m_volume += m_fadeStep;
-      m_volume = std::min(1.0f, std::max(0.0f, m_volume));
-      if (m_fadeDirUp)
-      {
-        if (m_volume >= m_fadeTarget)
-          m_fadeRunning = false;
-      }
-      else
-      {
-        if (m_volume <= m_fadeTarget)
-          m_fadeRunning = false;
-      }
-    }
   }
 
   --m_framesBuffered;
@@ -488,7 +488,7 @@ void CSoftAEStream::Drain()
 
 bool CSoftAEStream::IsDrained()
 {
-  CSingleLock lock(m_critSection);  
+  CSingleLock lock(m_critSection);
   return (!m_packet.samples && m_outBuffer.empty());
 }
 
@@ -583,6 +583,9 @@ void CSoftAEStream::UnRegisterAudioCallback()
 
 void CSoftAEStream::FadeVolume(float from, float target, unsigned int time)
 {
+  /* can't fade a RAW stream */
+  if (AE_IS_RAW(m_initDataFormat)) return;
+
   float delta   = target - from;
   m_fadeDirUp   = target > from;
   m_fadeTarget  = target;

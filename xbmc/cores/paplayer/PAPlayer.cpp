@@ -382,6 +382,7 @@ inline void PAPlayer::ProcessStreams(float &delay, float &buffer)
       itt = m_finishing.erase(itt);
       CAEFactory::AE->FreeStream(si->m_stream);
       delete si;
+      CLog::Log(LOGDEBUG, "PAPlayer::ProcessStreams - Stream Freed");
     }
     else
       ++itt;    

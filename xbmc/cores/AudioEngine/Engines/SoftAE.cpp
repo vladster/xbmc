@@ -512,10 +512,7 @@ void CSoftAE::EnumerateOutputDevices(AEDeviceList &devices, bool passthrough)
 
 bool CSoftAE::SupportsRaw()
 {
-  /* if we are going to encode, we dont do raw */
-  if (m_transcode && !m_streams.empty())
-    return false;
-
+  /* CSoftAE supports raw formats */
   return true;
 }
 
@@ -979,19 +976,52 @@ unsigned int CSoftAE::RunStreamStage(unsigned int channelCount, void *out, bool 
 
   if (m_rawPassthrough)
   {
-    if (m_streams.empty()) return 0;
-    CSoftAEStream *stream = m_streams.front();
-    /* if the stream is to be deleted, or is not raw */
-    if (stream->IsDestroyed() || !stream->IsRaw())
+    CSoftAEStream *stream = NULL;
+    for(StreamList::iterator itt = m_streams.begin(); itt != m_streams.end();)
     {
-      /* flag to have the sink re-started */
+      CSoftAEStream *sitt = *itt;
+
+      /* pick out the oldest raw stream */
+      if (!stream && sitt->IsRaw())
+      {
+        stream = sitt;
+        ++itt;
+        continue;
+      }
+
+      /* if the stream is destroyed, delete it while we have the lock */
+      if (sitt->IsDestroyed())
+      {
+        itt = m_streams.erase(itt);
+        delete sitt;
+        continue;
+      }
+
+      /* skip paused streams */
+      if (sitt->IsPaused()) {
+        ++itt;
+        continue;
+      }
+
+      /* consume data from streams even though we cant use it */
+      sitt->GetFrame();
+      ++itt;
+    }
+
+    /* we have to restart if the current raw stream has been destroyed as the next stream may be incompatible */
+    if (!stream || stream->IsDestroyed())
+    {
       restart = true;
       return 0;
     }
 
+    /* if the stream is paused do nothing */
+    if (stream->IsPaused())
+      return 0;
+
+    /* get the frame and append it to the output */
     uint8_t *frame = stream->GetFrame();
     if (!frame) return 0;
-
     memcpy(out, frame, m_sinkFormat.m_frameSize);
     return 1;
   }

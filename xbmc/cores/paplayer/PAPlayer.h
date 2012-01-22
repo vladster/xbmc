@@ -126,6 +126,7 @@ private:
   void ProcessStreams(float &delay, float &buffer);
   bool PrepareStream(StreamInfo *si);
   bool ProcessStream(StreamInfo *si, float &delay, float &buffer);
+  bool QueueData(StreamInfo *si);
   __int64 GetTotalTime64();
 };
 

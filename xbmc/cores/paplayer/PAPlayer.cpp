@@ -307,7 +307,7 @@ inline bool PAPlayer::PrepareStream(StreamInfo *si)
   /* if we have a stream we are already prepared */
   if (si->m_stream)
     return true;
-  
+
   /* get a paused stream */
   si->m_stream = CAEFactory::AE->MakeStream(
     si->m_dataFormat,
@@ -321,12 +321,14 @@ inline bool PAPlayer::PrepareStream(StreamInfo *si)
     CLog::Log(LOGDEBUG, "PAPlayer::PrepareStream - Failed to get IAEStream");
     return false;
   }
-  
+
   si->m_stream->SetVolume    (si->m_volume);
   si->m_stream->SetReplayGain(si->m_decoder.GetReplayGain());
   
   CLog::Log(LOGINFO, "PAPlayer::PrepareStream - Ready");
-  return true;
+
+  /* queue the decoded data */
+  return QueueData(si);
 }
 
 bool PAPlayer::CloseFile()
@@ -527,21 +529,28 @@ inline bool PAPlayer::ProcessStream(StreamInfo *si, float &delay, float &buffer)
     return false;
   }
 
-  /* calculate the data size */
-  unsigned int size = std::min(si->m_decoder.GetDataSize(), space / si->m_bytesPerSample);
-  if (!size)
+  if (!QueueData(si))
+    return false;
+
+  /* update the delay time if we are running */
+  if (si->m_started)
   {
     float cacheTime = si->m_stream->GetCacheTime();
     float cacheTotalTime = si->m_stream->GetCacheTotal();
-
-    /* update the delay time if we are running */
-    if (si->m_started)
-    {
-      delay = std::min(delay, cacheTime);
-      buffer = std::min(buffer, cacheTime / cacheTotalTime);
-    }
-    return true;
+    delay  = std::min(delay, cacheTime);
+    buffer = std::min(buffer, cacheTime / cacheTotalTime);
   }
+
+  return true;
+}
+
+bool PAPlayer::QueueData(StreamInfo *si)
+{
+  /* calculate the data size */
+  unsigned int space = si->m_stream->GetSpace();
+  unsigned int size  = std::min(si->m_decoder.GetDataSize(), space / si->m_bytesPerSample);
+  if (!size)
+    return true;
   
   void* data = si->m_decoder.GetData(size);
   if (!data)
@@ -552,16 +561,6 @@ inline bool PAPlayer::ProcessStream(StreamInfo *si, float &delay, float &buffer)
   
   unsigned int added = si->m_stream->AddData(data, size * si->m_bytesPerSample);
   si->m_framesSent += added / si->m_bytesPerSample;
-
-  float cacheTime = si->m_stream->GetCacheTime();
-  float cacheTotalTime = si->m_stream->GetCacheTotal();
-
-  /* update the delay time if we are running */
-  if (si->m_started)
-  {
-    delay  = std::min(delay, cacheTime);
-    buffer = std::min(buffer, cacheTime / cacheTotalTime);
-  }
 
   return true;
 }

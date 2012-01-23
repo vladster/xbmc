@@ -280,8 +280,15 @@ unsigned int CAEStreamInfo::SyncAC3(uint8_t *data, unsigned int size)
       continue;
 
     uint8_t bsid  = data[5] >> 3;
-    uint8_t acmod = data[6] & 0x7;
-    uint8_t lfeon = data[6] & 0x8 ? 1 : 0;
+    uint8_t acmod = data[6] >> 5;
+    uint8_t lfeon;
+
+    int8_t pos = 4;
+    if ((acmod & 0x1) && (acmod != 0x1)) pos -= 2;
+    if (acmod & 0x4 ) pos -= 2;
+    if (acmod == 0x2) pos -= 2;
+    if (pos < 0) lfeon = (data[7] & 0x64)         ? 1 : 0;
+    else         lfeon = ((data[6] >> pos) & 0x1) ? 1 : 0;
 
     if (bsid > 0x11 || acmod > 8)
       continue;
@@ -333,7 +340,7 @@ unsigned int CAEStreamInfo::SyncAC3(uint8_t *data, unsigned int size)
       m_packFunc       = &CAEPackIEC61937::PackAC3;
       m_repeat         = 1;
 
-      CLog::Log(LOGINFO, "CAEStreamInfo::SyncAC3 - AC3 stream detected (%dHz)", m_sampleRate);
+      CLog::Log(LOGINFO, "CAEStreamInfo::SyncAC3 - AC3 stream detected (%d channels, %dHz)", m_channels, m_sampleRate);
       return skip;
     }
     else
@@ -380,7 +387,7 @@ unsigned int CAEStreamInfo::SyncAC3(uint8_t *data, unsigned int size)
       m_dataType       = STREAM_TYPE_EAC3;
       m_packFunc       = &CAEPackIEC61937::PackEAC3;
 
-      CLog::Log(LOGINFO, "CAEStreamInfo::SyncAC3 - E-AC3 stream detected (%dHz)", m_sampleRate);
+      CLog::Log(LOGINFO, "CAEStreamInfo::SyncAC3 - E-AC3 stream detected (%d channels, %dHz)", m_channels, m_sampleRate);
       return skip;
     }
   }
@@ -537,12 +544,15 @@ unsigned int CAEStreamInfo::SyncDTS(uint8_t *data, unsigned int size)
         m_channels       = 2; /* FIXME: read the amode value */
       }
 
+      std::string type;
       switch(dataType)
       {
-        case STREAM_TYPE_DTSHD     : CLog::Log(LOGINFO, "CAEStreamInfo::SyncDTS - dtsHD stream detected (%dHz)", m_sampleRate); break;
-        case STREAM_TYPE_DTSHD_CORE: CLog::Log(LOGINFO, "CAEStreamInfo::SyncDTS - dtsHD stream detected (%dHz), only using core (dts)", m_sampleRate); break;
-        default                    : CLog::Log(LOGINFO, "CAEStreamInfo::SyncDTS - dts stream detected (%dHz)", m_sampleRate);
+        case STREAM_TYPE_DTSHD     : type = "dtsHD"; break;
+        case STREAM_TYPE_DTSHD_CORE: type = "dtsHD (core)"; break;
+        default                    : type = "dts"; break;
       }
+
+      CLog::Log(LOGINFO, "CAEStreamInfo::SyncDTS - %s stream detected (%d channels, %dHz)", type.c_str(), m_channels, m_sampleRate);
     }
 
     return skip;
@@ -595,7 +605,7 @@ unsigned int CAEStreamInfo::SyncTrueHD(uint8_t *data, unsigned int size)
       else m_outputRate = 176400;
 
       if (!m_hasSync)
-        CLog::Log(LOGINFO, "CAEStreamInfo::SyncMLP - TrueHD stream detected (%dHz)", m_sampleRate);
+        CLog::Log(LOGINFO, "CAEStreamInfo::SyncMLP - TrueHD stream detected (%d channels, %dHz)", m_channels, m_sampleRate);
 
       m_hasSync        = true;
       m_fsize          = length;

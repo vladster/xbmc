@@ -24,9 +24,6 @@
 #include <stddef.h>
 #include <string.h>
 
-/* FIXME: this should be moved into a MAT packer class */
-/* we need to pack 24 TrueHD audio units into the unknown MAT format before packing into IEC61937 */
-
 #define BURST_HEADER_SIZE       8
 #define TRUEHD_FRAME_OFFSET     2560
 #define MAT_MIDDLE_CODE_OFFSET -4
@@ -71,6 +68,7 @@ uint8_t* CAEBitstreamPacker::GetBuffer()
   return m_packedBuffer;
 }
 
+/* we need to pack 24 TrueHD audio units into the unknown MAT format before packing into IEC61937 */
 void CAEBitstreamPacker::PackTrueHD(CAEStreamInfo &info, uint8_t* data, int size)
 {
   /* magic MAT format values, meaning is unknown at this point */

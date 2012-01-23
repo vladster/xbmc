@@ -39,11 +39,11 @@
 using namespace std;
 
 CSoftAEStream::CSoftAEStream(enum AEDataFormat dataFormat, unsigned int sampleRate, CAEChannelInfo channelLayout, unsigned int options) :
+  m_resampleRatio   (1.0  ),
+  m_internalRatio   (1.0  ),
   m_convertBuffer   (NULL ),
   m_valid           (false),
   m_delete          (false),
-  m_resampleRatio   (1.0  ),
-  m_internalRatio   (1.0  ),
   m_volume          (1.0f ),
   m_rgain           (1.0f ),
   m_refillBuffer    (0    ),

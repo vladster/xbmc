@@ -194,5 +194,10 @@ public:
    * @return true if a fade is in progress, otherwise false
    */
   virtual bool IsFading() { return false; }
+
+  /**
+   * Slave a stream to resume when this stream has drained
+   */
+  virtual void RegisterSlave(IAEStream *stream) = 0;
 };
 

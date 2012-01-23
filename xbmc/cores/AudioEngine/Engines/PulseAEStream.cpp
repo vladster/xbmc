@@ -65,6 +65,7 @@ CPulseAEStream::CPulseAEStream(pa_context *context, pa_threaded_mainloop *mainLo
   m_options = options;
 
   m_DrainOperation = NULL;
+  m_slave = NULL;
 
   pa_threaded_mainloop_lock(m_MainLoop);
 
@@ -501,6 +502,8 @@ void CPulseAEStream::StreamUnderflowCallback(pa_stream *s, void *userdata)
 void CPulseAEStream::StreamDrainComplete(pa_stream *s, int success, void *userdata)
 {
   CPulseAEStream *stream = (CPulseAEStream *)userdata;
+  if (stream->m_slave)
+    stream->m_slave->Resume();
   pa_threaded_mainloop_signal(stream->m_MainLoop, 0);
 }
 
@@ -535,6 +538,11 @@ bool CPulseAEStream::Cork(bool cork)
 
   pa_threaded_mainloop_unlock(m_MainLoop);
   return cork;
+}
+
+void CPulseAEStream::RegisterSlave(IAEStream *stream)
+{
+  m_slave = stream;
 }
 
 CPulseAEStream::CLinearFader::CLinearFader(IAEStream *stream) : m_stream(stream)

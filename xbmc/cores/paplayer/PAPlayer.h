@@ -82,6 +82,7 @@ private:
   typedef struct {
     CAudioDecoder     m_decoder;             /* the stream decoder */
     __int64           m_startOffset;         /* the stream start offset */
+    __int64           m_endOffset;           /* the stream end offset */
     CAEChannelInfo    m_channelInfo;         /* channel layout information */
     unsigned int      m_sampleRate;          /* sample rate of the stream */
     enum AEDataFormat m_dataFormat;          /* data format of the samples */
@@ -101,6 +102,8 @@ private:
     
     IAEStream*        m_stream;              /* the playback stream */
     float             m_volume;              /* the initial volume level to set the stream to on creation */
+
+    bool              m_isSlaved;            /* true if the stream has been slaved to another */
   } StreamInfo;
 
   typedef std::list<StreamInfo*> StreamList;

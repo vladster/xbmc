@@ -1029,7 +1029,8 @@ unsigned int CSoftAE::RunStreamStage(unsigned int channelCount, void *out, bool 
   float *dst = (float*)out;
   unsigned int mixed = 0;
 
-  /* mix in any running streams */
+  /* get a list of unpaused streams */
+  StreamList unpaused;
   for(StreamList::iterator itt = m_streams.begin(); itt != m_streams.end();)
   {
     CSoftAEStream *stream = *itt;
@@ -1048,6 +1049,15 @@ unsigned int CSoftAE::RunStreamStage(unsigned int channelCount, void *out, bool 
       ++itt;
       continue;
     }
+
+    unpaused.push_back(stream);
+    ++itt;
+  }
+
+  /* mix in any running streams */
+  for(StreamList::iterator itt = unpaused.begin(); itt != unpaused.end();)
+  {
+    CSoftAEStream *stream = *itt;
 
     float *frame = (float*)stream->GetFrame();
     if (!frame)

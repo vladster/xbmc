@@ -56,7 +56,8 @@ CSoftAEStream::CSoftAEStream(enum AEDataFormat dataFormat, unsigned int sampleRa
   m_draining        (false),
   m_vizBufferSamples(0    ),
   m_audioCallback   (NULL ),
-  m_fadeRunning     (false)
+  m_fadeRunning     (false),
+  m_slave           (NULL )
 {
   m_ssrcData.data_out = NULL;
 
@@ -399,7 +400,8 @@ uint8_t* CSoftAEStream::GetFrame()
   }
 
   /* if we have been deleted or are refilling but not draining */
-  if (!m_valid || m_delete || (m_refillBuffer && !m_draining)) return NULL;
+  if (!m_valid || m_delete || (m_refillBuffer && !m_draining))
+    return NULL;
 
   /* if the packet is empty, advance to the next one */
   if(!m_packet.samples)
@@ -418,6 +420,7 @@ uint8_t* CSoftAEStream::GetFrame()
       {
         /* underrun, we need to refill our buffers */
         m_refillBuffer = m_waterLevel;
+        CLog::Log(LOGDEBUG, "CSoftAEStream::GetFrame - Underrun");
         return NULL;
       }
     }
@@ -458,6 +461,13 @@ uint8_t* CSoftAEStream::GetFrame()
     }
   }
 
+  /* if we are draining and are out of packets, tell the slave to resume */
+  if (m_draining && m_slave && !m_packet.samples && m_outBuffer.empty())
+  {
+    m_slave->Resume();
+    m_slave = NULL;
+  }
+
   return ret;
 }
 
@@ -489,7 +499,7 @@ void CSoftAEStream::Drain()
 bool CSoftAEStream::IsDrained()
 {
   CSharedLock lock(m_lock);
-  return (!m_packet.samples && m_outBuffer.empty());
+  return (m_draining && !m_packet.samples && m_outBuffer.empty());
 }
 
 void CSoftAEStream::Flush()
@@ -599,3 +609,10 @@ bool CSoftAEStream::IsFading()
   CSharedLock lock(m_lock);
   return m_fadeRunning;
 }
+
+void CSoftAEStream::RegisterSlave(IAEStream *slave)
+{
+  CSharedLock lock(m_lock);
+  m_slave = slave;
+}
+

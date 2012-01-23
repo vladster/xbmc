@@ -73,6 +73,8 @@ public:
 
   /* trigger the stream to update its volume relative to AE */
   void UpdateVolume(float max);
+
+  virtual void RegisterSlave(IAEStream *stream);
 private:
   static void StreamRequestCallback(pa_stream *s, size_t length, void *userdata);
   static void StreamLatencyUpdateCallback(pa_stream *s, void *userdata);
@@ -107,6 +109,7 @@ private:
   unsigned int m_cacheSize;
 
   pa_operation *m_DrainOperation;
+  IAEStream    *m_slave;
 
   class CLinearFader : public CThread
   {

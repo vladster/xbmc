@@ -564,8 +564,8 @@ bool PAPlayer::QueueData(StreamInfo *si)
   void* data = si->m_decoder.GetData(size);
   if (!data)
   {
-      CLog::Log(LOGERROR, "PAPlayer::ProcessStream - Failed to get data from the decoder");
-      return false;
+    CLog::Log(LOGERROR, "PAPlayer::ProcessStream - Failed to get data from the decoder");
+    return false;
   }
   
   unsigned int added = si->m_stream->AddData(data, size * si->m_bytesPerSample);

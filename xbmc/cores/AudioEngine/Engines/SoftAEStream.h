@@ -23,7 +23,7 @@
 #include <samplerate.h>
 #include <list>
 
-#include "threads/CriticalSection.h"
+#include "threads/SharedSection.h"
 
 #include "AEAudioFormat.h"
 #include "Interfaces/AEStream.h"
@@ -82,7 +82,7 @@ private:
   void InternalFlush();
   void CheckResampleBuffers();
 
-  CCriticalSection  m_critSection;
+  CSharedSection    m_lock;
   enum AEDataFormat m_initDataFormat;
   unsigned int      m_initSampleRate;
   CAEChannelInfo    m_initChannelLayout;

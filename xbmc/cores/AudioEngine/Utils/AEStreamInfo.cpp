@@ -40,6 +40,7 @@ static const uint16_t AC3Bitrates   [] = {32, 40, 48, 56, 64, 80, 96, 112, 128, 
 static const uint16_t AC3FSCod      [] = {48000, 44100, 32000, 0};
 static const uint8_t  AC3BlkCod     [] = {1, 2, 3, 6};
 static const uint8_t  AC3Channels   [] = {2, 1, 2, 3, 3, 4, 4, 5};
+static const uint8_t  DTSChannels   [] = {1, 2, 2, 2, 2, 3, 3, 4, 4, 5, 6, 6, 6, 7, 8, 8};
 
 static const uint32_t DTSSampleRates[DTS_SRATE_COUNT] =
 {
@@ -414,6 +415,8 @@ unsigned int CAEStreamInfo::SyncDTS(uint8_t *data, unsigned int size)
     unsigned int hd_sync = 0;
     bool match = true;
     unsigned int srate_code;
+    unsigned int amode;
+    unsigned int lfe;
 
     switch(header)
     {
@@ -427,6 +430,8 @@ unsigned int CAEStreamInfo::SyncDTS(uint8_t *data, unsigned int size)
         m_dtsBlocks = (((data[5] & 0x7) << 4) | (data[6] & 0x3C) >> 2) + 1;
         m_fsize     = (((data[6] & 0x3) << 12) | (data[7] << 4) | (data[8] & 0x3C) >> 2) + 1;
         srate_code  = data[9] & 0xf;
+        amode       = data[8] & 0x3f;
+        lfe         = (data[11] >> 1) & 0x3;
         m_dataIsLE  = false;
         break;
 
@@ -440,6 +445,8 @@ unsigned int CAEStreamInfo::SyncDTS(uint8_t *data, unsigned int size)
         m_dtsBlocks = (((data[4] & 0x7) << 4) | (data[7] & 0x3C) >> 2) + 1;
         m_fsize     = (((data[7] & 0x3) << 12) | (data[6] << 4) | (data[9] & 0x3C) >> 2) + 1;
         srate_code  = data[8] & 0xf;
+        amode       = data[9] & 0x3f;
+        lfe         = (data[10] >> 1) & 0x03;
         m_dataIsLE  = true;
         break;
 
@@ -449,6 +456,8 @@ unsigned int CAEStreamInfo::SyncDTS(uint8_t *data, unsigned int size)
         m_dtsBlocks = ((data[5] >> 2) & 0x7f) + 1;
         m_fsize     = ((((data[5] & 0x3) << 8 | data[6]) << 4) | ((data[7] & 0xF0) >> 4)) + 1;
         srate_code  = (data[8] & 0x3C) >> 2;
+        amode       = ((data[7] & 0x0F) << 2) | ((data[8] & 0xC0) >> 6);
+        lfe         = (data[10] >> 1) & 0x3;
         m_dataIsLE  = false;
         break;
 
@@ -458,9 +467,10 @@ unsigned int CAEStreamInfo::SyncDTS(uint8_t *data, unsigned int size)
         m_dtsBlocks = ((data[4] >> 2) & 0x7f) + 1;
         m_fsize     = ((((data[4] & 0x3) << 8 | data[7]) << 4) | ((data[6] & 0xF0) >> 4)) + 1;
         srate_code  = (data[9] & 0x3C) >> 2;
+        amode       = ((data[6] & 0x0F) << 2) | ((data[9] & 0xC0) >> 6);
+        lfe         = (data[11] >> 1) & 0x3;
         m_dataIsLE  = true;
         break;
-
 
       default:
         match = false;
@@ -524,8 +534,7 @@ unsigned int CAEStreamInfo::SyncDTS(uint8_t *data, unsigned int size)
       m_hasSync        = true;
       m_dataType       = dataType;
       m_sampleRate     = sampleRate;
-      m_outputRate     = (dataType == STREAM_TYPE_DTSHD) ? 192000 : sampleRate;
-      m_outputChannels = (dataType == STREAM_TYPE_DTSHD) ? 8 : 2; 
+      m_channels       = DTSChannels[amode] + (lfe ? 1 : 0);
       m_syncFunc       = &CAEStreamInfo::SyncDTS;
       m_repeat         = 1;
 
@@ -534,14 +543,13 @@ unsigned int CAEStreamInfo::SyncDTS(uint8_t *data, unsigned int size)
         m_outputRate     = 192000;
         m_outputChannels = 8;
         m_channelMap     = CAEChannelInfo(OutputMaps[1]);
-        m_channels       = 8; /* FIXME: read the amode value */
+        m_channels      += 2; /* FIXME: this needs to be read out, not sure how to do that yet */
       }
       else
       {
         m_outputRate     = m_sampleRate;
         m_outputChannels = 2;
         m_channelMap     = CAEChannelInfo(OutputMaps[0]);
-        m_channels       = 2; /* FIXME: read the amode value */
       }
 
       std::string type;

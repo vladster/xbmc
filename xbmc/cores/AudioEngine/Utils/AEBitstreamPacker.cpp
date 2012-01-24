@@ -33,7 +33,8 @@ CAEBitstreamPacker::CAEBitstreamPacker() :
   m_trueHD   (NULL),
   m_trueHDPos(0),
   m_dtsHD    (NULL),
-  m_dtsHDSize(0)
+  m_dtsHDSize(0),
+  m_dataSize (0)
 {
 }
 

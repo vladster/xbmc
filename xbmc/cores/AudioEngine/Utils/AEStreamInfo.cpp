@@ -70,6 +70,7 @@ CAEStreamInfo::CAEStreamInfo() :
   m_needBytes (0),
   m_syncFunc  (&CAEStreamInfo::DetectType),
   m_hasSync   (false),
+  m_sampleRate(0),
   m_dtsBlocks (0),
   m_dataType  (STREAM_TYPE_NULL),
   m_packFunc  (NULL)

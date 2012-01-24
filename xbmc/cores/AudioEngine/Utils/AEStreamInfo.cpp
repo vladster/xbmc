@@ -41,6 +41,7 @@ static const uint16_t AC3FSCod      [] = {48000, 44100, 32000, 0};
 static const uint8_t  AC3BlkCod     [] = {1, 2, 3, 6};
 static const uint8_t  AC3Channels   [] = {2, 1, 2, 3, 3, 4, 4, 5};
 static const uint8_t  DTSChannels   [] = {1, 2, 2, 2, 2, 3, 3, 4, 4, 5, 6, 6, 6, 7, 8, 8};
+static const uint8_t  THDChanMap    [] = {2, 1, 1, 2, 2, 2, 2, 1, 1, 2, 2, 1, 1};
 
 static const uint32_t DTSSampleRates[DTS_SRATE_COUNT] =
 {
@@ -572,6 +573,14 @@ unsigned int CAEStreamInfo::SyncDTS(uint8_t *data, unsigned int size)
   return skip;
 }
 
+inline unsigned int CAEStreamInfo::GetTrueHDChannels(const uint16_t chanmap)
+{
+  int channels = 0;
+  for(int i = 0; i < 13; ++i)
+    channels += THDChanMap[i] * ((chanmap >> i) & 1);
+  return channels;
+}
+
 unsigned int CAEStreamInfo::SyncTrueHD(uint8_t *data, unsigned int size)
 {
   unsigned int left = size;
@@ -608,7 +617,13 @@ unsigned int CAEStreamInfo::SyncTrueHD(uint8_t *data, unsigned int size)
       m_sampleRate = (rate & 0x8 ? 44100 : 48000) << (rate & 0x7);
       m_substreams = (data[20] & 0xF0) >> 4;
 
-      if (m_sampleRate == 48000 || m_sampleRate == 96000 || m_sampleRate == 192000)
+      /* get the number of encoded channels */
+      uint16_t channel_map = ((data[10] & 0x1F) << 8) | data[11];
+      if (!channel_map)
+        channel_map = (data[9] << 1) | (data[10] >> 7);
+      m_channels = CAEStreamInfo::GetTrueHDChannels(channel_map);
+
+        if (m_sampleRate == 48000 || m_sampleRate == 96000 || m_sampleRate == 192000)
            m_outputRate = 192000;
       else m_outputRate = 176400;
 
@@ -620,7 +635,6 @@ unsigned int CAEStreamInfo::SyncTrueHD(uint8_t *data, unsigned int size)
       m_dataType       = STREAM_TYPE_TRUEHD;
       m_outputChannels = 8;
       m_channelMap     = CAEChannelInfo(OutputMaps[1]);
-      m_channels       = 8; /* FIXME: parse this value */
       m_syncFunc       = &CAEStreamInfo::SyncTrueHD;
       m_packFunc       = &CAEPackIEC61937::PackTrueHD;
       m_repeat         = 1;

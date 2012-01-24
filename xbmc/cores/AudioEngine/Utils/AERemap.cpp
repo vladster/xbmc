@@ -297,7 +297,7 @@ void CAERemap::Remap(float * const in, float * const out, const unsigned int fra
 
         int i = 0;
         /* the compiler has a better chance of optimizing this if it is done in parallel */
-        int blocks = info->srcCount & 0x3;
+        int blocks = info->srcCount & ~0x3;
         for(; i < blocks; i += 4)
         {
           *outOffset += inOffset[info->srcIndex[i + 0].index] * info->srcIndex[i + 0].level;

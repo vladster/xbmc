@@ -628,7 +628,7 @@ unsigned int CAEStreamInfo::SyncTrueHD(uint8_t *data, unsigned int size)
       else m_outputRate = 176400;
 
       if (!m_hasSync)
-        CLog::Log(LOGINFO, "CAEStreamInfo::SyncMLP - TrueHD stream detected (%d channels, %dHz)", m_channels, m_sampleRate);
+        CLog::Log(LOGINFO, "CAEStreamInfo::SyncTrueHD - TrueHD stream detected (%d channels, %dHz)", m_channels, m_sampleRate);
 
       m_hasSync        = true;
       m_fsize          = length;

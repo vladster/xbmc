@@ -81,11 +81,11 @@ protected:
   DWORD m_dwPacketSize;
   CCriticalSection m_critSection;
 
-  int m_iChannels;
   int m_iBitrate;
   int m_iBitsPerSample;
   double m_SecondsPerByte;
   bool m_bPassthrough;
+  CAEChannelInfo m_channelLayout;
   bool m_bPaused;
 
   volatile bool& m_bStop;

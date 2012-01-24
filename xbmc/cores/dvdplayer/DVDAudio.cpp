@@ -41,7 +41,6 @@ CDVDAudio::CDVDAudio(volatile bool &bStop)
   m_bPassthrough = false;
   m_iBitsPerSample = 0;
   m_iBitrate = 0;
-  m_iChannels = 0;
   m_SecondsPerByte = 0.0;
   m_bPaused = true;
 }
@@ -75,14 +74,14 @@ bool CDVDAudio::Create(const DVDAudioFrame &audioframe, CodecID codec, bool need
   );
   if (!m_pAudioStream) return false;
 
-  m_iChannels      = audioframe.channel_count;
   m_iBitrate       = audioframe.sample_rate;
   m_iBitsPerSample = audioframe.bits_per_sample;
   m_bPassthrough   = audioframe.passthrough;
+  m_channelLayout  = audioframe.channel_layout;
   m_dwPacketSize   = m_pAudioStream->GetFrameSize();
 
-  if(m_iChannels && m_iBitrate && m_iBitsPerSample)
-    m_SecondsPerByte = 1.0 / (m_iChannels * m_iBitrate * (m_iBitsPerSample>>3));
+  if(m_channelLayout.Count() && m_iBitrate && m_iBitsPerSample)
+    m_SecondsPerByte = 1.0 / (m_channelLayout.Count() * m_iBitrate * (m_iBitsPerSample>>3));
   else
     m_SecondsPerByte = 0.0;
 
@@ -102,7 +101,6 @@ void CDVDAudio::Destroy()
   m_dwPacketSize = 0;
   m_pAudioStream = NULL;
   m_iBufferSize = 0;
-  m_iChannels = 0;
   m_iBitrate = 0;
   m_iBitsPerSample = 0;
   m_bPassthrough = false;
@@ -114,7 +112,7 @@ DWORD CDVDAudio::AddPacketsRenderer(unsigned char* data, DWORD len, CSingleLock 
   if(!m_pAudioStream)
     return 0;
 
-  DWORD bps = m_iChannels * m_iBitrate * (m_iBitsPerSample>>3);
+  DWORD bps = m_channelLayout.Count() * m_iBitrate * (m_iBitsPerSample>>3);
   if(!bps)
     return 0;
 
@@ -288,12 +286,10 @@ bool CDVDAudio::IsValidFormat(const DVDAudioFrame &audioframe)
   if(audioframe.passthrough != m_bPassthrough)
     return false;
 
-  if(audioframe.channel_count   != m_iChannels
-  || audioframe.sample_rate     != m_iBitrate
-  || audioframe.bits_per_sample != m_iBitsPerSample)
+  if(m_iBitrate       != audioframe.sample_rate
+  || m_iBitsPerSample != audioframe.bits_per_sample
+  || m_channelLayout  != audioframe.channel_layout)
     return false;
-
-  //FIXME: compare channel layout
 
   return true;
 }

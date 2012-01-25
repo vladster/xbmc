@@ -38,8 +38,8 @@
 
 #define OSS_FRAMES 256
 
-static enum AEChannel OSSChannelMap[7] =
-  {AE_CH_FL, AE_CH_FR, AE_CH_BL, AE_CH_BR, AE_CH_FC, AE_CH_LFE, AE_CH_NULL};
+static enum AEChannel OSSChannelMap[9] =
+  {AE_CH_FL, AE_CH_FR, AE_CH_BL, AE_CH_BR, AE_CH_FC, AE_CH_LFE, AE_CH_SL, AE_CH_SR, AE_CH_NULL};
 
 CAESinkOSS::CAESinkOSS() :
   m_channelLayout(NULL)

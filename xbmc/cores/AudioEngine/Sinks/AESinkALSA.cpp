@@ -143,23 +143,6 @@ bool CAESinkALSA::Initialize(AEAudioFormat &format, CStdString &device)
   /* if we are raw, correct the data format */
   if (AE_IS_RAW(format.m_dataFormat))
   {
-    switch(format.m_dataFormat)
-    {
-      case AE_FMT_AC3:
-      case AE_FMT_DTS:
-        break;
-      case AE_FMT_EAC3:
-        format.m_sampleRate = 192000;
-        break;
-      case AE_FMT_TRUEHD:
-      case AE_FMT_DTSHD:
-        format.m_sampleRate = 192000;
-        break;
-
-      default:
-        break;
-    }
-    
     m_channelLayout = GetChannelLayout(format);
     format.m_dataFormat   = AE_FMT_S16NE;
     m_passthrough         = true;

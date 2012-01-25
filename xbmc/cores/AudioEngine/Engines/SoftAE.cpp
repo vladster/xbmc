@@ -98,6 +98,26 @@ CSoftAE::~CSoftAE()
 IAESink *CSoftAE::GetSink(AEAudioFormat &newFormat, bool passthrough, CStdString &device)
 {
   device = passthrough ? m_passthroughDevice : m_device;
+  /* if we are raw, force the sample rate */
+  if (AE_IS_RAW(newFormat.m_dataFormat))
+  {
+    switch(newFormat.m_dataFormat)
+	{
+      case AE_FMT_AC3:
+      case AE_FMT_DTS:
+        break;
+      case AE_FMT_EAC3:
+        newFormat.m_sampleRate = 192000;
+        break:
+      case AE_FMT_TRUEHD:
+      case AE_FMT_DTSHD:
+        newFormat.m_sampleRate = 192000;
+        break;
+
+      default:
+        break;
+	}
+  }	
   IAESink *sink = CAESinkFactory::Create(device, newFormat, passthrough);
   return sink;
 }

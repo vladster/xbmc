@@ -50,10 +50,10 @@ CAESinkOSS::~CAESinkOSS()
 {
 }
 
-CStdString CAESinkOSS::GetDeviceUse(AEAudioFormat format, CStdString device)
+CStdString CAESinkOSS::GetDeviceUse(const AEAudioFormat format, const CStdString device)
 {
 #ifdef OSS4
-  if (format.m_dataFormat == AE_FMT_RAW)
+  if (AE_IS_RAW(format.m_dataFormat))
   {
     if (device.find_first_of('/') != 0)
       return "/dev/dsp_ac3";
@@ -352,7 +352,36 @@ void CAESinkOSS::Deinitialize()
   close(m_fd);
 }
 
-bool CAESinkOSS::IsCompatible(AEAudioFormat format, const CStdString device)
+inline CAEChannelInfo CAESinkOSS::GetChannelLayout(AEAudioFormat format)
+{
+  unsigned int count = 0;
+  
+       if (format.m_dataFormat == AE_FMT_AC3 ||
+           format.m_dataFormat == AE_FMT_DTS || 
+           format.m_dataFormat == AE_FMT_EAC3) 
+           count = 2;
+  else if (format.m_dataFormat == AE_FMT_TRUEHD ||
+           format.m_dataFormat == AE_FMT_DTSHD)
+           count = 8;
+  else
+  {
+    for(unsigned int c = 0; c < 8; ++c)
+      for(unsigned int i = 0; i < format.m_channelLayout.Count(); ++i)
+        if (format.m_channelLayout[i] == OSSChannelMap[c])
+        {
+          count = c + 1;
+          break;
+        }
+  }
+  
+  CAEChannelInfo info;
+  for(unsigned int i = 0; i < count; ++i)
+    info += OSSChannelMap[i];
+  
+  return info;
+}
+
+bool CAESinkOSS::IsCompatible(const AEAudioFormat format, const CStdString device)
 {
   return (
     format.m_sampleRate    == m_initFormat.m_sampleRate    &&
@@ -388,7 +417,14 @@ unsigned int CAESinkOSS::AddPackets(uint8_t *data, unsigned int frames)
   return wrote / m_format.m_frameSize;
 }
 
-void CAESinkOSS::EnumerateDevices (AEDeviceList &devices, bool passthrough)
+void CAESinkOSS::Drain()
+{
+  if (!m_fd) return;
+
+  // ???
+}
+
+void CAESinkOSS::EnumerateDevices(AEDeviceList &devices, bool passthrough)
 {
 }
 

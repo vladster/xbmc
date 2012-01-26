@@ -2546,6 +2546,7 @@
     </ClCompile>
     <ClCompile Include="..\..\xbmc\filesystem\FileUPnP.cpp">
       <Filter>filesystem</Filter>
+	</ClCompile>
     <ClCompile Include="..\..\xbmc\cores\AudioEngine\Engines\SoftAE.cpp">
       <Filter>cores\AudioEngine\Engines</Filter>
     </ClCompile>
@@ -2596,7 +2597,6 @@
     </ClCompile>
     <ClCompile Include="..\..\xbmc\cores\AudioEngine\Utils\AEChannelInfo.cpp">
       <Filter>cores\AudioEngine\Utils</Filter>
-    </ClCompile>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

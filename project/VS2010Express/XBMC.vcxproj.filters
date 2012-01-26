@@ -2546,7 +2546,7 @@
     </ClCompile>
     <ClCompile Include="..\..\xbmc\filesystem\FileUPnP.cpp">
       <Filter>filesystem</Filter>
-	</ClCompile>
+    </ClCompile>
     <ClCompile Include="..\..\xbmc\cores\AudioEngine\Engines\SoftAE.cpp">
       <Filter>cores\AudioEngine\Engines</Filter>
     </ClCompile>
@@ -2596,6 +2596,9 @@
       <Filter>cores\AudioEngine\Utils</Filter>
     </ClCompile>
     <ClCompile Include="..\..\xbmc\cores\AudioEngine\Utils\AEChannelInfo.cpp">
+      <Filter>cores\AudioEngine\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\xbmc\cores\AudioEngine\Utils\AEBitstreamPacker.cpp">
       <Filter>cores\AudioEngine\Utils</Filter>
     </ClCompile>
   </ItemGroup>
@@ -5221,6 +5224,9 @@
     </ClInclude>
     <ClInclude Include="..\..\xbmc\cores\AudioEngine\Interfaces\ThreadedAE.h">
       <Filter>cores\AudioEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\cores\AudioEngine\Utils\AEBitstreamPacker.h">
+      <Filter>cores\AudioEngine\Utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -4744,11 +4744,6 @@ void CApplication::Process()
   m_applicationMessenger.ProcessMessages();
   if (g_application.m_bStop) return; //we're done, everything has been unloaded
 
-  // check if we can free unused memory
-#ifndef _LINUX
-  g_audioManager.FreeUnused();
-#endif
-
   // check how far we are through playing the current item
   // and do anything that needs doing (lastfm submission, playcount updates etc)
   CheckPlayingProgress();

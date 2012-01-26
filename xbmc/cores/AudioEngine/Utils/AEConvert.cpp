@@ -22,7 +22,7 @@
 #define __STDC_LIMIT_MACROS
 #include "AEConvert.h"
 #include "AEUtil.h"
-#include "MathUtils.h"
+#include "utils/MathUtils.h"
 #include "utils/EndianSwap.h"
 
 #include <stdlib.h>
@@ -58,7 +58,7 @@ static inline int safeRound(double f)
 
   /* if the value is out of the MathUtils::round_int range, then round it normally */
   if (f <= static_cast<double>(INT_MIN / 2) - 1.0 || f >= static_cast <double>(INT_MAX / 2) + 1.0)
-    return floor(f+0.5);
+    return (int)floor(f+0.5);
 
   return MathUtils::round_int(f);
 }

@@ -20,14 +20,14 @@
  */
 
 #include "AESinkDirectSound.h"
-#include "Log.h"
+#include "utils/Log.h"
 #include <initguid.h>
 #include <Mmreg.h>
 #include <list>
 #include "threads/SingleLock.h"
-#include "SystemInfo.h"
+#include "utils/SystemInfo.h"
 #include "utils/TimeUtils.h"
-#include "CharsetConverter.h"
+#include "utils/CharsetConverter.h"
 
 extern HWND g_hWnd;
 

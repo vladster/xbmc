@@ -30,10 +30,10 @@
 
 #include "../Utils/AEUtil.h"
 #include "settings/GUISettings.h"
-#include "StdString.h"
+#include "utils/StdString.h"
 #include "utils/log.h"
 #include "threads/SingleLock.h"
-#include "CharsetConverter.h"
+#include "utils/CharsetConverter.h"
 
 #pragma comment(lib, "Avrt.lib")
 

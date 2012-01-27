@@ -82,6 +82,7 @@ public:
   unsigned int          GetSampleRate   ();
   unsigned int          GetChannelCount () {return m_chLayout.Count()      ;}
   CAEChannelInfo&       GetChannelLayout() {return m_chLayout              ;}
+  enum AEStdChLayout    GetStdChLayout  () {return m_stdChLayout           ;}
   unsigned int          GetFrames       () {return m_sinkFormat.m_frames   ;}
   unsigned int          GetFrameSize    () {return m_frameSize             ;}
 

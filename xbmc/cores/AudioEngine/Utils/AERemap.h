@@ -27,7 +27,7 @@ public:
   CAERemap();
   ~CAERemap();
 
-  bool Initialize(CAEChannelInfo input, CAEChannelInfo output, bool finalStage, bool forceNormalize = false);
+  bool Initialize(CAEChannelInfo input, CAEChannelInfo output, bool finalStage, bool forceNormalize = false, enum AEStdChLayout stdChLayout = AE_CH_LAYOUT_INVALID);
   void Remap(float * const in, float * const out, const unsigned int frames) const;
 
 private:

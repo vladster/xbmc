@@ -77,7 +77,7 @@ void CSoftAEStream::InitializeRemap()
   if (!AE_IS_RAW(m_initDataFormat))
   {
     /* re-init the remappers */
-    m_remap   .Initialize(m_initChannelLayout, AE.GetChannelLayout()           , false);
+    m_remap   .Initialize(m_initChannelLayout, AE.GetChannelLayout()           , false, false, AE.GetStdChLayout());
     m_vizRemap.Initialize(m_initChannelLayout, CAEChannelInfo(AE_CH_LAYOUT_2_0), false, true);
 
     /*
@@ -146,7 +146,7 @@ void CSoftAEStream::Initialize()
   if (!AE_IS_RAW(m_initDataFormat))
   {
     if (
-      !m_remap   .Initialize(m_initChannelLayout, m_aeChannelLayout               , false) ||
+      !m_remap   .Initialize(m_initChannelLayout, m_aeChannelLayout               , false, false, AE.GetStdChLayout()) ||
       !m_vizRemap.Initialize(m_initChannelLayout, CAEChannelInfo(AE_CH_LAYOUT_2_0), false, true))
     {
       m_valid = false;

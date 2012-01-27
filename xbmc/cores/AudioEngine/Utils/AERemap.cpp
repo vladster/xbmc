@@ -36,7 +36,7 @@ CAERemap::~CAERemap()
 {
 }
 
-bool CAERemap::Initialize(CAEChannelInfo input, CAEChannelInfo output, bool finalStage, bool forceNormalize/* = false */)
+bool CAERemap::Initialize(CAEChannelInfo input, CAEChannelInfo output, bool finalStage, bool forceNormalize/* = false */, enum AEStdChLayout stdChLayout/* = AE_CH_LAYOUT_INVALID */)
 {
   if (!input.Count() || !output.Count())
     return false;
@@ -49,21 +49,36 @@ bool CAERemap::Initialize(CAEChannelInfo input, CAEChannelInfo output, bool fina
   for(unsigned int o = 0; o < output.Count(); ++o)
     m_mixInfo[output[o]].in_dst = true;
   
+  /* flag invalid channels for forced downmix */
+  if (stdChLayout != AE_CH_LAYOUT_INVALID)
+  {
+    CAEChannelInfo layout = stdChLayout;
+    for(unsigned int o = 0; o < output.Count(); ++o)
+      if (!layout.HasChannel(output[o]))
+        m_mixInfo[output[o]].in_dst = false;
+  }
+
   m_outChannels = output.Count();
 
   /* lookup the channels that exist in the output */
-  for(unsigned int i = 0; i < input.Count(); ++i) {
+  for(unsigned int i = 0; i < input.Count(); ++i)
+  {
     AEMixInfo  *info = &m_mixInfo[input[i]];
     AEMixLevel *lvl  = &info->srcIndex[info->srcCount++];
     info->in_src = true;
     lvl->index   = i;
     lvl->level   = 1.0f;
-    for(unsigned int o = 0; o < output.Count(); ++o)
-      if (input[i] == output[o])
+    if (!info->in_dst)
+    {
+      for(unsigned int o = 0; o < output.Count(); ++o)
       {
-        info->outIndex = o;
-        break;
+        if (input[i] == output[o])
+        {
+          info->outIndex = o;
+          break;
+        }
       }
+    }
 
     m_inChannels = i;
   }
@@ -110,7 +125,7 @@ bool CAERemap::Initialize(CAEChannelInfo input, CAEChannelInfo output, bool fina
   RM(AE_CH_FLOC, AE_CH_FL, AE_CH_FC);
   RM(AE_CH_BL  , AE_CH_FL);
   RM(AE_CH_BR  , AE_CH_FR);
-  RM(AE_CH_LFE , AE_CH_FL  , AE_CH_FR);
+  RM(AE_CH_LFE , AE_CH_FL, AE_CH_FR);
   RM(AE_CH_FL  , AE_CH_FC);
   RM(AE_CH_FR  , AE_CH_FC);
 
@@ -271,6 +286,13 @@ void CAERemap::Remap(float * const in, float * const out, const unsigned int fra
   for(int o = 0; o < m_outChannels; ++o)
   {
     const AEMixInfo *info = &m_mixInfo[m_output[o]];
+    if (!info->in_dst)
+    {
+      for(unsigned int f = 0; f < frames; ++f)      
+        out[(f * m_outChannels) + o] = 0.0f;
+      continue;
+    }
+
     /* if there is only 1 source, just copy it so we dont break DPL */
     if (info->srcCount == 1)
     {

@@ -21,6 +21,7 @@
  */
 
 #include <list>
+#include <vector>
 #include <map>
 
 #include "system.h"
@@ -151,9 +152,9 @@ private:
     unsigned int  sampleCount;
   } SoundState;
 
-  typedef std::list<CSoftAEStream*> StreamList;
-  typedef std::list<CSoftAESound* > SoundList;
-  typedef std::list<SoundState    > SoundStateList;
+  typedef std::vector<CSoftAEStream*> StreamList;
+  typedef std::list  <CSoftAESound* > SoundList;
+  typedef std::list  <SoundState    > SoundStateList;
     
   /* the streams, sounds, output buffer and output buffer fill size */
   bool           m_transcode;
@@ -189,8 +190,11 @@ private:
   void         RunOutputStage   ();
 
   void         RunTranscodeStage();
-  unsigned int RunStreamStage   (unsigned int channelCount, void *out, bool &restart);
-  void         RunNormalizeStage(unsigned int channelCount, void *out, unsigned int mixed);
-  void         RunBufferStage   (void *out);
+  unsigned int (CSoftAE::*m_streamStageFn)(unsigned int channelCount, void *out, bool &restart);
+  unsigned int RunRawStreamStage (unsigned int channelCount, void *out, bool &restart);
+  unsigned int RunStreamStage    (unsigned int channelCount, void *out, bool &restart);
+  void         ResumeStreams     (StreamList &streams);
+  void         RunNormalizeStage (unsigned int channelCount, void *out, unsigned int mixed);
+  void         RunBufferStage    (void *out);
 };
 

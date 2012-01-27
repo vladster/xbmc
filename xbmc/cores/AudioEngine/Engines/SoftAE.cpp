@@ -68,7 +68,8 @@ CSoftAE::CSoftAE():
   m_remapped           (NULL ),
   m_remappedSize       (0    ),
   m_converted          (NULL ),
-  m_convertedSize      (0    )
+  m_convertedSize      (0    ),
+  m_streamStageFn      (NULL )
 {
 }
 
@@ -120,6 +121,7 @@ bool CSoftAE::OpenSink()
   /* lock the sink so the thread gets held up */
   CExclusiveLock sinkLock(m_sinkLock);
   m_rawPassthrough = false;
+  m_streamStageFn = &CSoftAE::RunStreamStage;
   LoadSettings();
  
   /* remove any deleted streams */
@@ -137,8 +139,9 @@ bool CSoftAE::OpenSink()
     /* prefer the first found raw stream over any others as the master */
     if (stream->IsRaw() &! masterStream)
     {
-      masterStream      = stream;
-      m_rawPassthrough  = true;
+      masterStream     = stream;
+      m_rawPassthrough = true;
+      m_streamStageFn  = &CSoftAE::RunRawStreamStage;
     }
 
     ++itt;
@@ -158,8 +161,9 @@ bool CSoftAE::OpenSink()
     /* prefer the first found raw stream over any others as the master */
     if (stream->IsRaw() &! masterStream)
     {
-      masterStream      = stream;
-      m_rawPassthrough  = true;
+      masterStream     = stream;
+      m_rawPassthrough = true;
+      m_streamStageFn  = &CSoftAE::RunRawStreamStage;
     }
 
     ++itt;
@@ -816,7 +820,7 @@ void CSoftAE::Run()
 
     /* run the stream stage */
     bool restart = false;
-    unsigned int mixed = RunStreamStage(channelCount, out, restart);
+    unsigned int mixed = (this->*m_streamStageFn)(channelCount, out, restart);
 
     /* if we are told to restart */
     if (restart)
@@ -1044,80 +1048,78 @@ void CSoftAE::RunTranscodeStage()
   }
 }
 
+unsigned int CSoftAE::RunRawStreamStage(unsigned int channelCount, void *out, bool &restart)
+{
+  CSingleLock streamLock(m_streamLock);
+  StreamList resumeStreams;
+  static StreamList::iterator itt;
+
+  CSoftAEStream *stream = NULL;
+  for(itt = m_streams.begin(); itt != m_streams.end();)
+  {
+    CSoftAEStream *sitt = *itt;
+
+    /* pick out the oldest raw stream */
+    if (!stream && sitt->IsRaw())
+    {
+      stream = sitt;
+      ++itt;
+      continue;
+    }
+
+    /* if the stream is destroyed, delete it while we have the lock */
+    if (sitt->IsDestroyed())
+    {
+      itt = m_streams.erase(itt);
+      delete sitt;
+      continue;
+    }
+
+    /* consume data from streams even though we cant use it */
+    sitt->GetFrame();
+         
+    if (sitt->IsDrained() && sitt->m_slave && sitt->m_slave->IsPaused())
+      resumeStreams.push_back(sitt);
+
+    ++itt;
+  }
+
+  /* we have to restart if the current raw stream has been destroyed as the next stream may be incompatible */
+  if (!stream || stream->IsDestroyed())
+  {
+    restart = true;
+    return 0;
+  }
+
+  /* get the frame and append it to the output */
+  uint8_t *frame = stream->GetFrame();
+  if (!frame)
+    return 0;
+
+  memcpy(out, frame, m_sinkFormat.m_frameSize);
+
+  if (stream->IsDrained() && stream->m_slave && stream->m_slave->IsPaused())
+    resumeStreams.push_back(stream);
+
+  streamLock.Leave();
+
+  /* resume any streams that need to be */
+  ResumeStreams(resumeStreams);
+
+  return 1;
+}
+
 unsigned int CSoftAE::RunStreamStage(unsigned int channelCount, void *out, bool &restart)
 {
   CSingleLock streamLock(m_streamLock);
   StreamList resumeStreams;
-
-  if (m_rawPassthrough)
-  {
-    CSoftAEStream *stream = NULL;
-    for(StreamList::iterator itt = m_streams.begin(); itt != m_streams.end();)
-    {
-      CSoftAEStream *sitt = *itt;
-
-      /* pick out the oldest raw stream */
-      if (!stream && sitt->IsRaw())
-      {
-        stream = sitt;
-        ++itt;
-        continue;
-      }
-
-      /* if the stream is destroyed, delete it while we have the lock */
-      if (sitt->IsDestroyed())
-      {
-        itt = m_streams.erase(itt);
-        delete sitt;
-        continue;
-      }
-
-      /* consume data from streams even though we cant use it */
-      sitt->GetFrame();
-         
-      if (sitt->IsDrained() && sitt->m_slave && sitt->m_slave->IsPaused())
-        resumeStreams.push_back(sitt);
-
-      ++itt;
-    }
-
-    /* we have to restart if the current raw stream has been destroyed as the next stream may be incompatible */
-    if (!stream || stream->IsDestroyed())
-    {
-      restart = true;
-      return 0;
-    }
-
-    /* get the frame and append it to the output */
-    uint8_t *frame = stream->GetFrame();
-    if (!frame)
-      return 0;
-
-    memcpy(out, frame, m_sinkFormat.m_frameSize);
-
-    if (stream->IsDrained() && stream->m_slave && stream->m_slave->IsPaused())
-      resumeStreams.push_back(stream);
-
-    streamLock.Leave();
-
-    /* resume any streams that need to be */
-    for(StreamList::iterator itt = resumeStreams.begin(); itt != resumeStreams.end(); ++itt)
-    {
-      CSoftAEStream *stream = *itt;
-      m_pausedStreams.remove(stream->m_slave);
-      m_streams.push_back(stream->m_slave);
-      stream->m_slave->m_paused = false;
-      stream->m_slave = NULL;
-    }
-
-    return 1;
-  }
+  static StreamList::iterator itt;
 
   float *dst = (float*)out;
   unsigned int mixed = 0;
 
   /* mix in any running streams */
-  for(StreamList::iterator itt = m_streams.begin(); itt != m_streams.end();)
+  for(itt = m_streams.begin(); itt != m_streams.end();)
   {
     CSoftAEStream *stream = *itt;
 
@@ -1154,17 +1156,29 @@ unsigned int CSoftAE::RunStreamStage(unsigned int channelCount, void *out, bool 
     ++itt;
   }
 
+  ResumeStreams(resumeStreams);
+  return mixed;
+}
+
+inline void CSoftAE::ResumeStreams(StreamList &streams)
+{
+  static StreamList::iterator itt, pitt;
+
   /* resume any streams that need to be */
-  for(StreamList::iterator itt = resumeStreams.begin(); itt != resumeStreams.end(); ++itt)
+  for(itt = streams.begin(); itt != streams.end(); ++itt)
   {
     CSoftAEStream *stream = *itt;
-    m_pausedStreams.remove(stream->m_slave);
+    for(pitt = m_pausedStreams.begin(); pitt != m_pausedStreams.end(); ++pitt)
+      if (*pitt == stream->m_slave)
+      {
+        m_pausedStreams.erase(pitt);
+        break;
+      }
+    
     m_streams.push_back(stream->m_slave);
     stream->m_slave->m_paused = false;
     stream->m_slave = NULL;
   }
-
-  return mixed;
 }
 
 inline void CSoftAE::RunNormalizeStage(unsigned int channelCount, void *out, unsigned int mixed)

@@ -53,6 +53,7 @@ private:
 
   static const char  *WASAPIErrToStr(HRESULT err);
 
+  HANDLE              m_needDataEvent;
   IMMDevice          *m_pDevice;
   IAudioClient       *m_pAudioClient;
   IAudioRenderClient *m_pRenderClient;

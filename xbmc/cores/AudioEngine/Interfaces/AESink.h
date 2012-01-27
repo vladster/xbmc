@@ -53,11 +53,6 @@ public:
   virtual bool IsCompatible(const AEAudioFormat format, const CStdString device) = 0;
 
   /*
-    This method must block while the sink is stopping
-  */
-  virtual void Stop() = 0;
-
-  /*
     This method must return the delay in miliseconds till new data will be sent out
   */
   virtual float GetDelay() = 0;

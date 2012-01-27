@@ -105,10 +105,13 @@ bool CAESinkOSS::Initialize(AEAudioFormat &format, CStdString &device)
        if ((format.m_dataFormat == AE_FMT_FLOAT) && (format_mask & AFMT_FLOAT )) oss_fmt = AFMT_FLOAT;
   else
 #endif
+#ifdef OSS4
        if ((format.m_dataFormat == AE_FMT_S32NE) && (format_mask & AFMT_S32_NE)) oss_fmt = AFMT_S32_NE;
   else if ((format.m_dataFormat == AE_FMT_S32BE) && (format_mask & AFMT_S32_BE)) oss_fmt = AFMT_S32_BE;
   else if ((format.m_dataFormat == AE_FMT_S32LE) && (format_mask & AFMT_S32_LE)) oss_fmt = AFMT_S32_LE;
-  else if ((format.m_dataFormat == AE_FMT_S16NE) && (format_mask & AFMT_S16_NE)) oss_fmt = AFMT_S16_NE;
+  else
+#endif
+       if ((format.m_dataFormat == AE_FMT_S16NE) && (format_mask & AFMT_S16_NE)) oss_fmt = AFMT_S16_NE;
   else if ((format.m_dataFormat == AE_FMT_S16BE) && (format_mask & AFMT_S16_BE)) oss_fmt = AFMT_S16_BE;
   else if ((format.m_dataFormat == AE_FMT_S16LE) && (format_mask & AFMT_S16_LE)) oss_fmt = AFMT_S16_LE;
   else if ((format.m_dataFormat == AE_FMT_S8   ) && (format_mask & AFMT_S8    )) oss_fmt = AFMT_S8;
@@ -129,10 +132,13 @@ bool CAESinkOSS::Initialize(AEAudioFormat &format, CStdString &device)
          if (format_mask & AFMT_FLOAT ) {oss_fmt = AFMT_FLOAT ; format.m_dataFormat = AE_FMT_FLOAT; }
     else
 #endif
+#ifdef OSS4
          if (format_mask & AFMT_S32_NE) {oss_fmt = AFMT_S32_NE; format.m_dataFormat = AE_FMT_S32NE; }
     else if (format_mask & AFMT_S32_BE) {oss_fmt = AFMT_S32_BE; format.m_dataFormat = AE_FMT_S32BE; }
     else if (format_mask & AFMT_S32_LE) {oss_fmt = AFMT_S32_LE; format.m_dataFormat = AE_FMT_S32LE; }
-    else if (format_mask & AFMT_S16_NE) {oss_fmt = AFMT_S16_NE; format.m_dataFormat = AE_FMT_S16NE; }
+    else
+#endif         
+         if (format_mask & AFMT_S16_NE) {oss_fmt = AFMT_S16_NE; format.m_dataFormat = AE_FMT_S16NE; }
     else if (format_mask & AFMT_S16_BE) {oss_fmt = AFMT_S16_BE; format.m_dataFormat = AE_FMT_S16BE; }
     else if (format_mask & AFMT_S16_LE) {oss_fmt = AFMT_S16_LE; format.m_dataFormat = AE_FMT_S16LE; }
     else if (format_mask & AFMT_S8    ) {oss_fmt = AFMT_S8;     format.m_dataFormat = AE_FMT_S8; }
@@ -375,9 +381,8 @@ void CAESinkOSS::Drain()
 
 void CAESinkOSS::EnumerateDevices(AEDeviceList &devices, bool passthrough)
 {
-  int mixerfd, i;
+  int mixerfd;
   const char * mixerdev = "/dev/mixer";
-  oss_sysinfo sysinfo;
   CStdString devicepath;
 
   devices.push_back(AEDevice("default", "/dev/dsp"));
@@ -389,6 +394,8 @@ void CAESinkOSS::EnumerateDevices(AEDeviceList &devices, bool passthrough)
     return;
   }	
 
+#ifdef OSS4
+  oss_sysinfo sysinfo;
   if (ioctl(mixerfd, SNDCTL_SYSINFO, &sysinfo) == -1)
   {
     // hardware not supported
@@ -397,7 +404,7 @@ void CAESinkOSS::EnumerateDevices(AEDeviceList &devices, bool passthrough)
     return;
   }
 
-  for (i = 0; i < sysinfo.numcards; ++i)
+  for (int i = 0; i < sysinfo.numcards; ++i)
   {
     oss_card_info cardinfo;
 	if (ioctl(mixerfd, SNDCTL_CARDINFO, &cardinfo) == -1)
@@ -408,5 +415,6 @@ void CAESinkOSS::EnumerateDevices(AEDeviceList &devices, bool passthrough)
   }
 
   close(mixerfd);
+#endif
 }
 

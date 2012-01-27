@@ -516,7 +516,7 @@ unsigned int CAEStreamInfo::SyncDTS(uint8_t *data, unsigned int size)
     if (hd_sync == DTS_PREAMBLE_HD)
     {
       int hd_size;
-      bool blownup = (data[m_fsize + 5] & 0x20);
+      bool blownup = (data[m_fsize + 5] & 0x20) != 0;
       if (blownup)
            hd_size = (((data[m_fsize + 6] & 0x01) << 19) | (data[m_fsize + 7] << 11) | (data[m_fsize + 8] << 3) | ((data[m_fsize + 9] & 0xe0) >> 5)) + 1;
       else hd_size = (((data[m_fsize + 6] & 0x1f) << 11) | (data[m_fsize + 7] << 3) | ((data[m_fsize + 8] & 0xe0) >> 5)) + 1;

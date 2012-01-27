@@ -190,6 +190,7 @@ enum AEDataFormat CDVDAudioCodecFFmpeg::GetDataFormat()
     default:
       printf("%x\n", m_pCodecContext->sample_fmt);
       assert(false);
+      return AE_FMT_INVALID;
   }
 }
 

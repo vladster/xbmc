@@ -80,6 +80,8 @@ public:
   void Reset();
   unsigned int Count() const;
   static const char* GetChName(const enum AEChannel ch);
+  bool HasChannel(const enum AEChannel ch);
+  bool ContainsChannels(CAEChannelInfo& rhs);
 private:
   unsigned int   m_channelCount;
   enum AEChannel m_channels[AE_CH_MAX];

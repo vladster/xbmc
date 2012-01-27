@@ -85,6 +85,13 @@ CSoftAE::~CSoftAE()
     delete s;
   }
 
+  while(!m_pausedStreams.empty())
+  {
+    CSoftAEStream *s = m_pausedStreams.front();
+    /* note: the stream will call RemoveStream via it's dtor */
+    delete s;
+  }
+
   /* free the sounds */
   CSingleLock soundLock(m_soundLock);
   while(!m_sounds.empty())
@@ -137,9 +144,33 @@ bool CSoftAE::OpenSink()
     ++itt;
   }
 
+  /* remove any deleted paused streams */
+  for(StreamList::iterator itt = m_pausedStreams.begin(); itt != m_pausedStreams.end();)
+  {
+    CSoftAEStream *stream = *itt;
+    if (stream->IsDestroyed())
+    {
+      itt = m_pausedStreams.erase(itt);
+      delete stream;
+      continue;
+    }
+
+    /* prefer the first found raw stream over any others as the master */
+    if (stream->IsRaw() &! masterStream)
+    {
+      masterStream      = stream;
+      m_rawPassthrough  = true;
+    }
+
+    ++itt;
+  }
+
   /* if we dont have a master stream, choose one based on the seemless setting */
-  if (!masterStream && !m_streams.empty())
-    masterStream = m_preferSeemless ? m_streams.front() : m_streams.back();
+  if (!masterStream)
+  {
+         if (!m_streams      .empty()) masterStream = m_preferSeemless ? m_streams      .front() : m_streams      .back();
+    else if (!m_pausedStreams.empty()) masterStream = m_preferSeemless ? m_pausedStreams.front() : m_pausedStreams.back();
+  }
 
   /* the desired format */
   AEAudioFormat newFormat;
@@ -338,7 +369,9 @@ bool CSoftAE::OpenSink()
     /* re-init streams */
     streamLock.Enter();
     for(StreamList::iterator itt = m_streams.begin(); itt != m_streams.end(); ++itt)
-      (*itt)->Initialize();  
+      (*itt)->Initialize();
+    for(StreamList::iterator itt = m_pausedStreams.begin(); itt != m_pausedStreams.end(); ++itt)
+      (*itt)->Initialize();
     streamLock.Leave();
   }
   
@@ -402,6 +435,8 @@ void CSoftAE::OnSettingsChange(CStdString setting)
     /* re-init streams reampper */
     CSingleLock streamLock(m_streamLock);
     for(StreamList::iterator itt = m_streams.begin(); itt != m_streams.end(); ++itt)
+      (*itt)->InitializeRemap();
+    for(StreamList::iterator itt = m_pausedStreams.begin(); itt != m_pausedStreams.end(); ++itt)
       (*itt)->InitializeRemap();
   }
 
@@ -527,6 +562,40 @@ void CSoftAE::DelayFrames()
   Sleep(DELAY_FRAME_TIME - 4);
 }
 
+void CSoftAE::PauseStream(CSoftAEStream *stream)
+{  
+  CSingleLock streamLock(m_streamLock);
+
+  /* remove the stream from the running stream list */
+  for(StreamList::iterator itt = m_pausedStreams.begin(); itt != m_streams.end(); ++itt)
+  {
+    if (*itt == stream) {
+      m_streams.erase(itt);
+      break;
+    }
+  }
+
+  /* add the stream to the paused stream list */
+  m_pausedStreams.push_back(stream);
+}
+
+void CSoftAE::ResumeStream(CSoftAEStream *stream)
+{
+  CSingleLock streamLock(m_streamLock);
+
+  /* remove the stream from the paused stream list */
+  for(StreamList::iterator itt = m_pausedStreams.begin(); itt != m_pausedStreams.end(); ++itt)
+  {
+    if (*itt == stream) {
+      m_pausedStreams.erase(itt);
+      break;
+    }
+  }
+
+  /* add the stream to the running stream list */
+  m_streams.push_back(stream);
+}
+
 void CSoftAE::Stop()
 {
   m_running = false;
@@ -547,7 +616,12 @@ IAEStream *CSoftAE::MakeStream(enum AEDataFormat dataFormat, unsigned int sample
   CSingleLock streamLock(m_streamLock);
   bool wasEmpty = m_streams.empty();
   CSoftAEStream *stream = new CSoftAEStream(dataFormat, sampleRate, channelLayout, options);
-  m_streams.push_back(stream);
+
+  if (options && AESTREAM_PAUSED != 0)
+    m_pausedStreams.push_back(stream);
+  else
+    m_streams.push_back(stream);
+
   streamLock.Leave();
 
   if (AE_IS_RAW(dataFormat))
@@ -973,6 +1047,7 @@ void CSoftAE::RunTranscodeStage()
 unsigned int CSoftAE::RunStreamStage(unsigned int channelCount, void *out, bool &restart)
 {
   CSingleLock streamLock(m_streamLock);
+  StreamList resumeStreams;
 
   if (m_rawPassthrough)
   {
@@ -997,14 +1072,12 @@ unsigned int CSoftAE::RunStreamStage(unsigned int channelCount, void *out, bool 
         continue;
       }
 
-      /* skip paused streams */
-      if (sitt->IsPaused()) {
-        ++itt;
-        continue;
-      }
-
       /* consume data from streams even though we cant use it */
       sitt->GetFrame();
+         
+      if (sitt->IsDrained() && sitt->m_slave && sitt->m_slave->IsPaused())
+        resumeStreams.push_back(sitt);
+
       ++itt;
     }
 
@@ -1015,27 +1088,40 @@ unsigned int CSoftAE::RunStreamStage(unsigned int channelCount, void *out, bool 
       return 0;
     }
 
-    /* if the stream is paused do nothing */
-    if (stream->IsPaused())
-      return 0;
-
     /* get the frame and append it to the output */
     uint8_t *frame = stream->GetFrame();
-    if (!frame) return 0;
+    if (!frame)
+      return 0;
+
     memcpy(out, frame, m_sinkFormat.m_frameSize);
+
+    if (stream->IsDrained() && stream->m_slave && stream->m_slave->IsPaused())
+      resumeStreams.push_back(stream);
+
+    streamLock.Leave();
+
+    /* resume any streams that need to be */
+    for(StreamList::iterator itt = resumeStreams.begin(); itt != resumeStreams.end(); ++itt)
+    {
+      CSoftAEStream *stream = *itt;
+      m_pausedStreams.remove(stream->m_slave);
+      m_streams.push_back(stream->m_slave);
+      stream->m_slave->m_paused = false;
+      stream->m_slave = NULL;
+    }
+
     return 1;
   }
 
   float *dst = (float*)out;
   unsigned int mixed = 0;
 
-  /* get a list of unpaused streams */
-  StreamList unpaused;
+  /* mix in any running streams */
   for(StreamList::iterator itt = m_streams.begin(); itt != m_streams.end();)
   {
     CSoftAEStream *stream = *itt;
 
-    /* skip streams that are flagged for deletion */
+    /* remove streams that are flagged for deletion */
     if (stream->IsDestroyed())
     {
       itt = m_streams.erase(itt);
@@ -1043,28 +1129,15 @@ unsigned int CSoftAE::RunStreamStage(unsigned int channelCount, void *out, bool 
       continue;
     }
 
-    /* dont process streams that are paused */
-    if (stream->IsPaused())
-    {
-      ++itt;
-      continue;
-    }
-
-    unpaused.push_back(stream);
-    ++itt;
-  }
-
-  /* mix in any running streams */
-  for(StreamList::iterator itt = unpaused.begin(); itt != unpaused.end();)
-  {
-    CSoftAEStream *stream = *itt;
-
     float *frame = (float*)stream->GetFrame();
     if (!frame)
     {
       ++itt;
       continue;
     }
+
+    if (stream->IsDrained() && stream->m_slave && stream->m_slave->IsPaused())
+      resumeStreams.push_back(stream);
 
     float volume = stream->GetVolume() * stream->GetReplayGain();
     #ifdef __SSE__
@@ -1079,6 +1152,16 @@ unsigned int CSoftAE::RunStreamStage(unsigned int channelCount, void *out, bool 
 
     ++mixed;
     ++itt;
+  }
+
+  /* resume any streams that need to be */
+  for(StreamList::iterator itt = resumeStreams.begin(); itt != resumeStreams.end(); ++itt)
+  {
+    CSoftAEStream *stream = *itt;
+    m_pausedStreams.remove(stream->m_slave);
+    m_streams.push_back(stream->m_slave);
+    stream->m_slave->m_paused = false;
+    stream->m_slave = NULL;
   }
 
   return mixed;

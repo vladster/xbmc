@@ -93,6 +93,10 @@ public:
   virtual void EnumerateOutputDevices(AEDeviceList &devices, bool passthrough);
   virtual bool SupportsRaw();
 
+  /* internal stream methods */
+  void PauseStream (CSoftAEStream *stream);
+  void ResumeStream(CSoftAEStream *stream);
+
 #ifdef __SSE__
   inline static void SSEMulAddArray(float *data, float *add, const float mul, uint32_t count);
   inline static void SSEMulArray   (float *data, const float mul, uint32_t count);
@@ -154,7 +158,7 @@ private:
   /* the streams, sounds, output buffer and output buffer fill size */
   bool           m_transcode;
   bool           m_rawPassthrough;
-  StreamList     m_streams;
+  StreamList     m_streams, m_pausedStreams;
   SoundList      m_sounds;
   SoundStateList m_playing_sounds;
 

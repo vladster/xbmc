@@ -461,13 +461,6 @@ uint8_t* CSoftAEStream::GetFrame()
     }
   }
 
-  /* if we are draining and are out of packets, tell the slave to resume */
-  if (m_draining && m_slave && !m_packet.samples && m_outBuffer.empty())
-  {
-    m_slave->Resume();
-    m_slave = NULL;
-  }
-
   return ret;
 }
 
@@ -488,6 +481,20 @@ float CSoftAEStream::GetCacheTotal()
 {
   if (m_delete) return 0.0f;
   return (float)m_waterLevel / (float)AE.GetSampleRate();
+}
+
+void CSoftAEStream::Pause()
+{
+  if (m_paused) return;
+  m_paused = true;
+  AE.PauseStream(this);
+}
+
+void CSoftAEStream::Resume()
+{
+  if (!m_paused) return;
+  m_paused = false;
+  AE.ResumeStream(this);
 }
 
 void CSoftAEStream::Drain()
@@ -613,6 +620,6 @@ bool CSoftAEStream::IsFading()
 void CSoftAEStream::RegisterSlave(IAEStream *slave)
 {
   CSharedLock lock(m_lock);
-  m_slave = slave;
+  m_slave = (CSoftAEStream*)slave;
 }
 

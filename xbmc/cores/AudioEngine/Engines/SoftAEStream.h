@@ -55,8 +55,8 @@ public:
   virtual float             GetCacheTime    ();
   virtual float             GetCacheTotal   ();
 
-  virtual void              Pause           () { m_paused = true;  }
-  virtual void              Resume          () { m_paused = false; }
+  virtual void              Pause           ();
+  virtual void              Resume          ();
   virtual void              Drain           ();
   virtual bool              IsDraining      () { return m_draining;    }
   virtual bool              IsDrained       ();
@@ -147,6 +147,6 @@ private:
   unsigned int       m_fadeTime;
 
   /* slave stream */
-  IAEStream         *m_slave;
+  CSoftAEStream     *m_slave;
 };
 

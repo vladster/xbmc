@@ -85,13 +85,10 @@ CAESinkWASAPI::CAESinkWASAPI() :
 
 CAESinkWASAPI::~CAESinkWASAPI()
 {
-  Deinitialize();
 }
 
 bool CAESinkWASAPI::Initialize(AEAudioFormat &format, CStdString &device)
 {
-  CSingleLock lock(m_runLock);
-
   if(m_initialized) return false;
 
   m_device = device;
@@ -226,7 +223,9 @@ void CAESinkWASAPI::Deinitialize()
 {
   if(!m_initialized) return;
 
-  Stop();
+  if(m_running)
+    m_pAudioClient->Stop();
+  m_running = false;
 
   SAFE_RELEASE(m_pRenderClient);
   SAFE_RELEASE(m_pAudioClient);
@@ -238,7 +237,6 @@ void CAESinkWASAPI::Deinitialize()
 
 bool CAESinkWASAPI::IsCompatible(const AEAudioFormat format, const CStdString device)
 {
-  CSingleLock lock(m_runLock);
   if(!m_initialized) return false;
 
   bool excSetting = g_guiSettings.GetBool("audiooutput.useexclusivemode");
@@ -268,20 +266,8 @@ bool CAESinkWASAPI::IsCompatible(const AEAudioFormat format, const CStdString de
   return false;
 }
 
-void CAESinkWASAPI::Stop()
-{
-  CSingleLock lock(m_runLock);
-  if(!m_initialized) return;
-
-  if(m_running)
-    m_pAudioClient->Stop();
-
-  m_running = false;
-}
-
 float CAESinkWASAPI::GetDelay()
 {
-//  CSingleLock lock(m_runLock);
   if(!m_initialized) return 0.0f;
 
   UINT32 frames;
@@ -291,13 +277,11 @@ float CAESinkWASAPI::GetDelay()
 
 unsigned int CAESinkWASAPI::AddPackets(uint8_t *data, unsigned int frames)
 {
-  CSingleLock lock(m_runLock);
   if(!m_initialized) return 0;
 
-  HRESULT hr;
+  /* block until there is room for data */
   UINT32 waitFor;
   unsigned int use;
-
   while(TRUE)
   {
     m_pAudioClient->GetCurrentPadding(&waitFor);
@@ -307,8 +291,8 @@ unsigned int CAESinkWASAPI::AddPackets(uint8_t *data, unsigned int frames)
     WaitForSingleObject(m_needDataEvent, INFINITE);
   }
 
+  HRESULT hr;
   BYTE *buf;
-
   if (SUCCEEDED(hr = m_pRenderClient->GetBuffer(use, &buf)))
   {
     memcpy(buf, data, use*m_format.m_frameSize);

@@ -534,9 +534,9 @@ bool CAESinkWASAPI::InitializeShared(AEAudioFormat &format)
   //For audio stability make sure we have at least an 8ms buffer.
   if(hnsPeriodicity < 80000) hnsPeriodicity = 80000;
 
-  hnsRequestedDuration = hnsPeriodicity*8;
+  hnsRequestedDuration = hnsPeriodicity;
 
-  if (FAILED(hr = m_pAudioClient->Initialize(AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_EVENTCALLBACK, hnsRequestedDuration, 0, &wfxex->Format, NULL)))
+  if (FAILED(hr = m_pAudioClient->Initialize(AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_EVENTCALLBACK, hnsRequestedDuration, hnsPeriodicity, &wfxex->Format, NULL)))
   {
     CLog::Log(LOGERROR, __FUNCTION__": Initialize failed (%s)", WASAPIErrToStr(hr));
     CoTaskMemFree(wfxex);
@@ -651,7 +651,7 @@ initialize:
   //For audio stability make sure we have at least an 8ms buffer.
   if(hnsPeriodicity < 80000) hnsPeriodicity = 80000;
 
-  hnsRequestedDuration = hnsPeriodicity * 8;
+  hnsRequestedDuration = hnsPeriodicity;
 
   CLog::Log(LOGDEBUG, __FUNCTION__": Initializing WASAPI exclusive mode with the following parameters:");
   CLog::Log(LOGDEBUG, "  Sample Rate   : %d", format.m_sampleRate);

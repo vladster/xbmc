@@ -621,7 +621,7 @@ IAEStream *CSoftAE::MakeStream(enum AEDataFormat dataFormat, unsigned int sample
   bool wasEmpty = m_streams.empty();
   CSoftAEStream *stream = new CSoftAEStream(dataFormat, sampleRate, channelLayout, options);
 
-  if (options && AESTREAM_PAUSED != 0)
+  if ((options & AESTREAM_PAUSED) != 0)
     m_pausedStreams.push_back(stream);
   else
     m_streams.push_back(stream);

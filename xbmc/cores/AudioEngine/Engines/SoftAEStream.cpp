@@ -316,6 +316,12 @@ unsigned int CSoftAEStream::ProcessFrameBuffer()
     consumed = frames * m_bytesPerFrame;
   }
 
+  if (m_refillBuffer)
+  {
+    if (frames > m_refillBuffer) m_refillBuffer = 0;
+    else m_refillBuffer -= frames;
+  }
+
   /* buffer the data */
   m_framesBuffered += frames;
   while(samples)
@@ -372,9 +378,6 @@ unsigned int CSoftAEStream::ProcessFrameBuffer()
     }
   }
 
-  if (m_refillBuffer)
-    m_refillBuffer = (unsigned int)std::max((int)m_refillBuffer - (int)frames, 0);
-
   return consumed;
 }
 
@@ -419,7 +422,7 @@ uint8_t* CSoftAEStream::GetFrame()
       else
       {
         /* underrun, we need to refill our buffers */
-        m_refillBuffer = m_waterLevel;
+        m_refillBuffer = m_waterLevel - m_framesBuffered;
         CLog::Log(LOGDEBUG, "CSoftAEStream::GetFrame - Underrun");
         return NULL;
       }

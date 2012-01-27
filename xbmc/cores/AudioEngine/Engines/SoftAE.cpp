@@ -571,7 +571,7 @@ void CSoftAE::PauseStream(CSoftAEStream *stream)
   CSingleLock streamLock(m_streamLock);
 
   /* remove the stream from the running stream list */
-  for(StreamList::iterator itt = m_pausedStreams.begin(); itt != m_streams.end(); ++itt)
+  for(StreamList::iterator itt = m_pausedStreams.begin(); itt != m_pausedStreams.end(); ++itt)
   {
     if (*itt == stream) {
       m_streams.erase(itt);

@@ -116,7 +116,7 @@ private:
   IAESink *GetSink(AEAudioFormat &desiredFormat, bool passthrough, CStdString &device);
   void StopAllSounds();
 
-  unsigned int m_delayFrames;
+  unsigned int m_delayTime;
   void DelayFrames();
 
   enum AEStdChLayout m_stdChLayout;

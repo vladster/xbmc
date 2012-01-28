@@ -29,6 +29,8 @@
 #include "settings/GUISettings.h"
 #include "settings/Settings.h"
 #include "settings/AdvancedSettings.h"
+#include "guilib/LocalizeStrings.h"
+#include "dialogs/GUIDialogKaiToast.h"
 #include "DllAvCore.h"
 
 #include "SoftAE.h"
@@ -38,12 +40,6 @@
 #include "Interfaces/AESink.h"
 #include "Utils/AEUtil.h"
 #include "Encoders/AEEncoderFFmpeg.h"
-
-/*
-  frame delay time in milliseconds when there is no sink
-  must NOT be less then 4
-*/
-#define DELAY_FRAME_TIME 20
 
 using namespace std;
 
@@ -71,6 +67,7 @@ CSoftAE::CSoftAE():
   m_convertedSize      (0    ),
   m_streamStageFn      (NULL )
 {
+
 }
 
 CSoftAE::~CSoftAE()
@@ -286,9 +283,18 @@ bool CSoftAE::OpenSink()
       else
         newFormat.m_channelLayout = m_stdChLayout;
       newFormat.m_dataFormat    = (m_rawPassthrough || m_transcode) ? AE_FMT_S16NE : AE_FMT_FLOAT;
-      newFormat.m_frames        = (unsigned int)(((float)newFormat.m_sampleRate / 1000.0f) * (float)DELAY_FRAME_TIME);
+      newFormat.m_frames        = newFormat.m_sampleRate / 10; /* 100ms of audio */
       newFormat.m_frameSamples  = newFormat.m_frames * newFormat.m_channelLayout.Count();
       newFormat.m_frameSize     = (CAEUtil::DataFormatToBits(newFormat.m_dataFormat) >> 3) * newFormat.m_channelLayout.Count();
+      m_delayTime               = 100;
+
+      CGUIDialogKaiToast::QueueNotification(
+        CGUIDialogKaiToast::Error,
+        g_localizeStrings.Get(34402),
+        g_localizeStrings.Get(34403),
+        TOAST_DISPLAY_TIME,
+        false
+      );
     }
 
     CLog::Log(LOGINFO, "CSoftAE::Initialize - %s Initialized:", m_sink ? m_sink->GetName() : "NULL");
@@ -452,6 +458,7 @@ bool CSoftAE::Initialize()
   m_running = true;
   m_thread  = new CThread(this);
   m_thread->Create();
+  m_thread->SetPriority(THREAD_PRIORITY_ABOVE_NORMAL);
 
   return true;
 }
@@ -582,12 +589,7 @@ bool CSoftAE::SupportsRaw()
 /* this is used when there is no sink to prevent us running too fast */
 void CSoftAE::DelayFrames()
 {
-  /*
-    since there is no audio, this does not need to be exact
-    but less then the actual by a little to cope with system
-    overheads otherwise the video output is jerky
-  */
-  Sleep(DELAY_FRAME_TIME - 4);
+  Sleep(m_delayTime);
 }
 
 void CSoftAE::PauseStream(CSoftAEStream *stream)

@@ -916,9 +916,7 @@ void CSoftAE::FinalizeSamples(float *buffer, unsigned int samples)
   MixSounds(buffer, samples);
 
   #ifdef __SSE__
-    CAEUtil::SSEMulArray(buffer, m_volume, samples);
-    for(unsigned int i = 0; i < samples; ++i)
-      buffer[i] = CAEUtil::SoftClamp(buffer[i]);
+    CAEUtil::SSEMulClampArray(buffer, m_volume, samples);
   #else
     for(unsigned int i = 0; i < samples; ++i)
       buffer[i] = CAEUtil::SoftClamp(buffer[i] * m_volume);

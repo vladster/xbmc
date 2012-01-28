@@ -194,6 +194,91 @@ void CAEUtil::SSEMulAddArray(float *data, float *add, const float mul, uint32_t 
   }
 }
 
+void CAEUtil::SSEMulClampArray(float *data, const float mul, uint32_t count)
+{
+  const __m128 m  = _mm_set_ps1(mul);
+  const __m128 c1 = _mm_set_ps1(27.0f);
+  const __m128 c2 = _mm_set_ps1(27.0f + 9.0f);
+
+  /* work around invalid alignment */
+  while(((uintptr_t)data & 0xF) && count > 0)
+  {
+    data[0] = SoftClamp(data[0] * mul);
+    ++data;
+    --count;
+  }
+
+  uint32_t even = count & ~0x3;
+  for(uint32_t i = 0; i < even; i+=4, data+=4)
+  {
+    /* mul */
+    __m128 to = _mm_load_ps(data);
+    __m128 dt = _mm_mul_ps(to, m);
+
+    /* tanh approx clamp */
+    __m128 tmp     = _mm_mul_ps(dt, dt);
+    *(__m128*)data = _mm_div_ps(
+      _mm_mul_ps(
+        dt,
+        _mm_add_ps(c1, tmp)
+      ),
+      _mm_add_ps(c2, tmp)
+    );
+  }
+
+  if (even != count)
+  {
+    uint32_t odd = count - even;
+    if (odd == 1)
+      data[0] = SoftClamp(data[0] * mul);
+    else
+    {
+      __m128 to;
+      __m128 dt;
+      __m128 tmp;
+      __m128 out;
+      if (odd == 2)
+      {
+        /* mul */
+        to = _mm_setr_ps(data[0], data[1], 0, 0);
+        dt = _mm_mul_ps(to, m);
+        
+        /* tanh approx clamp */
+        tmp = _mm_mul_ps(dt, dt);
+        out = _mm_div_ps(
+          _mm_mul_ps(
+            dt,
+            _mm_add_ps(c1, tmp)
+          ),
+          _mm_add_ps(c2, tmp)
+        );
+
+        data[0] = ((float*)&out)[0];
+        data[1] = ((float*)&out)[1];
+      }
+      else
+      {
+        to = _mm_setr_ps(data[0], data[1], data[2], 0);
+        dt = _mm_mul_ps(to, m);
+
+        /* tanh approx clamp */
+        tmp = _mm_mul_ps(dt, dt);
+        out = _mm_div_ps(
+          _mm_mul_ps(
+            dt,
+            _mm_add_ps(c1, tmp)
+          ),
+          _mm_add_ps(c2, tmp)
+        );
+
+        data[0] = ((float*)&out)[0];
+        data[1] = ((float*)&out)[1];
+        data[2] = ((float*)&out)[2];
+      }
+    }
+  }
+}
+
 void CAEUtil::SSEMulArray(float *data, const float mul, uint32_t count)
 {
   const __m128 m = _mm_set_ps1(mul);

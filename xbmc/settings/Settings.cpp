@@ -55,7 +55,6 @@
 #include "utils/URIUtils.h"
 #include "input/MouseStat.h"
 #include "filesystem/File.h"
-#include "addons/AddonManager.h"
 
 using namespace std;
 using namespace XFILE;
@@ -722,6 +721,7 @@ bool CSettings::LoadSettings(const CStdString& strSettingsFile)
   pElement = pRootElement->FirstChildElement("audio");
   if (pElement)
   {
+    XMLUtils::GetBoolean(pElement, "mute", m_bMute);
     GetFloat(pElement, "fvolumelevel", m_fVolumeLevel, VOLUME_MAXIMUM, VOLUME_MINIMUM, VOLUME_MAXIMUM);
   }
 
@@ -897,6 +897,7 @@ bool CSettings::SaveSettings(const CStdString& strSettingsFile, CGUISettings *lo
   TiXmlElement volumeNode("audio");
   pNode = pRoot->InsertEndChild(volumeNode);
   if (!pNode) return false;
+  XMLUtils::SetBoolean(pNode, "mute", m_bMute);
   XMLUtils::SetFloat(pNode, "volumelevel", m_fVolumeLevel);
 
   SaveCalibration(pRoot);
@@ -942,7 +943,7 @@ bool CSettings::LoadProfile(unsigned int index)
     CStdString strLanguagePath;
     strLanguagePath.Format("special://xbmc/language/%s/strings.xml", strLanguage.c_str());
 
-    CButtonTranslator::GetInstance().Load();
+    CButtonTranslator::GetInstance().Load(true);
     g_localizeStrings.Load(strLanguagePath);
 
     g_Mouse.SetEnabled(g_guiSettings.GetBool("input.enablemouse"));
@@ -972,8 +973,6 @@ bool CSettings::LoadProfile(unsigned int index)
 
     CUtil::DeleteMusicDatabaseDirectoryCache();
     CUtil::DeleteVideoDatabaseDirectoryCache();
-
-    ADDON::CAddonMgr::Get().StartServices(false);
 
     return true;
   }

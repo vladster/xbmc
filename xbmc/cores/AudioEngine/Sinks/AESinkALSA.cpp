@@ -39,7 +39,7 @@ static enum AEChannel ALSAChannelMap[9] =
   {AE_CH_FL, AE_CH_FR, AE_CH_BL, AE_CH_BR, AE_CH_FC, AE_CH_LFE, AE_CH_SL, AE_CH_SR, AE_CH_NULL};
 
 CAESinkALSA::CAESinkALSA() :
-  m_pcm(NULL )
+  m_pcm(NULL)
 {
   /* ensure that ALSA has been initialized */
   if(!snd_config)
@@ -303,10 +303,10 @@ bool CAESinkALSA::InitializeHW(AEAudioFormat &format)
     }
   }
 
-  unsigned int frames  = sampleRate / 1000; /* 1 ms of audio */
-  unsigned int periods = ALSA_PERIODS;
+  unsigned int framesPerMs  = sampleRate / 1000; /* 1 ms of audio */
+  unsigned int periods      = ALSA_PERIODS;
 
-  snd_pcm_uframes_t periodSize = frames * 4; /* 4 ms */
+  snd_pcm_uframes_t periodSize = framesPerMs * 4; /* 4 ms */
   snd_pcm_uframes_t bufferSize = periodSize * periods;
 
   /* work on a copy of the hw params */
@@ -356,7 +356,8 @@ bool CAESinkALSA::InitializeHW(AEAudioFormat &format)
   format.m_frames       = snd_pcm_bytes_to_frames(m_pcm, periodSize);
   format.m_frameSamples = format.m_frames * format.m_channelLayout.Count();
   format.m_frameSize    = snd_pcm_frames_to_bytes(m_pcm, 1);
-  m_timeout             = -1;//((float)format.m_frames / sampleRate * 1000.0f) * 2;
+  m_timeout             = m_format.m_frames / framesPerMs;
+  CLog::Log(LOGDEBUG, "CAESinkALSA::InitializeHW - Setting timeout to %d ms", m_timeout);
 
   snd_pcm_hw_params_free(hw_params_copy);
   snd_pcm_hw_params_free(hw_params    );

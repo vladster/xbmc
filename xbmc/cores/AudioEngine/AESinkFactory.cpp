@@ -35,6 +35,7 @@
 #else
   #pragma message("NOTICE: No audio sink for target platform.  Audio output will not be available.")
 #endif
+#include "Sinks/AESinkProfiler.h"
 
 void CAESinkFactory::ParseDevice(CStdString &device, CStdString &driver)
 {
@@ -55,7 +56,8 @@ void CAESinkFactory::ParseDevice(CStdString &device, CStdString &driver)
         driver == "WASAPI"      ||
         driver == "DIRECTSOUND" ||
 #endif
-        false)
+        driver == "PROFILER"
+        )
       device = device.substr(pos + 1, device.length() - pos - 1);
     else
       driver.Empty();
@@ -91,6 +93,10 @@ IAESink *CAESinkFactory::Create(CStdString &device, AEAudioFormat &desiredFormat
 #endif
   CStdString     tmpDevice;
 
+  if (driver == "PROFILER")
+    TRY_SINK(Profiler);
+
+
 #ifdef _WIN32
 
   if ((driver.IsEmpty() && g_sysinfo.IsVistaOrHigher() && !g_advancedSettings.m_audioForceDirectSound) || driver == "WASAPI")
@@ -107,7 +113,7 @@ IAESink *CAESinkFactory::Create(CStdString &device, AEAudioFormat &desiredFormat
   #endif
   if (driver.IsEmpty() || driver == "OSS")
     TRY_SINK(OSS)
-    
+  
   /* no need to try others as both will have been attempted if driver is empty */
   if (driver.IsEmpty())
     return NULL;

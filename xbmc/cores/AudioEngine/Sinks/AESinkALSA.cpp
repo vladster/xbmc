@@ -441,14 +441,37 @@ unsigned int CAESinkALSA::AddPackets(uint8_t *data, unsigned int frames)
   int ret = snd_pcm_writei(m_pcm, (void*)data, frames);
   if (ret < 0)
   {
-    if (ret == -EPIPE)
+    switch(ret)
     {
-      CLog::Log(LOGERROR, "CAESinkALSA::AddPackets - Underrun");
-      if (snd_pcm_prepare(m_pcm) < 0)
-        return 0;
+      case -EPIPE:
+        CLog::Log(LOGERROR, "CAESinkALSA::AddPackets - Underrun");
+         if ((ret = snd_pcm_prepare(m_pcm)) < 0)
+        {
+          CLog::Log(LOGERROR, "CAESinkALSA::AddPackets - snd_pcm_prepare returned %d (%s)", ret, snd_strerror(ret));
+          return 0;
+        }
+        break;
+
+      case -ESTRPIPE:
+        CLog::Log(LOGINFO, "CAESinkALSA::AddPackets - Resuming after suspend");
+
+        /* try to resume the stream */
+        while((ret = snd_pcm_resume(m_pcm)) == -EAGAIN)
+          Sleep(1);
+
+        /* if the hardware doesnt support resume, prepare the stream */
+        if (ret == -ENOSYS)
+        {
+          if ((ret = snd_pcm_prepare(m_pcm)) < 0)
+          {
+            CLog::Log(LOGERROR, "CAESinkALSA::AddPackets - snd_pcm_prepare returned %d (%s)", ret, snd_strerror(ret));
+            return 0;
+          }
+        }      
+        break;
     }
 
-    CLog::Log(LOGERROR, "CAESinkALSA::AddPackets - snd_pcm_writei returned %d", ret);
+    CLog::Log(LOGERROR, "CAESinkALSA::AddPackets - snd_pcm_writei returned %d (%s)", ret, snd_strerror(ret));
     return 0;
   }
 

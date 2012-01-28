@@ -29,11 +29,13 @@
 #include "Utils/AEUtil.h"
 #include "utils/StdString.h"
 #include "utils/log.h"
+#include "utils/MathUtils.h"
 #include "threads/SingleLock.h"
 #include "settings/GUISettings.h"
 
 #define ALSA_OPTIONS (SND_PCM_NONBLOCK | SND_PCM_NO_AUTO_FORMAT | SND_PCM_NO_AUTO_RESAMPLE)
-#define ALSA_PERIODS 32
+#define PERIOD_SIZE_MS 20
+#define ALSA_PERIODS   2
 
 static enum AEChannel ALSAChannelMap[9] =
   {AE_CH_FL, AE_CH_FR, AE_CH_BL, AE_CH_BR, AE_CH_FC, AE_CH_LFE, AE_CH_SL, AE_CH_SR, AE_CH_NULL};
@@ -91,6 +93,9 @@ CStdString CAESinkALSA::GetDeviceUse(AEAudioFormat format, CStdString device, bo
   else
     cardName.Empty();
 
+  if (device != "default" && !SoundDeviceExists(device))
+    device = "default";
+
   if (AE_IS_RAW(format.m_dataFormat) || passthrough)
   {
     if (device == "default")
@@ -101,21 +106,18 @@ CStdString CAESinkALSA::GetDeviceUse(AEAudioFormat format, CStdString device, bo
         device = "iec958";
     }
 
-//    if (device == "iec958")
-    {
-      if (cardName.IsEmpty())
-        device += ":AES0=0x06,AES1=0x82,AES2=0x00";
-      else
-        device += ",AES0=0x06,AES1=0x82,AES2=0x00";
-           if (format.m_sampleRate == 192000) device += ",AES3=0x0e";
-      else if (format.m_sampleRate == 176400) device += ",AES3=0x0c";
-      else if (format.m_sampleRate ==  96000) device += ",AES3=0x0a";
-      else if (format.m_sampleRate ==  88200) device += ",AES3=0x08";
-      else if (format.m_sampleRate ==  48000) device += ",AES3=0x02";
-      else if (format.m_sampleRate ==  44100) device += ",AES3=0x00";
-      else if (format.m_sampleRate ==  32000) device += ",AES3=0x03";
-      else device += ",AES3=0x01";
-    }
+    if (cardName.IsEmpty())
+      device += ":AES0=0x06,AES1=0x82,AES2=0x00";
+    else
+      device += ",AES0=0x06,AES1=0x82,AES2=0x00";
+         if (format.m_sampleRate == 192000) device += ",AES3=0x0e";
+    else if (format.m_sampleRate == 176400) device += ",AES3=0x0c";
+    else if (format.m_sampleRate ==  96000) device += ",AES3=0x0a";
+    else if (format.m_sampleRate ==  88200) device += ",AES3=0x08";
+    else if (format.m_sampleRate ==  48000) device += ",AES3=0x02";
+    else if (format.m_sampleRate ==  44100) device += ",AES3=0x00";
+    else if (format.m_sampleRate ==  32000) device += ",AES3=0x03";
+    else device += ",AES3=0x01";
   }
 
   if (device == "default" && g_guiSettings.GetInt("audiooutput.mode") == AUDIO_HDMI)
@@ -303,10 +305,10 @@ bool CAESinkALSA::InitializeHW(AEAudioFormat &format)
     }
   }
 
-  unsigned int framesPerMs  = sampleRate / 1000; /* 1 ms of audio */
-  unsigned int periods      = ALSA_PERIODS;
+  unsigned int framesPerMs = sampleRate / 1000; /* 1 ms of audio */
+  unsigned int periods     = ALSA_PERIODS;
 
-  snd_pcm_uframes_t periodSize = framesPerMs * 4; /* 4 ms */
+  snd_pcm_uframes_t periodSize = framesPerMs * PERIOD_SIZE_MS;
   snd_pcm_uframes_t bufferSize = periodSize * periods;
 
   /* work on a copy of the hw params */
@@ -353,10 +355,10 @@ bool CAESinkALSA::InitializeHW(AEAudioFormat &format)
 
   /* set the format parameters */
   format.m_sampleRate   = sampleRate;
-  format.m_frames       = snd_pcm_bytes_to_frames(m_pcm, periodSize);
-  format.m_frameSamples = format.m_frames * format.m_channelLayout.Count();
+  format.m_frames       = periodSize;
+  format.m_frameSamples = periodSize * format.m_channelLayout.Count();
   format.m_frameSize    = snd_pcm_frames_to_bytes(m_pcm, 1);
-  m_timeout             = m_format.m_frames / framesPerMs;
+  m_timeout             = MathUtils::truncate_int((float)format.m_frames / (float)framesPerMs + 0.5f);
   CLog::Log(LOGDEBUG, "CAESinkALSA::InitializeHW - Setting timeout to %d ms", m_timeout);
 
   snd_pcm_hw_params_free(hw_params_copy);
@@ -462,7 +464,7 @@ void CAESinkALSA::Drain()
   snd_pcm_nonblock(m_pcm, 1);
 }
 
-void CAESinkALSA::EnumerateDevices (AEDeviceList &devices, bool passthrough)
+void CAESinkALSA::EnumerateDevices(AEDeviceList &devices, bool passthrough)
 {
   if (!passthrough)
   {

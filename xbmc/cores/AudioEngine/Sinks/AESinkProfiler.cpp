@@ -43,10 +43,12 @@ bool CAESinkProfiler::Initialize(AEAudioFormat &format, CStdString &device)
   if (AE_IS_RAW(format.m_dataFormat))
     return false;
 
-  format.m_dataFormat   = AE_FMT_FLOAT;
-  format.m_frames       = 128;
-  format.m_frameSamples = format.m_channelLayout.Count();
-  format.m_frameSize    = format.m_frameSamples * sizeof(float);
+  format.m_sampleRate    = 192000;
+  format.m_channelLayout = AE_CH_LAYOUT_7_1;
+  format.m_dataFormat    = AE_FMT_S32LE;
+  format.m_frames        = 30720;
+  format.m_frameSamples  = format.m_channelLayout.Count();
+  format.m_frameSize     = format.m_frameSamples * sizeof(float);
   return true;
 }
 

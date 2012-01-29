@@ -27,6 +27,8 @@
 
 #ifdef __SSE__
 #include <xmmintrin.h>
+#else
+#define __m128 void
 #endif
 
 #ifdef __GNUC__

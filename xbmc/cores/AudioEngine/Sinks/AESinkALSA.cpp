@@ -309,7 +309,7 @@ bool CAESinkALSA::InitializeHW(AEAudioFormat &format)
   unsigned int periods     = ALSA_PERIODS;
 
   snd_pcm_uframes_t periodSize = framesPerMs * PERIOD_SIZE_MS;
-  snd_pcm_uframes_t bufferSize = periodSize * periods;
+  snd_pcm_uframes_t bufferSize = periodSize  * periods;
 
   /* work on a copy of the hw params */
   snd_pcm_hw_params_t *hw_params_copy;
@@ -358,7 +358,7 @@ bool CAESinkALSA::InitializeHW(AEAudioFormat &format)
   format.m_frames       = periodSize;
   format.m_frameSamples = periodSize * format.m_channelLayout.Count();
   format.m_frameSize    = snd_pcm_frames_to_bytes(m_pcm, 1);
-  m_timeout             = MathUtils::round_int(((float)format.m_frames / (float)framesPerMs) * 1.5f);
+  m_timeout             = MathUtils::round_int(((float)format.m_frames / (float)framesPerMs) * (float)periods);
   CLog::Log(LOGDEBUG, "CAESinkALSA::InitializeHW - Setting timeout to %d ms", m_timeout);
 
   snd_pcm_hw_params_free(hw_params_copy);

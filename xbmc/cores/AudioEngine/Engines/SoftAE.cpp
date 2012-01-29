@@ -45,7 +45,7 @@ using namespace std;
 
 CSoftAE::CSoftAE():
   m_thread             (NULL ),
-  m_preferSeemless     (true ),
+  m_audiophile         (true ),
   m_running            (false),
   m_reOpened           (false),
   m_chLayoutCount      (0    ),
@@ -190,13 +190,10 @@ bool CSoftAE::OpenSink()
     ++itt;
   }
 
-  /* if we dont have a master stream, choose one based on the seemless setting */
-  if (!masterStream)
-  {
-         if (!m_streams      .empty()) masterStream = m_preferSeemless ? m_streams      .front() : m_streams      .back();
-    else if (!m_pausedStreams.empty()) masterStream = m_preferSeemless ? m_pausedStreams.front() : m_pausedStreams.back();
-  }
-
+  /* if we dont have a master stream, choose one based on the audiophile setting */
+  if (!masterStream && !m_streams.empty() || m_streams.size() && m_audiophile &&!m_streams.empty())
+    masterStream = m_audiophile ? m_streams.back() : m_streams.front();
+ 
   /* the desired format */
   AEAudioFormat newFormat;
 
@@ -654,10 +651,10 @@ IAEStream *CSoftAE::MakeStream(enum AEDataFormat dataFormat, unsigned int sample
 
   streamLock.Leave();
 
-  if (AE_IS_RAW(dataFormat))
-    OpenSink();
-  else if (wasEmpty || !m_preferSeemless)
-    OpenSink();
+  if ((AE_IS_RAW(dataFormat)) || wasEmpty || m_audiophile) 
+  {
+	  OpenSink();
+  }
 
   /* if the stream was not initialized, do it now */
   if (!stream->IsValid())

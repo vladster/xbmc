@@ -67,6 +67,7 @@ private:
   bool                m_running;
   bool                m_initialized;
   bool                m_isExclusive;
-
-  unsigned int        m_uiBufferLen; // wasapi endpoint buffer size, in frames
+  
+  unsigned int        m_uiBufferLen;  // wasapi endpoint buffer size, in frames
+  double              avgTimeWaiting; // time between next buffer of data from SoftAE and driver call for data
 };

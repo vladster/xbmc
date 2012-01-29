@@ -85,7 +85,7 @@ class CAdvancedSettings
     bool m_dvdplayerIgnoreDTSinWAV;
     int m_audioResample;
     bool m_audioForceDirectSound;
-	CStdString m_audioTranscodeTo;
+    CStdString m_audioTranscodeTo;
     float m_limiterHold;
     float m_limiterRelease;
 

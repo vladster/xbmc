@@ -19,15 +19,11 @@
  *
  */
 
-#define __STDC_LIMIT_MACROS
 #include "AEConvert.h"
 #include "AEUtil.h"
 #include "utils/MathUtils.h"
 #include "utils/EndianSwap.h"
-
-#include <stdlib.h>
-#include <limits.h>
-#include <stdint.h>
+#include "PlatformDefs.h"
 
 #ifndef _WIN32
 #include <unistd.h>
@@ -554,9 +550,7 @@ unsigned int CAEConvert::Float_S16LE(float *data, const unsigned int samples, ui
   dst   += unaligned;
   count -= unaligned;
   
-  uint32_t i = 0;
   const uint32_t even = count & ~0x3;
-
   for(uint32_t i = 0; i < even; i += 4, data += 4, dst += 4)
   {
     /* random round to dither */
@@ -705,9 +699,7 @@ unsigned int CAEConvert::Float_S16BE(float *data, const unsigned int samples, ui
   dst   += unaligned;
   count -= unaligned;
   
-  uint32_t i = 0;
   const uint32_t even = count & ~0x3;
-
   for(uint32_t i = 0; i < even; i += 4, data += 4, dst += 4)
   {
     /* random round to dither */

@@ -191,8 +191,11 @@ bool CSoftAE::OpenSink()
   }
 
   /* if we dont have a master stream, choose one based on the audiophile setting */
-  if (!masterStream && !m_streams.empty() || m_streams.size() && m_audiophile &&!m_streams.empty())
+  if (!m_streams.empty() && (!masterStream || m_audiophile))
     masterStream = m_audiophile ? m_streams.back() : m_streams.front();
+  else
+  if (!m_pausedStreams.empty() && (!masterStream || m_audiophile))
+    masterStream = m_audiophile ? m_pausedStreams.back() : m_pausedStreams.front();
  
   /* the desired format */
   AEAudioFormat newFormat;

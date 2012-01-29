@@ -2547,6 +2547,9 @@
     <ClCompile Include="..\..\xbmc\filesystem\FileUPnP.cpp">
       <Filter>filesystem</Filter>
     </ClCompile>
+	<ClCompile Include="..\..\xbmc\storage\DetectDVDType.cpp">
+	  <Filter>storage</Filter>
+	</ClCompile>
     <ClCompile Include="..\..\xbmc\cores\AudioEngine\Engines\SoftAE.cpp">
       <Filter>cores\AudioEngine\Engines</Filter>
     </ClCompile>
@@ -2600,6 +2603,9 @@
     </ClCompile>
     <ClCompile Include="..\..\xbmc\cores\AudioEngine\Utils\AEBitstreamPacker.cpp">
       <Filter>cores\AudioEngine\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\xbmc\cores\AudioEngine\Sinks\AESinkProfiler.cpp">
+      <Filter>cores\AudioEngine\Sinks</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -5153,6 +5159,9 @@
     <ClInclude Include="..\..\xbmc\filesystem\FileUPnP.h">
       <Filter>filesystem</Filter>
     </ClInclude>
+	<ClInclude Include="..\..\xbmc\storage\DetectDVDType.h">
+	  <Filter>storage</Filter>
+	</ClInclude>
     <ClInclude Include="..\..\xbmc\cores\AudioEngine\Engines\SoftAEStream.h">
       <Filter>cores\AudioEngine\Engines</Filter>
     </ClInclude>
@@ -5227,6 +5236,9 @@
     </ClInclude>
     <ClInclude Include="..\..\xbmc\cores\AudioEngine\Utils\AEBitstreamPacker.h">
       <Filter>cores\AudioEngine\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\cores\AudioEngine\Sinks\AESinkProfiler.h">
+      <Filter>cores\AudioEngine\Sinks</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

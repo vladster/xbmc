@@ -496,6 +496,8 @@ unsigned int CAEConvert::Float_S16LE(float *data, const unsigned int samples, ui
 
   unsigned int count     = samples;
   unsigned int unaligned = (0x10 - ((uintptr_t)data & 0xF)) >> 2;
+  if (unaligned == 4)
+    unaligned = 0;
 
   /*
     if we are only out by one, dont use SSE to correct it.
@@ -645,6 +647,8 @@ unsigned int CAEConvert::Float_S16BE(float *data, const unsigned int samples, ui
 
   unsigned int count     = samples;
   unsigned int unaligned = (0x10 - ((uintptr_t)data & 0xF)) >> 2;
+  if (unaligned == 4)
+    unaligned = 0;
 
   /*
     if we are only out by one, dont use SSE to correct it.

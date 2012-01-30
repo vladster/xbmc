@@ -1108,6 +1108,29 @@ unsigned int CSoftAE::RunRawStreamStage(unsigned int channelCount, void *out, bo
     ++itt;
   }
 
+  for(itt = m_pausedStreams.begin(); itt != m_pausedStreams.end();)
+  {
+    CSoftAEStream *sitt = *itt;
+
+    /* pick out the oldest raw stream */
+    if (!stream && sitt->IsRaw())
+    {
+      stream = sitt;
+      ++itt;
+      continue;
+    }
+
+    /* if the stream is destroyed, delete it while we have the lock */
+    if (sitt->IsDestroyed())
+    {
+      itt = m_streams.erase(itt);
+      delete sitt;
+      continue;
+    }
+
+    ++itt;
+  }
+
   /* we have to restart if the current raw stream has been destroyed as the next stream may be incompatible */
   if (!stream || stream->IsDestroyed())
   {

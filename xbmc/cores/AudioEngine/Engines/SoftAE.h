@@ -160,14 +160,14 @@ private:
   /* the streams, sounds, output buffer and output buffer fill size */
   bool           m_transcode;
   bool           m_rawPassthrough;
-  StreamList     m_streams, m_pausedStreams;
+  StreamList     m_streams, m_playingStreams;
   SoundList      m_sounds;
   SoundStateList m_playing_sounds;
 
   /* this will contain either float, or uint8_t depending on if we are in raw mode or not */
-  unsigned int                              m_bufferSize;
-  void                                     *m_buffer;
-  unsigned int                              m_bufferSamples;
+  unsigned int   m_bufferSize;
+  void          *m_buffer;
+  unsigned int   m_bufferSamples;
 
   /* the encoder */
   IAEEncoder    *m_encoder;
@@ -191,11 +191,16 @@ private:
   void         RunOutputStage   ();
 
   void         RunTranscodeStage();
+
+  CSoftAEStream *m_masterStream;
   unsigned int (CSoftAE::*m_streamStageFn)(unsigned int channelCount, void *out, bool &restart);
   unsigned int RunRawStreamStage (unsigned int channelCount, void *out, bool &restart);
   unsigned int RunStreamStage    (unsigned int channelCount, void *out, bool &restart);
+
   void         ResumeStreams     (StreamList &streams);
   void         RunNormalizeStage (unsigned int channelCount, void *out, unsigned int mixed);
   void         RunBufferStage    (void *out);
+
+  void         RemoveStream(StreamList &streams, CSoftAEStream *stream);
 };
 

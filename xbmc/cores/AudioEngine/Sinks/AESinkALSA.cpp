@@ -38,7 +38,7 @@
 #define PERIOD_SIZE_MS     20
 #define PERIODS            8
 
-#define RAW_PERIOD_SIZE    32
+#define RAW_PERIOD_SIZE    64
 #define RAW_PERIODS        16
 
 #define RAW_PERIOD_SIZE_HD 256

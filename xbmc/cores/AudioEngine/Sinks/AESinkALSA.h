@@ -52,6 +52,7 @@ private:
   CAEChannelInfo GetChannelLayout(AEAudioFormat format);
   CStdString     GetDeviceUse    (const AEAudioFormat format, CStdString device, bool passthrough);
 
+  CStdString        m_initDevice;
   AEAudioFormat     m_initFormat;
   AEAudioFormat     m_format;
   bool              m_passthrough;

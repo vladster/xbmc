@@ -147,6 +147,7 @@ CStdString CAESinkALSA::GetDeviceUse(AEAudioFormat format, CStdString device, bo
 
 bool CAESinkALSA::Initialize(AEAudioFormat &format, CStdString &device)
 {
+  m_initDevice = device;
   m_initFormat = format;
 
   /* if we are raw, correct the data format */
@@ -159,7 +160,7 @@ bool CAESinkALSA::Initialize(AEAudioFormat &format, CStdString &device)
   else
   {
     m_channelLayout = GetChannelLayout(format);
-    m_passthrough = false;
+    m_passthrough   = false;
   }
   
   if (m_channelLayout.Count() == 0)
@@ -206,7 +207,7 @@ bool CAESinkALSA::IsCompatible(const AEAudioFormat format, const CStdString devi
       (m_initFormat.m_sampleRate    == format.m_sampleRate    || m_format.m_sampleRate    == format.m_sampleRate   ) &&
       (m_initFormat.m_dataFormat    == format.m_dataFormat    || m_format.m_dataFormat    == format.m_dataFormat   ) &&
       (m_initFormat.m_channelLayout == format.m_channelLayout || m_format.m_channelLayout == format.m_channelLayout) &&
-      GetDeviceUse(format, device, m_passthrough) == m_device
+      (m_initDevice == device)
   );
 }
 
@@ -496,7 +497,7 @@ unsigned int CAESinkALSA::AddPackets(uint8_t *data, unsigned int frames)
       }
       break;
 
-    defaut:
+    default:
       CLog::Log(LOGERROR, "CAESinkALSA::AddPackets - snd_pcm_writei returned %d (%s)", ret, snd_strerror(ret));
       return 0;
   }

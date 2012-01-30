@@ -17,6 +17,7 @@ SRCS = \
 	Sinks/AESinkProfiler.cpp \
 	\
 	Utils/AEChannelInfo.cpp \
+        Utils/AEStreamList.cpp \
 	Utils/AEConvert.cpp \
 	Utils/AERemap.cpp \
 	Utils/AEUtil.cpp \

@@ -51,6 +51,7 @@ void CAdvancedSettings::Initialize()
   m_dvdplayerIgnoreDTSinWAV = false;
   m_audioResample = 0;
   m_audioForceDirectSound = false;
+  m_audioAudiophile = false;
 
   //default hold time of 25 ms, this allows a 20 hertz sine to pass undistorted
   m_limiterHold = 0.025f;
@@ -356,7 +357,8 @@ void CAdvancedSettings::ParseSettingsFile(const CStdString &file)
     XMLUtils::GetInt(pElement, "percentseekbackwardbig", m_musicPercentSeekBackwardBig, -100, 0);
 
     XMLUtils::GetInt(pElement, "resample", m_audioResample, 0, 192000);
-	XMLUtils::GetBoolean(pElement, "forceDirectSound", m_audioForceDirectSound);
+    XMLUtils::GetBoolean(pElement, "forceDirectSound", m_audioForceDirectSound);
+    XMLUtils::GetBoolean(pElement, "audiophile", m_audioAudiophile);
     XMLUtils::GetString(pElement, "transcodeto", m_audioTranscodeTo);
 
     TiXmlElement* pAudioExcludes = pElement->FirstChildElement("excludefromlisting");

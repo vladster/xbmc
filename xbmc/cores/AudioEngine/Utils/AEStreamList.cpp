@@ -90,7 +90,7 @@ void CAEStreamList::CommitFlags()
     itt->m_flagged = itt->m_newstate; 
 }
 
-IAEStream *stream CAEStreamList::GetMasterStream()
+IAEStream* CAEStreamList::GetMasterStream()
 {
   /* TODO: implement this */
   return NULL;

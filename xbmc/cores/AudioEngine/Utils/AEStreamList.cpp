@@ -20,25 +20,21 @@
  */
 
 #include "AEStreamList.h"
-#include "AEFactory.h"
 
-CAEStreamList::CAEStreamList(const bool ownsStreams/* = false */) :
-  m_ownsStreams(ownsStreams)
+CAEStreamList::CAEStreamList()
 {
+  /* pre-allocate room for 16 streams */
+  m_streams.reserve(16);
 }
 
 CAEStreamList::~CAEStreamList()
 {
-  /* if we own the streams, free them before destruction */
-  if (m_ownsStreams)
-    for(StreamList::iterator itt = m_streams.begin(); itt != m_streams.end(); ++itt)
-      CAEFactory::AE->FreeStream(itt->m_stream);
 }
 
 void CAEStreamList::AddStream(IAEStream *stream)
 {
   ASSERT(stream);
-  CExclusiveLock lock(m_lock);
+  CSingleLock lock(m_lock);
  
   /* ensure the stream is not already in the list */
   ASSERT(FindStream(stream) == m_streams.end());
@@ -48,30 +44,27 @@ void CAEStreamList::AddStream(IAEStream *stream)
   i.m_stream   = stream;
   i.m_flagged  = false;
   i.m_newstate = false;
+  i.m_erase    = false;
   m_streams.push_back(i);
 }
 
-void CAEStreamList::RemStream(IAEStream *stream)
+void CAEStreamList::RemStream(IAEStream *stream, const bool commit/* = true */)
 {
   ASSERT(stream);
-  CExclusiveLock lock(m_lock);
+  CSingleLock lock(m_lock);
 
   /* find and erase the stream from the main stream list */
   StreamList::iterator itt = FindStream(stream);
   ASSERT(itt != m_streams.end());
-  m_streams.erase(itt);
+
+  if (commit) m_streams.erase(itt);
+  else        itt->m_erase = true;
 }
 
-void CAEStreamList::DelStream(IAEStream *stream)
-{
-  RemStream(stream);
-  CAEFactory::AE->FreeStream(stream);
-}
-
-void CAEStreamList::SetFlag(IAEStream *stream, bool flag, bool commit/* = true */)
+void CAEStreamList::SetFlag(IAEStream *stream, const bool flag, const bool commit/* = true */)
 {
   ASSERT(stream);
-  CExclusiveLock lock(m_lock);
+  CSingleLock lock(m_lock);
 
   /* find and ensure we have the stream in our list */
   StreamList::iterator itt = FindStream(stream);
@@ -83,11 +76,20 @@ void CAEStreamList::SetFlag(IAEStream *stream, bool flag, bool commit/* = true *
     itt->m_flagged = flag;
 }
 
-void CAEStreamList::CommitFlags()
+void CAEStreamList::CommitChanges()
 {
-  CExclusiveLock lock(m_lock);
-  for(StreamList::iterator itt = m_streams.begin(); itt != m_streams.end(); ++itt)
+  CSingleLock lock(m_lock);
+  for(StreamList::iterator itt = m_streams.begin(); itt != m_streams.end();)
+  {
+    if (itt->m_erase)
+    {
+      itt = m_streams.erase(itt);
+      continue;
+    }
+
     itt->m_flagged = itt->m_newstate; 
+    ++itt;
+  }
 }
 
 IAEStream* CAEStreamList::GetMasterStream()

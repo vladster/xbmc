@@ -21,72 +21,116 @@
  */
 
 #include "Interfaces/AEStream.h"
-#include "threads/SharedSection.h"
+#include "threads/CriticalSection.h"
+#include "threads/SingleLock.h"
 #include "settings/AdvancedSettings.h"
 
 /**
  * CAEStreamList is a thread safe IAEStream list utility
+ * that allows flagging of streams and deferred commit of
+ * flag and removal of entries.
  */
 class CAEStreamList
 {
-public:
-  /**
-   * CAEStreamList Constructor
-   * @param ownsStreams	Set this value to true to free the streams on destruction
-   */
-  CAEStreamList(const bool ownsStreams = false);
-  ~CAEStreamList();
-
-  /**
-   * Add a stream to the list, new streams are not playing by default
-   * @param stream	The stream to add
-   */
-  void AddStream(IAEStream *stream);
-
-  /**
-   * Remove a stream from the list
-   * @param stream	The stream to remove
-   */
-  void RemStream(IAEStream *stream);
-
-  /**
-   * Remove and free a stream from the list
-   * @param stream	The stream to remove and free
-   */
-  void DelStream(IAEStream *stream);
-
-  /**
-   * Flag a stream
-   * @param stream	The stream to flag
-   * @param flag	The flag value
-   * @param commit	Commit the new value now
-   */
-  void SetFlag(IAEStream *stream, bool flag, bool commit = true);
-
-  /**
-   * Commit any pending flag changes
-   */
-  void CommitFlags();
-
-  /**
-   * Gets the master stream based on raw status and the audiophile setting
-   */
-  IAEStream* GetMasterStream();
-
-
 private:
   typedef struct
   {
     IAEStream *m_stream;
     bool       m_flagged;
     bool       m_newstate;
+    bool       m_erase;
   } ListItem;
+
 
   typedef std::vector<ListItem> StreamList;
 
-  CSharedSection m_lock;
-  bool           m_ownsStreams;
-  StreamList     m_streams;
+public:
+  /**
+   * CAEStreamList Constructor
+   */
+  CAEStreamList();
+  ~CAEStreamList();
+
+  /**
+   * Add a stream to the list, new streams are not playing by default
+   * @param stream The stream to add
+   */
+  void AddStream(IAEStream *stream);
+
+  /**
+   * Remove a stream from the list
+   * @param stream The stream to remove
+   */
+  void RemStream(IAEStream *stream, const bool commit = true);
+
+  /**
+   * Flag a stream
+   * @param stream The stream to flag
+   * @param flag   The flag value
+   * @param commit Commit the new value now
+   */
+  void SetFlag(IAEStream *stream, const bool flag, const bool commit = true);
+
+  /**
+   * Commit any pending changes
+   */
+  void CommitChanges();
+
+  /**
+   * Lock the stream for thread safe update
+   */
+  void ReadLock()
+  {
+     
+  }
+
+  /**
+   * Gets the master stream based on raw status and the audiophile setting
+   */
+  IAEStream* GetMasterStream();
+
+  /*
+   * Iterator
+   */
+  class flagged_iterator
+  {
+    public:
+      flagged_iterator(StreamList *streamList, StreamList::iterator itt) :
+        m_streamList(streamList),
+        m_itt       (itt       )
+      {
+        /* move to the first flagged entry */
+        while(m_itt != m_streamList->end() && (!m_itt->m_flagged || m_itt->m_erase))
+          ++m_itt;
+      }
+
+      inline IAEStream* operator*() const { return m_itt->m_stream; }
+      inline void operator++() { while(++m_itt != m_streamList->end() && (!m_itt->m_flagged || m_itt->m_erase)) {}; }
+      inline bool operator==(const flagged_iterator     &rhs) { return m_itt == rhs.m_itt; }
+      inline bool operator!=(const flagged_iterator     &rhs) { return m_itt != rhs.m_itt; }
+      inline bool operator==(const StreamList::iterator &rhs) { return m_itt == m_itt; }
+      inline bool operator!=(const StreamList::iterator &rhs) { return m_itt != m_itt; }
+
+    private:
+      friend class CAEStreamList;
+      StreamList           *m_streamList;
+      StreamList::iterator m_itt;
+  };
+
+  inline flagged_iterator begin() { return flagged_iterator(&m_streams, m_streams.begin()); }
+  inline flagged_iterator end  () { return flagged_iterator(&m_streams, m_streams.end  ()); }
+  inline flagged_iterator erase(const flagged_iterator &itt, bool commit = true)
+  {
+    if (commit)
+      return flagged_iterator(&m_streams, m_streams.erase(itt.m_itt));
+
+    itt.m_itt->m_erase = true;
+    return flagged_iterator(&m_streams, itt.m_itt);
+  }
+
+private:
+  CCriticalSection m_lock;
+  StreamList       m_streams;
 
   StreamList::iterator FindStream(IAEStream *stream);
 };

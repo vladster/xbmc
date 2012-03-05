@@ -66,6 +66,7 @@ CSoftAE::CSoftAE():
   m_converted          (NULL ),
   m_convertedSize      (0    ),
   m_masterStream       (NULL ),
+  m_outputStageFn      (NULL ),
   m_streamStageFn      (NULL )
 {
 
@@ -138,6 +139,7 @@ bool CSoftAE::OpenSink()
 
   m_rawPassthrough = false;
   m_streamStageFn = &CSoftAE::RunStreamStage;
+  m_outputStageFn = &CSoftAE::RunOutputStage;
  
   /* determine the master stream */
   CSingleLock streamLock(m_streamLock);
@@ -155,6 +157,7 @@ bool CSoftAE::OpenSink()
       masterStream     = stream;
       m_rawPassthrough = true;
       m_streamStageFn  = &CSoftAE::RunRawStreamStage;
+      m_outputStageFn  = &CSoftAE::RunRawOutputStage;
       break;
     }
 
@@ -181,6 +184,7 @@ bool CSoftAE::OpenSink()
     {
       m_rawPassthrough = true;
       m_streamStageFn  = &CSoftAE::RunRawStreamStage;
+      m_outputStageFn  = &CSoftAE::RunRawOutputStage;
     }
   }
 
@@ -223,7 +227,10 @@ bool CSoftAE::OpenSink()
     some receivers & crappy integrated sound drivers.
   */
   if (m_transcode && !m_rawPassthrough)
+  {
     newFormat.m_sampleRate = 48000;
+    m_outputStageFn = &CSoftAE::RunTranscodeStage;
+  }
 
   /*
     if there is an audio resample rate set, use it, this MAY NOT be honoured as
@@ -796,10 +803,7 @@ void CSoftAE::Run()
     m_reOpened = false;
 
     /* output the buffer to the sink */
-    if (m_transcode && m_encoder && !m_rawPassthrough)
-      RunTranscodeStage();
-    else
-      RunOutputStage();
+    (this->*m_outputStageFn)();
 
     /* unlock the sink, we don't need it anymore */
     sinkLock.Leave();
@@ -899,78 +903,81 @@ void CSoftAE::FinalizeSamples(float *buffer, unsigned int samples)
   #endif
 }
 
-inline void CSoftAE::RunOutputStage()
+void CSoftAE::RunOutputStage()
 {
   const unsigned int rSamples = m_sinkFormat.m_frames * m_sinkChLayoutCount;
-  const unsigned int samples  = m_rawPassthrough ? rSamples : m_sinkFormat.m_frames * m_chLayoutCount;
+  const unsigned int samples  = m_sinkFormat.m_frames * m_chLayoutCount;
 
   /* this normally only loops once */
   while(m_bufferSamples >= samples)
   {
     int wroteFrames;
 
-    /* if we are in raw passthrough we dont touch the samples */
-    if (!m_rawPassthrough)
+    if(m_remappedSize < rSamples)
     {
-      if(m_remappedSize < rSamples)
-      {
-        _aligned_free(m_remapped);
-        m_remapped = (float *)_aligned_malloc(rSamples * sizeof(float), 16);
-        m_remappedSize = rSamples;
-      }
+      _aligned_free(m_remapped);
+      m_remapped = (float *)_aligned_malloc(rSamples * sizeof(float), 16);
+      m_remappedSize = rSamples;
+    }
 
-      m_remap.Remap((float *)m_buffer, m_remapped, m_sinkFormat.m_frames);
-      FinalizeSamples(m_remapped, rSamples);
+    m_remap.Remap((float *)m_buffer, m_remapped, m_sinkFormat.m_frames);
+    FinalizeSamples(m_remapped, rSamples);
 
-      if (m_convertFn)
+    if (m_convertFn)
+    {
+      unsigned int newSize = m_sinkFormat.m_frames * m_sinkFormat.m_frameSize;
+      if(m_convertedSize < newSize)
       {
-        unsigned int newSize = m_sinkFormat.m_frames * m_sinkFormat.m_frameSize;
-        if(m_convertedSize < newSize)
-        {
-          _aligned_free(m_converted);
-          m_converted = (uint8_t *)_aligned_malloc(newSize, 16);
-          m_convertedSize = newSize;
-        }
-        m_convertFn(m_remapped, rSamples, m_converted);
-        if (m_sink)
-          wroteFrames = m_sink->AddPackets(m_converted, m_sinkFormat.m_frames);
-        else
-        {
-          wroteFrames = m_sinkFormat.m_frames;
-          DelayFrames();
-        }
+        _aligned_free(m_converted);
+        m_converted = (uint8_t *)_aligned_malloc(newSize, 16);
+        m_convertedSize = newSize;
       }
+      m_convertFn(m_remapped, rSamples, m_converted);
+      if (m_sink)
+        wroteFrames = m_sink->AddPackets(m_converted, m_sinkFormat.m_frames);
       else
       {
-        if (m_sink)
-          wroteFrames = m_sink->AddPackets((uint8_t*)m_remapped, m_sinkFormat.m_frames);
-        else
-        {
-          wroteFrames = m_sinkFormat.m_frames;
-          DelayFrames();
-        }
+        wroteFrames = m_sinkFormat.m_frames;
+        DelayFrames();
       }
-
-      int wroteSamples = wroteFrames * m_chLayoutCount;
-      int bytesLeft    = (m_bufferSamples - wroteSamples) * m_bytesPerSample;
-      memmove((float*)m_buffer, (float*)m_buffer + wroteSamples, bytesLeft);
-      m_bufferSamples -= wroteSamples;
     }
     else
     {
-      /* RAW output */
-      unsigned int wroteFrames;
-      uint8_t *rawBuffer = (uint8_t*)m_buffer;
       if (m_sink)
-        wroteFrames = m_sink->AddPackets(rawBuffer, m_sinkFormat.m_frames);
+        wroteFrames = m_sink->AddPackets((uint8_t*)m_remapped, m_sinkFormat.m_frames);
       else
+      {
         wroteFrames = m_sinkFormat.m_frames;
-
-      int wroteSamples = wroteFrames * m_chLayoutCount;
-      int bytesLeft    = (m_bufferSamples - wroteSamples) * m_bytesPerSample;
-      memmove(rawBuffer, rawBuffer + (wroteSamples * m_bytesPerSample), bytesLeft);
-      m_bufferSamples -= wroteSamples;
+        DelayFrames();
+      }
     }
+
+    int wroteSamples = wroteFrames * m_chLayoutCount;
+    int bytesLeft    = (m_bufferSamples - wroteSamples) * m_bytesPerSample;
+    memmove((float*)m_buffer, (float*)m_buffer + wroteSamples, bytesLeft);
+    m_bufferSamples -= wroteSamples;
+  }
+}
+
+void CSoftAE::RunRawOutputStage()
+{
+  const unsigned int rSamples = m_sinkFormat.m_frames * m_sinkChLayoutCount;
+  const unsigned int samples  = rSamples;
+
+  /* this normally only loops once */
+  while(m_bufferSamples >= samples)
+  {
+    int wroteFrames;
+    uint8_t *rawBuffer = (uint8_t*)m_buffer;
+    if (m_sink)
+      wroteFrames = m_sink->AddPackets(rawBuffer, m_sinkFormat.m_frames);
+    else
+      wroteFrames = m_sinkFormat.m_frames;
+
+    int wroteSamples = wroteFrames * m_chLayoutCount;
+    int bytesLeft    = (m_bufferSamples - wroteSamples) * m_bytesPerSample;
+    memmove(rawBuffer, rawBuffer + (wroteSamples * m_bytesPerSample), bytesLeft);
+    m_bufferSamples -= wroteSamples;
   }
 }
 

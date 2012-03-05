@@ -188,11 +188,13 @@ private:
   void         MixSounds        (float *buffer, unsigned int samples);
   void         FinalizeSamples  (float *buffer, unsigned int samples);
 
-  void         RunOutputStage   ();
+  CSoftAEStream *m_masterStream;
 
+  void         (CSoftAE::*m_outputStageFn)();
+  void         RunOutputStage   ();
+  void         RunRawOutputStage();
   void         RunTranscodeStage();
 
-  CSoftAEStream *m_masterStream;
   unsigned int (CSoftAE::*m_streamStageFn)(unsigned int channelCount, void *out, bool &restart);
   unsigned int RunRawStreamStage (unsigned int channelCount, void *out, bool &restart);
   unsigned int RunStreamStage    (unsigned int channelCount, void *out, bool &restart);

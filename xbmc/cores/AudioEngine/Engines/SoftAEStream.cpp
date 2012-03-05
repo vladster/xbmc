@@ -241,7 +241,17 @@ unsigned int CSoftAEStream::GetSpace()
 unsigned int CSoftAEStream::AddData(void *data, unsigned int size)
 {
   CExclusiveLock lock(m_lock);
-  if (!m_valid || size == 0 || data == NULL || m_draining) return 0;  
+  if (!m_valid || size == 0 || data == NULL) return 0;
+
+  /* if the stream is draining */
+  if (m_draining)
+  {
+    /* if the stream has finished draining, cork it */
+    if (!m_packet.samples && m_outBuffer.empty())
+      m_draining = false;
+    else
+      return 0;
+  }
 
   if (m_framesBuffered >= m_waterLevel)
     return 0;

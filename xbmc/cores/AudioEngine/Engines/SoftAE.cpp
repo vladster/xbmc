@@ -60,7 +60,6 @@ CSoftAE::CSoftAE():
   m_encodedBufferSize  (0    ),
   m_encodedBufferPos   (0    ),
   m_encodedBufferFrames(0    ),
-  m_encodedPending     (false),
   m_remapped           (NULL ),
   m_remappedSize       (0    ),
   m_converted          (NULL ),
@@ -125,86 +124,94 @@ IAESink *CSoftAE::GetSink(AEAudioFormat &newFormat, bool passthrough, CStdString
   return sink;
 }
 
+/* this method MUST be called while holding m_streamLock */
+inline CSoftAEStream *CSoftAE::GetMasterStream()
+{
+  /* if there are no streams, just return NULL */
+  if (m_streams.empty())
+    return NULL;
+
+  /* if we already know the master stream return it */
+  if (m_masterStream && !m_masterStream->IsDestroyed())
+    return m_masterStream;
+
+  /* determine the master stream */
+  m_masterStream = NULL;
+  for(StreamList::iterator itt = m_streams.begin(); itt != m_streams.end();)
+  {
+    CSoftAEStream *stream = *itt;
+
+    /* remove any destroyed streams */
+    if (stream->IsDestroyed())
+    {
+      RemoveStream(m_playingStreams, stream);
+      RemoveStream(m_streams       , stream);
+      delete stream;
+      continue;
+    }
+
+    /* raw streams get priority */
+    if (stream->IsRaw()) {
+      m_masterStream = stream;
+      break;
+    }
+
+    /* get the first/last stream in the list depending on audiophile setting */
+    if (!m_audiophile && !m_masterStream)
+      m_masterStream = stream;
+
+    ++itt;
+  }
+
+  return m_masterStream;
+}
+
 bool CSoftAE::OpenSink()
 {
   /* save off our raw/passthrough mode for checking */
   bool wasTranscode           = m_transcode;
   bool wasRawPassthrough      = m_rawPassthrough;
   bool reInit                 = false;
-  CSoftAEStream *masterStream = NULL;
 
   /* lock the sink so the thread gets held up */
   CExclusiveLock sinkLock(m_sinkLock);
   LoadSettings();
 
+  /* initialize for analog output */
   m_rawPassthrough = false;
   m_streamStageFn = &CSoftAE::RunStreamStage;
   m_outputStageFn = &CSoftAE::RunOutputStage;
- 
-  /* determine the master stream */
-  CSingleLock streamLock(m_streamLock);
-  for(StreamList::iterator itt = m_playingStreams.begin(); itt != m_playingStreams.end(); ++itt)
-  {
-    CSoftAEStream *stream = *itt;
 
-    /* let the run loop cleanup destroyed streams */
-    if (stream->IsDestroyed())
-      continue;
-
-    /* prefer the first found raw stream over any others as the master */
-    if (stream->IsRaw() && (!masterStream || !masterStream->IsRaw()))
-    {
-      masterStream     = stream;
-      m_rawPassthrough = true;
-      m_streamStageFn  = &CSoftAE::RunRawStreamStage;
-      m_outputStageFn  = &CSoftAE::RunRawOutputStage;
-      break;
-    }
-
-    if (!masterStream)
-      masterStream = stream;
-  }
-
-  /* if audiophile is on, prefer the newest stream's format */
-  if (!m_rawPassthrough)
-  {
-    /* override the master stream if audiophile */
-    if (m_audiophile)
-    {
-           if (!m_playingStreams.empty()) masterStream = m_playingStreams.back();
-      else if (!m_streams       .empty()) masterStream = m_streams.back();
-    }
-  }
-
-  /* if we still dont have a stream, use a paused one if there is one */
-  if (!masterStream && !m_streams.empty())
-  {
-    masterStream = m_streams.front();
-    if (masterStream && masterStream->IsRaw())
-    {
-      m_rawPassthrough = true;
-      m_streamStageFn  = &CSoftAE::RunRawStreamStage;
-      m_outputStageFn  = &CSoftAE::RunRawOutputStage;
-    }
-  }
-
-  /* the desired format */
+  /* initialize the new format for basic 2.0 output */
   AEAudioFormat newFormat;
+  newFormat.m_dataFormat    = AE_FMT_FLOAT;
+  newFormat.m_sampleRate    = 44100;
+  newFormat.m_channelLayout = AE_CH_LAYOUT_2_0;
 
-  /* override the sample rate & channel layout based on the master stream if there is one */
+  CSingleLock streamLock(m_streamLock);
+  CSoftAEStream *masterStream = GetMasterStream();
   if (masterStream)
   {
+    /* choose the sample rate & channel layout based on the master stream */
     newFormat.m_sampleRate    = masterStream->GetSampleRate();
     newFormat.m_channelLayout = masterStream->m_initChannelLayout;    
-    /* dont resolve the channels if we are transoding or in raw mode */
-    if (!m_transcode && !m_rawPassthrough)
-      newFormat.m_channelLayout.ResolveChannels(m_stdChLayout);
+
+    if (masterStream->IsRaw())
+    {
+      newFormat.m_dataFormat = masterStream->GetDataFormat();
+      m_rawPassthrough       = true;
+      m_streamStageFn        = &CSoftAE::RunRawStreamStage;
+      m_outputStageFn        = &CSoftAE::RunRawOutputStage;
+    }
+    else
+    {      
+      if (!m_transcode)
+        newFormat.m_channelLayout.ResolveChannels(m_stdChLayout);
+    }
   }
-  else
-  {
-    newFormat.m_sampleRate    = 44100;
-    newFormat.m_channelLayout = AE_CH_LAYOUT_2_0;
-  }
+
+  if (!m_rawPassthrough && m_transcode)
+    newFormat.m_dataFormat = AE_FMT_AC3;
 
   streamLock.Leave();
 
@@ -242,11 +249,6 @@ bool CSoftAE::OpenSink()
     CLog::Log(LOGINFO, "CSoftAE::OpenSink - Forcing samplerate to %d", newFormat.m_sampleRate);
   }
 
-  /* figure out the best possible format */
-       if (m_rawPassthrough) newFormat.m_dataFormat = masterStream->GetDataFormat();
-  else if (m_transcode     ) newFormat.m_dataFormat = AE_FMT_AC3;
-  else                       newFormat.m_dataFormat = AE_FMT_FLOAT;
-
   /* only re-open the sink if its not compatible with what we need */
   if (!m_sink || ((CStdString)m_sink->GetName()).ToUpper() != driver || !m_sink->IsCompatible(newFormat, device))
   {
@@ -282,6 +284,7 @@ bool CSoftAE::OpenSink()
       newFormat.m_frameSize     = (CAEUtil::DataFormatToBits(newFormat.m_dataFormat) >> 3) * newFormat.m_channelLayout.Count();
       m_delayTime               = 100;
 
+      /* display failure notification */
       CGUIDialogKaiToast::QueueNotification(
         CGUIDialogKaiToast::Error,
         g_localizeStrings.Get(34402),
@@ -416,7 +419,6 @@ void CSoftAE::ResetEncoder()
   m_encodedBufferSize   = 0;
   m_encodedBufferPos    = 0;
   m_encodedBufferFrames = 0;
-  m_encodedPending      = false;
 }
 
 bool CSoftAE::SetupEncoder(AEAudioFormat &format)
@@ -621,8 +623,14 @@ IAEStream *CSoftAE::MakeStream(enum AEDataFormat dataFormat, unsigned int sample
   );
 
   CSingleLock streamLock(m_streamLock);
-  bool wasEmpty = m_streams.empty();
   CSoftAEStream *stream = new CSoftAEStream(dataFormat, sampleRate, channelLayout, options);
+
+  bool wasEmpty = false;
+  if (m_streams.empty())
+  {
+    wasEmpty       = true;
+    m_masterStream = stream;
+  }  
 
   m_streams.push_back(stream);
   if ((options & AESTREAM_PAUSED) == 0)
@@ -720,22 +728,16 @@ void CSoftAE::StopSound(IAESound *sound)
 IAEStream *CSoftAE::FreeStream(IAEStream *stream)
 {
   CSingleLock lock(m_streamLock);
-  
-  /* ensure the stream still exists */
-  for(StreamList::iterator itt = m_streams.begin(); itt != m_streams.end(); ++itt)
-    if (*itt == stream)
-    {
-      RemoveStream(m_playingStreams, (CSoftAEStream*)stream);
-      itt = m_streams.erase(itt);
-      delete (CSoftAEStream*)stream;
-      break;
-    }
 
-  /* if it was the last stream and we have a mono output, or we are raw, then reopen */
-  if (m_streams.empty() && (m_chLayout.Count() <= 1 || (m_rawPassthrough && !m_transcode)))
+  RemoveStream(m_playingStreams, (CSoftAEStream*)stream);
+  RemoveStream(m_streams       , (CSoftAEStream*)stream);
+  delete (CSoftAEStream*)stream;
+
+  /* if it was the master stream */
+  if (m_masterStream == stream)
   {
-     lock.Leave();
-     OpenSink();
+    m_masterStream = NULL;
+    GetMasterStream();
   }
 
   return NULL;
@@ -983,11 +985,6 @@ void CSoftAE::RunRawOutputStage()
   }
 }
 
-/*
-  encodedPending is a flag to signify that the encoder has a packet ready for us
-  we dont pick it up however until we have finished with our current encoded
-  buffer, this allows our encoder to have a frame ready in advance.
-*/
 void CSoftAE::RunTranscodeStage()
 {
   /* if we dont have enough samples to encode yet, return */
@@ -1054,56 +1051,35 @@ void CSoftAE::RunTranscodeStage()
 
 unsigned int CSoftAE::RunRawStreamStage(unsigned int channelCount, void *out, bool &restart)
 {
-  CSingleLock streamLock(m_streamLock);
   StreamList resumeStreams;
   static StreamList::iterator itt;
 
-  m_masterStream = NULL;
-  for(itt = m_playingStreams.begin(); itt != m_playingStreams.end();)
+  /* identify the masterStream */
+  CSingleLock streamLock(m_streamLock);
+  CSoftAEStream *masterStream = GetMasterStream();
+
+  /* if the master is not RAW anymore flag for restart */
+  if (!masterStream || !masterStream->IsRaw())
   {
-    CSoftAEStream *sitt = *itt;
-
-    /* pick out the oldest raw stream */
-    if (!m_masterStream && sitt->IsRaw())
-    {
-      m_masterStream = sitt;
-      ++itt;
-      continue;
-    }
-
-    /* if the stream is destroyed, delete it while we have the lock */
-    if (sitt->IsDestroyed())
-    {
-      RemoveStream(m_streams, sitt);
-      itt = m_playingStreams.erase(itt);
-      delete sitt;
-      continue;
-    }
-
-    /* consume data from streams even though we cant use it */
-    sitt->GetFrame();
-
-    /* flag the stream's slave to be resumed */
-    if (sitt->IsDrained() && sitt->m_slave && sitt->m_slave->m_paused)
-      resumeStreams.push_back(sitt);
-
-    ++itt;
-  }
-
-  /* we have to restart if the current raw stream has been destroyed as the next stream may be incompatible */
-  if (!m_masterStream || m_masterStream->IsDestroyed())
-  {
-    RemoveStream(m_streams       , m_masterStream);
-    RemoveStream(m_playingStreams, m_masterStream);
-    m_masterStream = NULL;
-
-    ResumeStreams(resumeStreams);
     restart = true;
     return 0;
   }
 
+  /* handle playing streams */
+  for(itt = m_playingStreams.begin(); itt != m_playingStreams.end(); ++itt)
+  {
+    CSoftAEStream *sitt = *itt;
+
+    /* consume data from streams even though we cant use it */
+    sitt->GetFrame();
+
+    /* flag the stream's slave to be resumed if it has drained */
+    if (sitt->IsDrained() && sitt->m_slave && sitt->m_slave->m_paused)
+      resumeStreams.push_back(sitt);
+  }
+
   /* get the frame and append it to the output */
-  uint8_t *frame = m_masterStream->GetFrame();
+  uint8_t *frame = masterStream->GetFrame();
   if (!frame)
   {
     ResumeStreams(resumeStreams);
@@ -1112,8 +1088,8 @@ unsigned int CSoftAE::RunRawStreamStage(unsigned int channelCount, void *out, bo
 
   memcpy(out, frame, m_sinkFormat.m_frameSize);
 
-  if (m_masterStream->IsDrained() && m_masterStream->m_slave && m_masterStream->m_slave->m_paused)
-    resumeStreams.push_back(m_masterStream);
+  if (masterStream->IsDrained() && masterStream->m_slave && masterStream->m_slave->m_paused)
+    resumeStreams.push_back(masterStream);
 
   ResumeStreams(resumeStreams);
   return 1;
@@ -1121,37 +1097,31 @@ unsigned int CSoftAE::RunRawStreamStage(unsigned int channelCount, void *out, bo
 
 unsigned int CSoftAE::RunStreamStage(unsigned int channelCount, void *out, bool &restart)
 {
-  CSingleLock streamLock(m_streamLock);
   StreamList resumeStreams;
   static StreamList::iterator itt;
 
   float *dst = (float*)out;
   unsigned int mixed = 0;
 
+  /* identify the master stream */
+  CSingleLock streamLock(m_streamLock);
+  CSoftAEStream *masterStream = GetMasterStream();
+
+  /* if the master stream is now RAW, flag for restart */
+  if (masterStream && masterStream->IsRaw())
+  {
+    restart = true;
+    return 0;
+  }
+
   /* mix in any running streams */
-  m_masterStream = NULL;
-  for(itt = m_playingStreams.begin(); itt != m_playingStreams.end();)
+  for(itt = m_playingStreams.begin(); itt != m_playingStreams.end(); ++itt)
   {
     CSoftAEStream *stream = *itt;
 
-    /* remove streams that are flagged for deletion */
-    if (stream->IsDestroyed())
-    {
-      RemoveStream(m_streams, stream);
-      itt = m_playingStreams.erase(itt);
-      delete stream;
-      continue;
-    }
-
-    if (!m_masterStream)
-      m_masterStream = stream;
-
     float *frame = (float*)stream->GetFrame();
     if (!frame)
-    {
-      ++itt;
       continue;
-    }
 
     if (stream->IsDrained() && stream->m_slave && stream->m_slave->IsPaused())
       resumeStreams.push_back(stream);
@@ -1168,7 +1138,6 @@ unsigned int CSoftAE::RunStreamStage(unsigned int channelCount, void *out, bool 
     }
 
     ++mixed;
-    ++itt;
   }
 
   ResumeStreams(resumeStreams);

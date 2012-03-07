@@ -107,6 +107,8 @@ public:
 private:
   CThread *m_thread;
 
+  CSoftAEStream *GetMasterStream();
+
   void LoadSettings();
   bool OpenSink();
   void ResetEncoder();
@@ -155,7 +157,7 @@ private:
 
   typedef std::vector<CSoftAEStream*> StreamList;
   typedef std::list  <CSoftAESound* > SoundList;
-  typedef std::list  <SoundState    > SoundStateList;
+  typedef std::list  <SoundState    > SoundStateList;  
     
   /* the streams, sounds, output buffer and output buffer fill size */
   bool           m_transcode;
@@ -175,7 +177,6 @@ private:
   unsigned int   m_encodedBufferSize;
   unsigned int   m_encodedBufferPos;
   unsigned int   m_encodedBufferFrames;
-  bool           m_encodedPending;
 
   /* the channel remapper  */
   CAERemap        m_remap;

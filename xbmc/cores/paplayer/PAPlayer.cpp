@@ -398,6 +398,9 @@ inline void PAPlayer::ProcessStreams(float &delay, float &buffer)
     else
       ++itt;
   }
+
+  sharedLock.Leave();
+  CExclusiveLock lock(m_streamsLock);
     
   for(StreamList::iterator itt = m_streams.begin(); itt != m_streams.end(); ++itt)
   {
@@ -413,10 +416,6 @@ inline void PAPlayer::ProcessStreams(float &delay, float &buffer)
         si->m_prepareTriggered = true;
         m_callback.OnQueueNextItem();
       }
-
-      /* if the stream is finshed */
-      sharedLock.Leave();
-      CExclusiveLock lock(m_streamsLock);
 
       /* remove the stream */
       itt = m_streams.erase(itt);

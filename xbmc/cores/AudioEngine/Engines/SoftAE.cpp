@@ -1048,7 +1048,7 @@ void CSoftAE::RunTranscodeStage()
 
     m_encodedBufferPos    -= wrote * m_sinkFormat.m_frameSize;
     m_encodedBufferFrames -= wrote;
-    memmove(m_encodedBuffer, m_encodedBuffer + wrote, m_encodedBufferPos);
+    memmove(m_encodedBuffer, m_encodedBuffer + wrote * m_sinkFormat.m_frameSize, m_encodedBufferPos);
   }
 }
 

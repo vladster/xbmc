@@ -409,7 +409,9 @@ void CSoftAE::ResetEncoder()
   if (m_encoder)
     m_encoder->Reset();
 
-  delete[] m_encodedBuffer;
+  if (m_encodedBuffer)
+    free(m_encodedBuffer);
+
   m_encodedBuffer       = NULL;
   m_encodedBufferSize   = 0;
   m_encodedBufferPos    = 0;
@@ -987,9 +989,9 @@ void CSoftAE::RunRawOutputStage()
   buffer, this allows our encoder to have a frame ready in advance.
 */
 void CSoftAE::RunTranscodeStage()
-{ 
-  /* if there is not a pending block to pick up and we have enough samples to make one */
-  if (!m_encodedPending && m_bufferSamples >= m_encoderFormat.m_frameSamples)
+{
+  /* if we dont have enough samples to encode yet, return */
+  if (m_bufferSamples >= m_encoderFormat.m_frameSamples && m_encodedBufferFrames < m_sinkFormat.m_frames * 2)
   {
     FinalizeSamples((float*)m_buffer, m_encoderFormat.m_frameSamples);    
 
@@ -1015,43 +1017,38 @@ void CSoftAE::RunTranscodeStage()
 
     memmove((float*)m_buffer, ((float*)m_buffer) + encodedSamples, bytesLeft);
     m_bufferSamples -= encodedSamples;
-    m_encodedPending = true;
-  }
 
-  /* if there is a pending block, and we need to fetch it, then fetch it */
-  if (m_encodedPending && m_encodedBufferPos == m_encodedBufferFrames)
-  {
     uint8_t *packet;
     unsigned int size = m_encoder->GetData(&packet);
-    if (m_encodedBufferSize < size)
+
+    /* if there is not enough space for another encoded packet enlarge the buffer */
+    if (m_encodedBufferSize - m_encodedBufferPos < size)
     {
-      delete[] m_encodedBuffer;
-      m_encodedBuffer     = new uint8_t[size];
-      m_encodedBufferSize = size;
+      m_encodedBufferSize += size - (m_encodedBufferSize - m_encodedBufferPos);
+      m_encodedBuffer     = (uint8_t*)realloc(m_encodedBuffer, m_encodedBufferSize);
     }
 
-    memcpy(m_encodedBuffer, packet, size);
-    m_encodedBufferPos    = 0;
-    m_encodedBufferFrames = size / m_sinkFormat.m_frameSize;
-    m_encodedPending      = false;
+    memcpy(m_encodedBuffer + m_encodedBufferPos, packet, size);
+    m_encodedBufferPos    += size;
+    m_encodedBufferFrames += size / m_sinkFormat.m_frameSize;
   }
 
-  /* if we have data to write */
-  if(m_encodedBufferPos < m_encodedBufferFrames)
+  /* if we have enough data to write */
+  if(m_encodedBufferFrames >= m_sinkFormat.m_frames)
   {
-    unsigned int frames = m_encodedBufferFrames - m_encodedBufferPos;
-    unsigned int write  = std::min(m_sinkFormat.m_frames, frames);
-    int wrote;
-    
+    unsigned int wrote;
+        
     if (m_sink)
-      wrote = m_sink->AddPackets(m_encodedBuffer + (m_encodedBufferPos * m_sinkFormat.m_frameSize), write);
+      wrote = m_sink->AddPackets(m_encodedBuffer, m_sinkFormat.m_frames);
     else
     {
-      wrote = write;
+      wrote = m_sinkFormat.m_frames;
       DelayFrames();
     }
 
-    m_encodedBufferPos += wrote;
+    m_encodedBufferPos    -= wrote * m_sinkFormat.m_frameSize;
+    m_encodedBufferFrames -= wrote;
+    memmove(m_encodedBuffer, m_encodedBuffer + wrote, m_encodedBufferPos);
   }
 }
 
@@ -1212,14 +1209,21 @@ inline void CSoftAE::RunBufferStage(void *out)
 {
   if (m_rawPassthrough)
   {
+    /* check for buffer overflow */
+    ASSERT(m_bufferSize - m_bufferSamples * m_bytesPerSample >= m_sinkFormat.m_frameSize);
+
     uint8_t *rawBuffer = (uint8_t*)m_buffer;
     memcpy(rawBuffer + (m_bufferSamples * m_bytesPerSample), out, m_sinkFormat.m_frameSize);
   }
   else
   {
+    /* check for buffer overflow */
+    ASSERT(m_bufferSize - m_bufferSamples * sizeof(float) >= m_frameSize);
+
     float *floatBuffer = (float*)m_buffer;
     memcpy(floatBuffer + m_bufferSamples, out, m_frameSize);
   }
+
   m_bufferSamples += m_chLayoutCount;
 }
 

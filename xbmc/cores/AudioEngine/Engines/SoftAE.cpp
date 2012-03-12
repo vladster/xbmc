@@ -252,6 +252,8 @@ bool CSoftAE::OpenSink()
   /* only re-open the sink if its not compatible with what we need */
   if (!m_sink || ((CStdString)m_sink->GetName()).ToUpper() != driver || !m_sink->IsCompatible(newFormat, device))
   {
+    CLog::Log(LOGINFO, "CSoftAE::OpenSink - sink incompatible, re-starting");
+
     /* let the thread know we have re-opened the sink */
     m_reOpened = true;
     reInit = true;
@@ -294,7 +296,7 @@ bool CSoftAE::OpenSink()
       );
     }
 
-    CLog::Log(LOGINFO, "CSoftAE::Initialize - %s Initialized:", m_sink ? m_sink->GetName() : "NULL");
+    CLog::Log(LOGINFO, "CSoftAE::OpenSink - %s Initialized:", m_sink ? m_sink->GetName() : "NULL");
     CLog::Log(LOGINFO, "  Output Device : %s", m_sink ? device.c_str() : "NULL");
     CLog::Log(LOGINFO, "  Sample Rate   : %d", newFormat.m_sampleRate);
     CLog::Log(LOGINFO, "  Sample Format : %s", CAEUtil::DataFormatToStr(newFormat.m_dataFormat));
@@ -310,6 +312,8 @@ bool CSoftAE::OpenSink()
     /* invalidate the buffer */
     m_bufferSamples = 0;
   }
+  else
+    CLog::Log(LOGINFO, "CSoftAE::OpenSink - keeping old sink");
 
   size_t neededBufferSize = 0;
   if (m_rawPassthrough)
@@ -739,6 +743,9 @@ IAEStream *CSoftAE::FreeStream(IAEStream *stream)
     m_masterStream = NULL;
     GetMasterStream();
   }
+
+  /* re-open the sink if required */
+  OpenSink();
 
   return NULL;
 }

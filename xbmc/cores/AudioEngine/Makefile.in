@@ -15,6 +15,7 @@ SRCS = \
 	Sinks/AESinkALSA.cpp \
 	Sinks/AESinkOSS.cpp \
 	Sinks/AESinkProfiler.cpp \
+	Sinks/AESinkNULL.cpp \
 	\
 	Utils/AEChannelInfo.cpp \
         Utils/AEStreamList.cpp \

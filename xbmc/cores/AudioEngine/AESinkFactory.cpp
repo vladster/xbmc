@@ -36,6 +36,7 @@
   #pragma message("NOTICE: No audio sink for target platform.  Audio output will not be available.")
 #endif
 #include "Sinks/AESinkProfiler.h"
+#include "Sinks/AESinkNULL.h"
 
 void CAESinkFactory::ParseDevice(CStdString &device, CStdString &driver)
 {
@@ -116,7 +117,7 @@ IAESink *CAESinkFactory::Create(CStdString &device, AEAudioFormat &desiredFormat
   
   /* no need to try others as both will have been attempted if driver is empty */
   if (driver.IsEmpty())
-    return NULL;
+    TRY_SINK(NULL);
 
   /* if we failed to get a sink, try to open one of the others */
   #ifdef HAS_ALSA
@@ -129,7 +130,10 @@ IAESink *CAESinkFactory::Create(CStdString &device, AEAudioFormat &desiredFormat
 #endif /* defined _LINUX && !defined __APPLE__ */
 
   //Complete failure.
-  return NULL;
+  TRY_SINK(NULL);
+
+  /* should never get here */
+  ASSERT(false);
 }
 
 void CAESinkFactory::Enumerate(AEDeviceList &devices, bool passthrough)

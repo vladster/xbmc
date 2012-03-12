@@ -118,18 +118,15 @@ private:
   IAESink *GetSink(AEAudioFormat &desiredFormat, bool passthrough, CStdString &device);
   void StopAllSounds();
 
-  unsigned int m_delayTime;
-  void DelayFrames();
-
   enum AEStdChLayout m_stdChLayout;
   CStdString m_device;
   CStdString m_passthroughDevice;
   bool m_audiophile;
 
   /* internal vars */
-  bool             m_running, m_reOpened;
+  bool             m_running, m_reOpen, m_reOpened;
+  float            m_delay;           /* current delay time */
   CCriticalSection m_runningLock;     /* released when the thread exits */
-  CSharedSection   m_sinkLock;        /* sink & configuration lock */
   CCriticalSection m_streamLock;      /* m_streams lock */
   CCriticalSection m_soundLock;       /* m_sounds lock */
   CCriticalSection m_soundSampleLock; /* m_playing_sounds lock */

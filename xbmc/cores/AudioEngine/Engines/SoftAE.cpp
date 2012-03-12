@@ -29,8 +29,6 @@
 #include "settings/GUISettings.h"
 #include "settings/Settings.h"
 #include "settings/AdvancedSettings.h"
-#include "guilib/LocalizeStrings.h"
-#include "dialogs/GUIDialogKaiToast.h"
 #include "DllAvCore.h"
 
 #include "SoftAE.h"
@@ -47,7 +45,9 @@ CSoftAE::CSoftAE():
   m_thread             (NULL ),
   m_audiophile         (true ),
   m_running            (false),
+  m_reOpen             (false),
   m_reOpened           (false),
+  m_delay              (0    ),
   m_chLayoutCount      (0    ),
   m_sink               (NULL ),
   m_sinkChLayoutCount  (0    ),
@@ -166,6 +166,7 @@ inline CSoftAEStream *CSoftAE::GetMasterStream()
   return m_masterStream;
 }
 
+/* this must NEVER be called from outside the main thread or Initialization */
 bool CSoftAE::OpenSink()
 {
   /* save off our raw/passthrough mode for checking */
@@ -173,8 +174,6 @@ bool CSoftAE::OpenSink()
   bool wasRawPassthrough      = m_rawPassthrough;
   bool reInit                 = false;
 
-  /* lock the sink so the thread gets held up */
-  CExclusiveLock sinkLock(m_sinkLock);
   LoadSettings();
 
   /* initialize for analog output */
@@ -273,31 +272,9 @@ bool CSoftAE::OpenSink()
     
     /* create the new sink */
     m_sink = GetSink(newFormat, m_transcode || m_rawPassthrough, device);
-    if (!m_sink)
-    {
-      /* we failed, set the data format to defaults so the thread does not block */
-      if (m_rawPassthrough || m_transcode)
-        newFormat.m_channelLayout = (newFormat.m_dataFormat == AE_FMT_AC3) ? AE_CH_LAYOUT_2_0 : AE_CH_LAYOUT_7_1;
-      else
-        newFormat.m_channelLayout = m_stdChLayout;
-      newFormat.m_dataFormat    = (m_rawPassthrough || m_transcode) ? AE_FMT_S16NE : AE_FMT_FLOAT;
-      newFormat.m_frames        = newFormat.m_sampleRate / 10; /* 100ms of audio */
-      newFormat.m_frameSamples  = newFormat.m_frames * newFormat.m_channelLayout.Count();
-      newFormat.m_frameSize     = (CAEUtil::DataFormatToBits(newFormat.m_dataFormat) >> 3) * newFormat.m_channelLayout.Count();
-      m_delayTime               = 100;
 
-      /* display failure notification */
-      CGUIDialogKaiToast::QueueNotification(
-        CGUIDialogKaiToast::Error,
-        g_localizeStrings.Get(34402),
-        g_localizeStrings.Get(34403),
-        TOAST_DISPLAY_TIME,
-        false
-      );
-    }
-
-    CLog::Log(LOGINFO, "CSoftAE::OpenSink - %s Initialized:", m_sink ? m_sink->GetName() : "NULL");
-    CLog::Log(LOGINFO, "  Output Device : %s", m_sink ? device.c_str() : "NULL");
+    CLog::Log(LOGINFO, "CSoftAE::OpenSink - %s Initialized:", m_sink->GetName());
+    CLog::Log(LOGINFO, "  Output Device : %s", device.c_str());
     CLog::Log(LOGINFO, "  Sample Rate   : %d", newFormat.m_sampleRate);
     CLog::Log(LOGINFO, "  Sample Format : %s", CAEUtil::DataFormatToStr(newFormat.m_dataFormat));
     CLog::Log(LOGINFO, "  Channel Count : %d", newFormat.m_channelLayout.Count());
@@ -395,7 +372,7 @@ bool CSoftAE::OpenSink()
 
   if (reInit)
   {
-    /* re-init sounds, it is safe to do this here as the sinkLock prevents the thread from accessing the running sounds list */
+    /* re-init sounds */
     CSingleLock soundLock(m_soundLock);
     StopAllSounds();
     for(SoundList::iterator itt = m_sounds.begin(); itt != m_sounds.end(); ++itt)
@@ -484,7 +461,7 @@ void CSoftAE::OnSettingsChange(CStdString setting)
       setting == "audiooutput.useexclusivemode"  ||
       setting == "audiooutput.multichannellpcm")
   {
-    OpenSink();
+    m_reOpen = true;
   }
 }
 
@@ -588,12 +565,6 @@ bool CSoftAE::SupportsRaw()
   return true;
 }
 
-/* this is used when there is no sink to prevent us running too fast */
-void CSoftAE::DelayFrames()
-{
-  Sleep(m_delayTime);
-}
-
 void CSoftAE::PauseStream(CSoftAEStream *stream)
 {  
   CSingleLock streamLock(m_streamLock);
@@ -606,7 +577,7 @@ void CSoftAE::ResumeStream(CSoftAEStream *stream)
   m_playingStreams.push_back(stream);
   streamLock.Leave();
 
-  OpenSink();
+  m_reOpen = true;
 }
 
 void CSoftAE::Stop()
@@ -645,8 +616,8 @@ IAEStream *CSoftAE::MakeStream(enum AEDataFormat dataFormat, unsigned int sample
   /* dont re-open if the new stream is paused */
   if ((options & AESTREAM_PAUSED) == 0)
   {
-    if ((AE_IS_RAW(dataFormat)) || wasEmpty || m_audiophile) 
-      OpenSink();
+    if ((AE_IS_RAW(dataFormat)) || wasEmpty || m_audiophile)
+      m_reOpen = true;
   }
 
   /* if the stream was not initialized, do it now */
@@ -745,7 +716,7 @@ IAEStream *CSoftAE::FreeStream(IAEStream *stream)
   }
 
   /* re-open the sink if required */
-  OpenSink();
+  m_reOpen = true;
 
   return NULL;
 }
@@ -755,21 +726,7 @@ float CSoftAE::GetDelay()
   if (!m_running)
     return 0.0f;
 
-  m_sinkLock.lock_shared();
-
-  float delay = 0.0f;
-  if (m_sink)
-    delay = m_sink->GetDelay();
-
-  if (m_transcode && m_encoder && !m_rawPassthrough)
-    delay += m_encoder->GetDelay(m_encodedBufferFrames - m_encodedBufferPos);
-
-  unsigned int buffered = m_bufferSamples / m_chLayoutCount;
-  delay += (float)buffered / (float)m_sinkFormat.m_sampleRate;
-
-  m_sinkLock.unlock_shared();
-
-  return delay;
+  return m_delay;
 }
 
 float CSoftAE::GetVolume()
@@ -808,16 +765,12 @@ void CSoftAE::Run()
   unsigned int channelCount = m_chLayout.Count();
   size_t size               = m_frameSize;
 
-  CSharedLock sinkLock(m_sinkLock);
   while(m_running)
   {
     m_reOpened = false;
 
     /* output the buffer to the sink */
     (this->*m_outputStageFn)();
-
-    /* unlock the sink, we don't need it anymore */
-    sinkLock.Leave();
 
     /* make sure we have enough room to fetch a frame */
     if(size > outSize)
@@ -839,20 +792,18 @@ void CSoftAE::Run()
       restart = true;
 
     /* if we are told to restart */
-    if (restart)
+    if (m_reOpen || restart)
     {
       CLog::Log(LOGDEBUG, "CSoftAE::Run - Sink restart flagged");
+      m_reOpen = false;
       OpenSink();
     }
-    else
+
+    if(!m_reOpened)
     {
-      /* otherwise process the frame */
       if (!m_rawPassthrough && mixed)
         RunNormalizeStage(channelCount, out, mixed);
     }
-
-    /* re-lock the sink for the next loop */
-    sinkLock.Enter();
 
     /* update the save values */
     channelCount = m_chLayoutCount;
@@ -861,6 +812,13 @@ void CSoftAE::Run()
     /* buffer the samples into the output buffer */
     if (!m_reOpened)
       RunBufferStage(out);
+
+    /* update the current delay */
+    m_delay = m_sink->GetDelay();
+    if (m_transcode && m_encoder && !m_rawPassthrough)
+      m_delay += m_encoder->GetDelay(m_encodedBufferFrames - m_encodedBufferPos);
+    unsigned int buffered = m_bufferSamples / m_chLayoutCount;
+    m_delay += (float)buffered / (float)m_sinkFormat.m_sampleRate;
   }
 
   /* free the frame storage */
@@ -944,23 +902,11 @@ void CSoftAE::RunOutputStage()
         m_convertedSize = newSize;
       }
       m_convertFn(m_remapped, rSamples, m_converted);
-      if (m_sink)
-        wroteFrames = m_sink->AddPackets(m_converted, m_sinkFormat.m_frames);
-      else
-      {
-        wroteFrames = m_sinkFormat.m_frames;
-        DelayFrames();
-      }
+      wroteFrames = m_sink->AddPackets(m_converted, m_sinkFormat.m_frames);
     }
     else
     {
-      if (m_sink)
-        wroteFrames = m_sink->AddPackets((uint8_t*)m_remapped, m_sinkFormat.m_frames);
-      else
-      {
-        wroteFrames = m_sinkFormat.m_frames;
-        DelayFrames();
-      }
+      wroteFrames = m_sink->AddPackets((uint8_t*)m_remapped, m_sinkFormat.m_frames);
     }
 
     int wroteSamples = wroteFrames * m_chLayoutCount;
@@ -980,10 +926,7 @@ void CSoftAE::RunRawOutputStage()
   {
     int wroteFrames;
     uint8_t *rawBuffer = (uint8_t*)m_buffer;
-    if (m_sink)
-      wroteFrames = m_sink->AddPackets(rawBuffer, m_sinkFormat.m_frames);
-    else
-      wroteFrames = m_sinkFormat.m_frames;
+    wroteFrames = m_sink->AddPackets(rawBuffer, m_sinkFormat.m_frames);
 
     int wroteSamples = wroteFrames * m_chLayoutCount;
     int bytesLeft    = (m_bufferSamples - wroteSamples) * m_bytesPerSample;
@@ -1042,14 +985,7 @@ void CSoftAE::RunTranscodeStage()
   {
     unsigned int wrote;
         
-    if (m_sink)
-      wrote = m_sink->AddPackets(m_encodedBuffer, m_sinkFormat.m_frames);
-    else
-    {
-      wrote = m_sinkFormat.m_frames;
-      DelayFrames();
-    }
-
+    wrote = m_sink->AddPackets(m_encodedBuffer, m_sinkFormat.m_frames);
     m_encodedBufferPos    -= wrote * m_sinkFormat.m_frameSize;
     m_encodedBufferFrames -= wrote;
     memmove(m_encodedBuffer, m_encodedBuffer + wrote * m_sinkFormat.m_frameSize, m_encodedBufferPos);

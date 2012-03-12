@@ -48,9 +48,7 @@ CSoftAE::CSoftAE():
   m_reOpen             (false),
   m_reOpened           (false),
   m_delay              (0    ),
-  m_chLayoutCount      (0    ),
   m_sink               (NULL ),
-  m_sinkChLayoutCount  (0    ),
   m_transcode          (false),
   m_rawPassthrough     (false),
   m_bufferSize         (0    ),
@@ -151,14 +149,18 @@ inline CSoftAEStream *CSoftAE::GetMasterStream()
     }
 
     /* raw streams get priority */
-    if (stream->IsRaw()) {
+    if (stream->IsRaw())
       m_masterStream = stream;
-      break;
-    }
 
-    /* get the first/last stream in the list depending on audiophile setting */
-    if (!m_audiophile && !m_masterStream)
-      m_masterStream = stream;
+    if (!m_masterStream || !m_masterStream->IsRaw())
+    {
+      /* get the first/last stream in the list depending on audiophile setting */
+      if (m_audiophile)
+        m_masterStream = stream;
+      else
+        if (!m_masterStream)
+          m_masterStream = stream;
+    }
 
     ++itt;
   }
@@ -283,8 +285,7 @@ bool CSoftAE::OpenSink()
     CLog::Log(LOGINFO, "  Frame Samples : %d", newFormat.m_frameSamples);
     CLog::Log(LOGINFO, "  Frame Size    : %d", newFormat.m_frameSize);
 
-    m_sinkFormat        = newFormat;
-    m_sinkChLayoutCount = newFormat.m_channelLayout.Count();
+    m_sinkFormat = newFormat;
 
     /* invalidate the buffer */
     m_bufferSamples = 0;
@@ -363,7 +364,6 @@ bool CSoftAE::OpenSink()
     m_bufferSize = neededBufferSize;
   }
 
-  m_chLayoutCount = m_chLayout.Count();
   m_remap.Initialize(m_chLayout, m_sinkFormat.m_channelLayout, true);
   
   /* if we in raw passthrough, we are finished */
@@ -761,9 +761,6 @@ void CSoftAE::Run()
 
   CLog::Log(LOGINFO, "CSoftAE::Run - Thread Started");
 
-  /* copy these value so we can use them outside of the sink lock */
-  unsigned int channelCount = m_chLayout.Count();
-  size_t size               = m_frameSize;
 
   while(m_running)
   {
@@ -773,19 +770,19 @@ void CSoftAE::Run()
     (this->*m_outputStageFn)();
 
     /* make sure we have enough room to fetch a frame */
-    if(size > outSize)
+    if(m_frameSize > outSize)
     {
       /* allocate space for the samples */
       _aligned_free(out);
-      out = (uint8_t *)_aligned_malloc(size, 16);
-      outSize = size;
+      out = (uint8_t *)_aligned_malloc(m_frameSize, 16);
+      outSize = m_frameSize;
     }
-    memset(out, 0, size);
+    memset(out, 0, m_frameSize);
 
     /* run the stream stage */
     bool restart = false;
     CSoftAEStream *oldMaster = m_masterStream;
-    unsigned int mixed = (this->*m_streamStageFn)(channelCount, out, restart);
+    unsigned int mixed = (this->*m_streamStageFn)(m_chLayout.Count(), out, restart);
  
     /* if in audiophile mode and the master stream has changed, flag for restart */
     if (m_audiophile && oldMaster != m_masterStream)
@@ -802,12 +799,8 @@ void CSoftAE::Run()
     if(!m_reOpened)
     {
       if (!m_rawPassthrough && mixed)
-        RunNormalizeStage(channelCount, out, mixed);
+        RunNormalizeStage(m_chLayout.Count(), out, mixed);
     }
-
-    /* update the save values */
-    channelCount = m_chLayoutCount;
-    size         = m_frameSize;
 
     /* buffer the samples into the output buffer */
     if (!m_reOpened)
@@ -817,7 +810,7 @@ void CSoftAE::Run()
     m_delay = m_sink->GetDelay();
     if (m_transcode && m_encoder && !m_rawPassthrough)
       m_delay += m_encoder->GetDelay(m_encodedBufferFrames - m_encodedBufferPos);
-    unsigned int buffered = m_bufferSamples / m_chLayoutCount;
+    unsigned int buffered = m_bufferSamples / m_chLayout.Count();
     m_delay += (float)buffered / (float)m_sinkFormat.m_sampleRate;
   }
 
@@ -874,8 +867,8 @@ void CSoftAE::FinalizeSamples(float *buffer, unsigned int samples)
 
 void CSoftAE::RunOutputStage()
 {
-  const unsigned int rSamples = m_sinkFormat.m_frames * m_sinkChLayoutCount;
-  const unsigned int samples  = m_sinkFormat.m_frames * m_chLayoutCount;
+  const unsigned int rSamples = m_sinkFormat.m_frames * m_sinkFormat.m_channelLayout.Count();
+  const unsigned int samples  = m_sinkFormat.m_frames * m_chLayout.Count();
 
   /* this normally only loops once */
   while(m_bufferSamples >= samples)
@@ -909,7 +902,7 @@ void CSoftAE::RunOutputStage()
       wroteFrames = m_sink->AddPackets((uint8_t*)m_remapped, m_sinkFormat.m_frames);
     }
 
-    int wroteSamples = wroteFrames * m_chLayoutCount;
+    int wroteSamples = wroteFrames * m_chLayout.Count();
     int bytesLeft    = (m_bufferSamples - wroteSamples) * m_bytesPerSample;
     memmove((float*)m_buffer, (float*)m_buffer + wroteSamples, bytesLeft);
     m_bufferSamples -= wroteSamples;
@@ -918,8 +911,7 @@ void CSoftAE::RunOutputStage()
 
 void CSoftAE::RunRawOutputStage()
 {
-  const unsigned int rSamples = m_sinkFormat.m_frames * m_sinkChLayoutCount;
-  const unsigned int samples  = rSamples;
+  unsigned int samples = m_sinkFormat.m_frames * m_sinkFormat.m_channelLayout.Count();
 
   /* this normally only loops once */
   while(m_bufferSamples >= samples)
@@ -928,7 +920,7 @@ void CSoftAE::RunRawOutputStage()
     uint8_t *rawBuffer = (uint8_t*)m_buffer;
     wroteFrames = m_sink->AddPackets(rawBuffer, m_sinkFormat.m_frames);
 
-    int wroteSamples = wroteFrames * m_chLayoutCount;
+    int wroteSamples = wroteFrames * m_sinkFormat.m_channelLayout.Count();;
     int bytesLeft    = (m_bufferSamples - wroteSamples) * m_bytesPerSample;
     memmove(rawBuffer, rawBuffer + (wroteSamples * m_bytesPerSample), bytesLeft);
     m_bufferSamples -= wroteSamples;
@@ -1012,6 +1004,8 @@ unsigned int CSoftAE::RunRawStreamStage(unsigned int channelCount, void *out, bo
   for(itt = m_playingStreams.begin(); itt != m_playingStreams.end(); ++itt)
   {
     CSoftAEStream *sitt = *itt;
+    if (sitt == masterStream)
+      continue;
 
     /* consume data from streams even though we cant use it */
     sitt->GetFrame();
@@ -1136,7 +1130,7 @@ inline void CSoftAE::RunBufferStage(void *out)
     memcpy(floatBuffer + m_bufferSamples, out, m_frameSize);
   }
 
-  m_bufferSamples += m_chLayoutCount;
+  m_bufferSamples += m_chLayout.Count();
 }
 
 inline void CSoftAE::RemoveStream(StreamList &streams, CSoftAEStream *stream)

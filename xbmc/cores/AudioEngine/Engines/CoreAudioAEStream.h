@@ -96,6 +96,7 @@ public:
 
   virtual void FadeVolume(float from, float to, unsigned int time);
   virtual bool IsFading();
+  virtual void RegisterSlave(IAEStream *stream){};//TODO
   
   OSStatus Render(AudioUnitRenderActionFlags* actionFlags, 
                   const AudioTimeStamp* pTimeStamp, 

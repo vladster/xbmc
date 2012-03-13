@@ -84,14 +84,13 @@ void CAESinkFactory::ParseDevice(CStdString &device, CStdString &driver)
 
 IAESink *CAESinkFactory::Create(CStdString &device, AEAudioFormat &desiredFormat, bool rawPassthrough)
 {
+#if !defined __APPLE__
   /* extract the driver from the device string if it exists */
   CStdString driver;  
   ParseDevice(device, driver);
   
-#if !defined __APPLE__
   AEAudioFormat  tmpFormat;
   IAESink        *sink;
-#endif
   CStdString     tmpDevice;
 
   if (driver == "PROFILER")
@@ -131,6 +130,8 @@ IAESink *CAESinkFactory::Create(CStdString &device, AEAudioFormat &desiredFormat
 
   //Complete failure.
   TRY_SINK(NULL);
+
+#endif//__APPLE__
 
   /* should never get here */
   ASSERT(false);

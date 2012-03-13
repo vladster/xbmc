@@ -443,24 +443,21 @@ void CGUISettings::Initialize()
   AddBool(ao, "audiooutput.dontnormalizelevels", 346, true);
 
 #if (defined(__APPLE__) && defined(__arm__))
-  AddBool(ao, "audiooutput.ac3passthrough", 364, false);
-  AddBool(ao, "audiooutput.dtspassthrough", 254, false);
+  CSettingsCategory* aocat = g_sysinfo.IsAppleTV2() ? ao : NULL;
 #else
   CSettingsCategory* aocat = ao;
 #endif
 
-#if defined __APPLE__
-#if defined(TARGET_DARWIN_OSX)
-  AddBool(ao, "audiooutput.multichannellpcm", 348, true);
-#else
-  AddBool(NULL, "audiooutput.multichannellpcm", 348, false);
-#endif
-  AddBool(NULL, "audiooutput.truehdpassthrough", 349, false);
-  AddBool(NULL, "audiooutput.dtshdpassthrough", 407, false);
-#else
-  AddBool(ao, "audiooutput.multichannellpcm", 348, true);
-  AddBool(ao, "audiooutput.truehdpassthrough", 349, true);
-  AddBool(ao, "audiooutput.dtshdpassthrough", 407, true);
+  AddBool(aocat, "audiooutput.ac3passthrough"   , 364, true);
+  AddBool(aocat, "audiooutput.dtspassthrough"   , 254, true);
+#if !defined(TARGET_DARWIN)
+  AddBool(aocat, "audiooutput.passthroughaac"   , 299, false);
+  AddBool(aocat, "audiooutput.multichannellpcm" , 348, true );
+  AddBool(aocat, "audiooutput.passthroughmp1"   , 300, false);
+  AddBool(aocat, "audiooutput.passthroughmp2"   , 301, false);
+  AddBool(aocat, "audiooutput.passthroughmp3"   , 302, false);
+  AddBool(aocat, "audiooutput.truehdpassthrough", 349, true );
+  AddBool(aocat, "audiooutput.dtshdpassthrough" , 407, true );
 #endif
 
 #if defined __APPLE__

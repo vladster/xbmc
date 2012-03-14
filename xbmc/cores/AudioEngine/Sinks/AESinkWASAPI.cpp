@@ -30,6 +30,7 @@
 
 #include "../Utils/AEUtil.h"
 #include "settings/GUISettings.h"
+#include "settings/AdvancedSettings.h"
 #include "utils/StdString.h"
 #include "utils/log.h"
 #include "threads/SingleLock.h"
@@ -92,8 +93,9 @@ CAESinkWASAPI::~CAESinkWASAPI()
 
 bool CAESinkWASAPI::Initialize(AEAudioFormat &format, CStdString &device)
 {
-  CLog::Log(LOGDEBUG, __FUNCTION__": Initializing sink - check for Exclusive or Shared mode");
   if(m_initialized) return false;
+
+  CLog::Log(LOGDEBUG, __FUNCTION__": Initializing WASAPI Sink Rev. 1.0.3");
 
   m_device = device;
 
@@ -260,39 +262,39 @@ bool CAESinkWASAPI::IsCompatible(const AEAudioFormat format, const CStdString de
 
   bool excSetting = g_guiSettings.GetBool("audiooutput.useexclusivemode");
 
-  //Shared mode has one mix format used to open the device and is set by Windows.
-  //Don't change unless we are switching to passthrough or changing output modes.
-  CLog::Log(LOGDEBUG, __FUNCTION__": Comparing Channel Layouts Current :  %d", m_format.m_channelLayout.Count());
-  CLog::Log(LOGDEBUG, __FUNCTION__": Comparing Channel Layouts Target  :  %d", format.m_channelLayout.Count());
+  u_int notCompatible         = 0;
+  std::string strDiffBecause ("");
+  static const char* compatibleParams[] = {" :Devices",
+                                           " :Channels",
+                                           " :Sample Rates",
+                                           " :Data Formats",
+                                           " :Exclusive Mode Settings",
+                                           " :Passthrough Formats"
+                                           " :End" };
 
-  //if(!m_isExclusive && excSetting &&  m_isExclusive && !AE_IS_RAW(format.m_dataFormat))
-  //	return true;
+  notCompatible = (notCompatible  +!((AE_IS_RAW(format.m_dataFormat)  == AE_IS_RAW(m_encodedFormat))    ||
+                                     (!AE_IS_RAW(format.m_dataFormat) == !AE_IS_RAW(m_encodedFormat)))) << 1;
+  notCompatible = (notCompatible  +!((m_isExclusive                   == excSetting)                    ||
+                                     (!m_isExclusive                  == !excSetting)))                 << 1;
+  notCompatible = (notCompatible  + !(format.m_dataFormat             == m_encodedFormat))              << 1;
+  notCompatible = (notCompatible  + !(format.m_sampleRate             == m_encodedSampleRate))          << 1;
+  notCompatible = (notCompatible  + !(format.m_channelLayout.Count()  == m_encodedChannels))            << 1;
+  notCompatible = (notCompatible  + !(m_device                        == device));
 
-  if( m_device      == device     && //Same device
-      m_isExclusive == excSetting && //No change in exclusive vs shared mode
-
-      AE_IS_RAW(m_encodedFormat) == AE_IS_RAW(format.m_dataFormat)  && //No change from PCM to RAW or vice versa
-
-      //If the current and target formats are raw and match...
-      ((AE_IS_RAW(format.m_dataFormat) && AE_IS_RAW(m_encodedFormat) && 
-      format.m_dataFormat            == m_encodedFormat     &&
-      format.m_sampleRate            == m_encodedSampleRate &&
-      format.m_channelLayout.Count() == m_encodedChannels)  ||
-
-      //Or the current and target formats are both PCM and match in Shared mode...
-      (!AE_IS_RAW(format.m_dataFormat) && !AE_IS_RAW(m_format.m_dataFormat) &&
-      m_format.m_sampleRate    == format.m_sampleRate   && 
-      m_format.m_channelLayout == format.m_channelLayout &&
-      !m_isExclusive)))
+  if (!notCompatible)
   {
-    CLog::Log(LOGDEBUG, __FUNCTION__": Formats compatible - reusing sink");
-    return true; //We can reuse the existing sink.
+    CLog::Log(LOGDEBUG, __FUNCTION__": Formats compatible - reusing existing sink");
+    return true;
   }
-  else
+
+  for (int i = 0; strcmp(compatibleParams[i], " :End"); i++)
   {
-    CLog::Log(LOGDEBUG, __FUNCTION__": Formats incompatible - need new sink");
+    strDiffBecause += (notCompatible & 0x01) ? compatibleParams[i] : "";
+    notCompatible    = notCompatible >> 1;
+  }
+
+  CLog::Log(LOGDEBUG, __FUNCTION__": Formats Incompatible due to different %s", strDiffBecause.c_str());
     return false;
-  }
 }
 
 
@@ -576,10 +578,10 @@ void CAESinkWASAPI::BuildWaveFormatExtensible(AEAudioFormat &format, WAVEFORMATE
   if (!AE_IS_RAW(format.m_dataFormat)) // PCM data
   {
     wfxex.dwChannelMask          = SpeakerMaskFromAEChannels(format.m_channelLayout);
-    wfxex.SubFormat              = KSDATAFORMAT_SUBTYPE_IEEE_FLOAT;
     wfxex.Format.nChannels       = format.m_channelLayout.Count();
     wfxex.Format.nSamplesPerSec  = format.m_sampleRate;
-    wfxex.Format.wBitsPerSample  = 32;
+    wfxex.Format.wBitsPerSample  = format.m_dataFormat <= AE_FMT_S16NE ? 16 : 32;
+    wfxex.SubFormat              = format.m_dataFormat <= AE_FMT_FLOAT ? KSDATAFORMAT_SUBTYPE_PCM : KSDATAFORMAT_SUBTYPE_IEEE_FLOAT;
   }
   else //Raw bitstream
   {
@@ -682,9 +684,16 @@ bool CAESinkWASAPI::InitializeShared(AEAudioFormat &format)
   REFERENCE_TIME hnsRequestedDuration, hnsPeriodicity;
   hr = m_pAudioClient->GetDevicePeriod(NULL, &hnsPeriodicity);
 
+  /* Get m_audioSinkBufferSizeSharedmsec from advancedsettings.xml */
+  int m_audioSinkBufferSharedmsec;
+  m_audioSinkBufferSharedmsec = g_advancedSettings.m_audioSinkBufferSizeExclusivemsec * 10000;
+
   //The default periods of some devices are VERY low (less than 3ms).
-  //For audio stability make sure we have at least an 8ms buffer.
-  if(hnsPeriodicity < 2000000) hnsPeriodicity = 2000000;
+  //For audio stability make sure we have at least an 50ms buffer.
+  if(hnsPeriodicity < 500000) hnsPeriodicity = 500000;
+
+  //use user's advancedsetting value for buffer size as long as it's over minimum set above
+  if(hnsPeriodicity < m_audioSinkBufferSharedmsec) hnsPeriodicity = m_audioSinkBufferSharedmsec;
 
   hnsRequestedDuration = hnsPeriodicity; //*MUST* be equal now with event-driven callback event
 
@@ -810,7 +819,7 @@ bool CAESinkWASAPI::InitializeExclusive(AEAudioFormat &format)
       if(SUCCEEDED(hr))
       {
         //If the current sample rate matches the source then stop looking and use it.
-        if(WASAPISampleRates[i] == format.m_sampleRate)
+        if((WASAPISampleRates[i] == format.m_sampleRate) && (format.m_dataFormat <= testFormats[j].subFormatType))
           goto initialize;
         //If this rate is closer to the source then the previous one, save it.
         else if(closestMatch < 0 || abs((int)WASAPISampleRates[i] - (int)format.m_sampleRate) < abs((int)WASAPISampleRates[closestMatch] - (int)format.m_sampleRate))
@@ -843,8 +852,8 @@ initialize:
   m_encodedFormat     = format.m_dataFormat;
   m_encodedChannels   = wfxex.Format.nChannels;
   m_encodedSampleRate = bool(format.m_dataFormat == AE_FMT_TRUEHD || format.m_dataFormat == AE_FMT_DTSHD) ? 96000L : 48000L;
-  wfxex_iec61937.dwEncodedChannelCount = wfxex.Format.nChannels; /* WATCH THIS */
-  wfxex_iec61937.dwEncodedSamplesPerSec = 48000L; /* WATCH THIS */
+  wfxex_iec61937.dwEncodedChannelCount = wfxex.Format.nChannels;
+  wfxex_iec61937.dwEncodedSamplesPerSec = m_encodedSampleRate;
 
   if(wfxex.Format.wBitsPerSample == 32)
   {
@@ -855,7 +864,7 @@ initialize:
     else // wfxex->Samples.wValidBitsPerSample == 24
       format.m_dataFormat = AE_FMT_S24NE4;
   }
-  else // if (wfxex.SubFormat == KSDATAFORMAT_SUBTYPE_PCM) // wfxex->Samples.wBitsPerSample == 16 <- Line Kills DTS-HD format!
+  else
   {
     format.m_dataFormat = AE_FMT_S16NE;
   }
@@ -867,9 +876,16 @@ initialize:
   REFERENCE_TIME hnsRequestedDuration, hnsPeriodicity;
   hr = m_pAudioClient->GetDevicePeriod(NULL, &hnsPeriodicity);
 
+  /* Get m_audioSinkBufferSizeExclusivemsec from advancedsettings.xml */
+  int m_audioSinkBufferExclusivemsec;
+  m_audioSinkBufferExclusivemsec = g_advancedSettings.m_audioSinkBufferSizeExclusivemsec * 10000;
+
   //The default periods of some devices are VERY low (less than 3ms).
-  //For audio stability make sure we have at least an 8ms buffer.
+  //For audio stability make sure we have at least an 50ms buffer.
   if(hnsPeriodicity < 500000) hnsPeriodicity = 500000;
+
+  //use user's advancedsetting value for buffer size as long as it's over minimum set above
+  if(hnsPeriodicity < m_audioSinkBufferExclusivemsec) hnsPeriodicity = m_audioSinkBufferExclusivemsec;
 
   //hnsPeriodicity = (REFERENCE_TIME)((hnsPeriodicity / format.m_frameSize) * format.m_frameSize); //even number of frames
   hnsRequestedDuration = hnsPeriodicity;
@@ -911,7 +927,7 @@ initialize:
   
   if (hr == AUDCLNT_E_BUFFER_SIZE_NOT_ALIGNED)
   {	
-    CLog::Log(LOGERROR, __FUNCTION__": Re-aligning WASAPI sink buffer due to %s.", WASAPIErrToStr(hr));
+    CLog::Log(LOGDEBUG, __FUNCTION__": Re-aligning WASAPI sink buffer due to %s.", WASAPIErrToStr(hr));
     // Get the next aligned frame.
     hr = m_pAudioClient->GetBufferSize(&m_uiBufferLen);
     if(FAILED(hr))
@@ -921,8 +937,8 @@ initialize:
     }
 
     hnsRequestedDuration = (REFERENCE_TIME) ((10000.0 * 1000 / wfxex.Format.nSamplesPerSec * m_uiBufferLen) + 0.5);
-    CLog::Log(LOGERROR, __FUNCTION__": Number of Frames in Buffer   : %d", m_uiBufferLen);
-    CLog::Log(LOGERROR, __FUNCTION__": Requested Duration of Buffer : %d", hnsRequestedDuration);
+    CLog::Log(LOGDEBUG, __FUNCTION__": Number of Frames in Buffer   : %d", m_uiBufferLen);
+    CLog::Log(LOGDEBUG, __FUNCTION__": Requested Duration of Buffer : %d", hnsRequestedDuration);
 
     // Release the previous allocations.
     SAFE_RELEASE(m_pAudioClient);

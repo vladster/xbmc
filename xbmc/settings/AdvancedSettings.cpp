@@ -52,6 +52,9 @@ void CAdvancedSettings::Initialize()
   m_audioResample = 0;
   m_audioForceDirectSound = false;
   m_audioAudiophile = false;
+  m_allChannelStereo = false;
+  m_audioSinkBufferSizeSharedmsec = 100;
+  m_audioSinkBufferSizeExclusivemsec = 60;
 
   //default hold time of 25 ms, this allows a 20 hertz sine to pass undistorted
   m_limiterHold = 0.025f;
@@ -359,7 +362,10 @@ void CAdvancedSettings::ParseSettingsFile(const CStdString &file)
     XMLUtils::GetInt(pElement, "resample", m_audioResample, 0, 192000);
     XMLUtils::GetBoolean(pElement, "forceDirectSound", m_audioForceDirectSound);
     XMLUtils::GetBoolean(pElement, "audiophile", m_audioAudiophile);
+    XMLUtils::GetBoolean(pElement, "allchannelstereo", m_allChannelStereo);
     XMLUtils::GetString(pElement, "transcodeto", m_audioTranscodeTo);
+    XMLUtils::GetInt(pElement, "audiosinksizesharedmsec", m_audioSinkBufferSizeSharedmsec);
+    XMLUtils::GetInt(pElement, "audiosinksizeexclusivemsec", m_audioSinkBufferSizeExclusivemsec);
 
     TiXmlElement* pAudioExcludes = pElement->FirstChildElement("excludefromlisting");
     if (pAudioExcludes)

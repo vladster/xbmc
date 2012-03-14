@@ -81,6 +81,7 @@ CCoreAudioAEStream::CCoreAudioAEStream(enum AEDataFormat dataFormat, unsigned in
   m_delete          (false),
   m_volume          (1.0f ),
   m_rgain           (1.0f ),
+  m_slave           (NULL ),
   m_convertFn       (NULL ),
   m_ssrc            (NULL ),
   m_draining        (false),
@@ -622,6 +623,13 @@ void CCoreAudioAEStream::InternalFlush()
       m_Buffer->Read(buffer, readsize);
       _aligned_free(buffer);
     }
+    
+      /* if we are draining and are out of packets, tell the slave to resume */
+    if (m_draining && m_slave)
+    {
+      m_slave->Resume();
+      m_slave = NULL;
+    }    
   }
   
   //if(m_Buffer)
@@ -704,6 +712,11 @@ void CCoreAudioAEStream::FadeVolume(float from, float target, unsigned int time)
 bool CCoreAudioAEStream::IsFading()
 {
   return m_fadeRunning;
+}
+
+void CCoreAudioAEStream::RegisterSlave(IAEStream *stream)
+{
+  m_slave = stream;
 }
 
 OSStatus CCoreAudioAEStream::OnRender(AudioUnitRenderActionFlags *ioActionFlags, const AudioTimeStamp *inTimeStamp, UInt32 inBusNumber, UInt32 inNumberFrames, AudioBufferList *ioData)

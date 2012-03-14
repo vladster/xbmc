@@ -96,7 +96,7 @@ public:
 
   virtual void FadeVolume(float from, float to, unsigned int time);
   virtual bool IsFading();
-  virtual void RegisterSlave(IAEStream *stream){};//TODO
+  virtual void RegisterSlave(IAEStream *stream);
   
   OSStatus Render(AudioUnitRenderActionFlags* actionFlags, 
                   const AudioTimeStamp* pTimeStamp, 
@@ -129,6 +129,7 @@ private:
   CAERemap                m_remap;         /* the remapper */
   float                   m_volume;        /* the volume level */
   float                   m_rgain;         /* replay gain level */
+  IAEStream               *m_slave;        /* slave aestream */
 
   CAEConvert::AEConvertToFn m_convertFn;
 

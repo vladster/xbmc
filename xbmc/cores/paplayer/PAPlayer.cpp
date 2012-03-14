@@ -62,8 +62,7 @@ PAPlayer::~PAPlayer()
   CloseAllStreams(false);  
   
   /* wait for the thread to terminate */
-  m_isPlaying = false;
-  CSingleLock lock(m_threadLock);
+  StopThread(true);//true - wait for end of thread
 }
 
 bool PAPlayer::HandlesType(const CStdString &type)
@@ -348,7 +347,6 @@ bool PAPlayer::CloseFile()
 
 void PAPlayer::Process()
 {
-  CSingleLock lock(m_threadLock);
   if (!m_startEvent.WaitMSec(100))
   {
     CLog::Log(LOGDEBUG, "PAPlayer::Process - Failed to receive start event");
@@ -356,7 +354,7 @@ void PAPlayer::Process()
   }
 
   CLog::Log(LOGDEBUG, "PAPlayer::Process - Playback started");  
-  while(m_isPlaying)
+  while(m_isPlaying && !m_bStop)
   {
     float delay = 1.0f;
     float buffer = 1.0f;

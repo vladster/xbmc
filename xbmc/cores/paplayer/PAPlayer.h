@@ -108,7 +108,6 @@ private:
 
   typedef std::list<StreamInfo*> StreamList;
 
-  CCriticalSection       m_threadLock;
   int                    m_playbackSpeed;    /* the playback speed (1 = normal) */
   bool                   m_isPlaying;
   bool                   m_isPaused;

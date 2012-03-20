@@ -668,8 +668,14 @@ void CGUIFontTTFBase::RenderCharacter(float posX, float posY, const Character *c
     // really interests us anyway.
     float rx0 = (float)MathUtils::round_int(x[0]);
     float rx3 = (float)MathUtils::round_int(x[3]);
+    /* Error: bad instruction on for marvell arm */
+#if defined(TARGET_MARVELL_DOVE)
+    x[1] = (float)floor(x[1] + 0.5f);
+    x[2] = (float)floor(x[2] + 0.5f);
+#else
     x[1] = (float)MathUtils::truncate_int(x[1]);
     x[2] = (float)MathUtils::truncate_int(x[2]);
+#endif
     if (rx0 > x[0])
       x[1] += 1;
     if (rx3 > x[3])

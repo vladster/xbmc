@@ -46,6 +46,11 @@ long cas(volatile long *pAddr, long expectedVal, long swapVal)
   return prev;
 }
 
+#elif defined(TARGET_MARVELL_DOVE)
+long cas(volatile long* pAddr, long expectedVal, long swapVal)
+{
+  return(__sync_val_compare_and_swap(pAddr, expectedVal, swapVal));
+}
 #elif defined(__arm__)
 long cas(volatile long* pAddr, long expectedVal, long swapVal)
 {
@@ -188,6 +193,25 @@ long AtomicIncrement(volatile long* pAddr)
   return val;
 }
 
+#elif defined(TARGET_MARVELL_DOVE)
+
+long AtomicIncrement(volatile long* pAddr)
+{
+  register long val;
+  asm volatile (
+                "1:                     \n" 
+                "ldrex   %0, [%1]       \n" // (val = *pAddr)
+                "add     %0,  #1        \n" // (val += 1)
+                "strex   r1,  %0, [%1]	\n"
+                "cmp     r1,   #0       \n"
+                "bne     1b             \n"
+                : "=&r" (val)
+                : "r"(pAddr)
+                : "r1"
+                );
+  return val;
+}
+
 #elif defined(__arm__)
 
 long AtomicIncrement(volatile long* pAddr)
@@ -264,6 +288,25 @@ long AtomicAdd(volatile long* pAddr, long amount)
                         : "=&r" (val)
                         : "r" (pAddr), "r" (amount)
                         : "cc", "memory");
+  return val;
+}
+
+#elif defined(TARGET_MARVELL_DOVE)
+
+long AtomicAdd(volatile long* pAddr, long amount)
+{
+  register long val;
+  asm volatile (
+                "1:                     \n" 
+                "ldrex   %0, [%1]       \n" // (val = *pAddr)
+                "add     %0,  %2        \n" // (val += amount)
+                "strex   r1,  %0, [%1]	\n"
+                "cmp     r1,   #0       \n"
+                "bne     1b             \n"
+                : "=&r" (val)
+                : "r"(pAddr), "r"(amount)
+                : "r1"
+                );
   return val;
 }
 
@@ -345,6 +388,26 @@ long AtomicDecrement(volatile long* pAddr)
   return val;
 }
 
+#elif defined(TARGET_MARVELL_DOVE)
+
+long AtomicDecrement(volatile long* pAddr)
+{
+  register long val;
+  asm volatile (
+                "1:                     \n" 
+                "ldrex   %0, [%1]       \n" // (val = *pAddr)
+                "sub     %0,  #1        \n" // (val -= 1)
+                "strex   r1,  %0, [%1]	\n"
+                "cmp     r1,   #0       \n"
+                "bne     1b             \n"
+                : "=&r" (val)
+                : "r"(pAddr)
+                : "r1"
+                );
+  
+  return val;
+}
+
 #elif defined(__arm__)
 
 long AtomicDecrement(volatile long* pAddr)
@@ -422,6 +485,26 @@ long AtomicSubtract(volatile long* pAddr, long amount)
                         : "=&r" (val)
                         : "r" (pAddr), "r" (amount)
                         : "cc", "memory");
+  return val;
+}
+
+#elif defined(TARGET_MARVELL_DOVE)
+
+long AtomicSubtract(volatile long* pAddr, long amount)
+{
+  register long val;
+  asm volatile (
+                "1:                     \n" 
+                "ldrex   %0, [%1]       \n" // (val = *pAddr)
+                "sub     %0,  %2        \n" // (val -= amount)
+                "strex   r1,  %0, [%1]	\n"
+                "cmp     r1,   #0       \n"
+                "bne     1b             \n"
+                : "=&r" (val)
+                : "r"(pAddr), "r"(amount)
+                : "r1"
+                );
+  
   return val;
 }
 

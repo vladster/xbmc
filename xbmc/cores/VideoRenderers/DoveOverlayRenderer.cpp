@@ -331,8 +331,12 @@ void CDoveOverlayRenderer::FlipPage(int source)
 
   }
 
+  /*
+   * Is only needed for DOVEFB_IOCTL_NEXT_FRAME_PRESENT
+   *
   if (ioctl(m_overlayfd, DOVEFB_IOCTL_WAIT_VSYNC, 0) != 0)
     CLog::Log(LOGERROR, "%s::%s - Error waiting for vsync\n", CLASSNAME, __func__);
+  */
 
   if( source >= 0 && source < NUM_BUFFERS )
     m_currentBuffer = source;

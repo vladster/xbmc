@@ -33,6 +33,7 @@
 #endif
 #include "Video/DVDVideoCodecFFmpeg.h"
 #include "Video/DVDVideoCodecOpenMax.h"
+#include "Video/DVDVideoCodecVMETA.h"
 #include "Video/DVDVideoCodecLibMpeg2.h"
 #if defined(HAVE_LIBCRYSTALHD)
 #include "Video/DVDVideoCodecCrystalHD.h"
@@ -162,8 +163,17 @@ CDVDVideoCodec* CDVDFactoryCodec::CreateVideoCodec(CDVDStreamInfo &hint, unsigne
 #elif defined(_LINUX) && !defined(__APPLE__)
   hwSupport += "VAAPI:no ";
 #endif
+#if defined(HAS_MARVELL_DOVE)
+  hwSupport += "VMETA:yes ";
+#else
+  hwSupport += "VMETA:no ";
+#endif
 
   CLog::Log(LOGDEBUG, "CDVDFactoryCodec: compiled in hardware support: %s", hwSupport.c_str());
+#if defined(HAS_MARVELL_DOVE)
+  CLog::Log(LOGINFO, "Trying VMETA Video Decoder...");
+  if ( (pCodec = OpenCodec(new CDVDVideoCodecVMETA(), hint, options)) ) return pCodec;
+#endif
 
   // dvd's have weird still-frames in it, which is not fully supported in ffmpeg
   if(hint.stills && (hint.codec == CODEC_ID_MPEG2VIDEO || hint.codec == CODEC_ID_MPEG1VIDEO))

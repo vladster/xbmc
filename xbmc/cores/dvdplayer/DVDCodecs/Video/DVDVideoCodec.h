@@ -42,7 +42,6 @@ struct OpenMaxVideoBuffer;
   class CDVDVideoCodecVideoToolBox;
   struct __CVBuffer;
 #endif
-
 // should be entirely filled by all codecs
 struct DVDVideoPicture
 {
@@ -76,6 +75,11 @@ struct DVDVideoPicture
     };
 #endif
   };
+#ifdef HAS_MARVELL_DOVE
+  struct {
+    void *vmeta;
+  };
+#endif
 
   unsigned int iFlags;
 

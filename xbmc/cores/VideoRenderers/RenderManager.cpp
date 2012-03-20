@@ -38,6 +38,8 @@
 
 #if defined(HAS_GL)
   #include "LinuxRendererGL.h"
+#elif defined(HAS_MARVELL_DOVE)
+  #include "DoveOverlayRenderer.h"
 #elif HAS_GLES == 2
   #include "LinuxRendererGLES.h"
 #elif defined(HAS_DX)
@@ -312,6 +314,8 @@ unsigned int CXBMCRenderManager::PreInit()
   {
 #if defined(HAS_GL)
     m_pRenderer = new CLinuxRendererGL();
+#elif defined(HAS_MARVELL_DOVE)
+    m_pRenderer = new CDoveOverlayRenderer();
 #elif HAS_GLES == 2
     m_pRenderer = new CLinuxRendererGLES();
 #elif defined(HAS_DX)
@@ -760,7 +764,11 @@ int CXBMCRenderManager::AddVideoPicture(DVDVideoPicture& pic)
 
   if(pic.format == DVDVideoPicture::FMT_YUV420P)
   {
+#ifdef HAS_MARVELL_DOVE
+    m_pRenderer->AddProcessor(&image, &pic);
+#else
     CDVDCodecUtils::CopyPicture(&image, &pic);
+#endif
   }
   else if(pic.format == DVDVideoPicture::FMT_NV12)
   {
@@ -769,7 +777,11 @@ int CXBMCRenderManager::AddVideoPicture(DVDVideoPicture& pic)
   else if(pic.format == DVDVideoPicture::FMT_YUY2
        || pic.format == DVDVideoPicture::FMT_UYVY)
   {
+#ifdef HAS_MARVELL_DOVE
+    m_pRenderer->AddProcessor(&image, &pic);
+#else
     CDVDCodecUtils::CopyYUV422PackedPicture(&image, &pic);
+#endif
   }
   else if(pic.format == DVDVideoPicture::FMT_DXVA)
   {

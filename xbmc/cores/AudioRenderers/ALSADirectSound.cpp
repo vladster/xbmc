@@ -112,7 +112,7 @@ bool CALSADirectSound::Initialize(IAudioCallback* pCallback, const CStdString& d
   if (!m_bPassthrough)
      m_amp.SetVolume(m_nCurrentVolume);
 
-  m_dwFrameCount = 512;
+  m_dwFrameCount = 1024;
   m_dwNumPackets = 16;
   m_uiBufferSize = 0;
 
@@ -253,12 +253,12 @@ bool CALSADirectSound::Initialize(IAudioCallback* pCallback, const CStdString& d
   nErr = snd_pcm_hw_params_set_periods_near(m_pPlayHandle, hw_params, &m_dwNumPackets, NULL);
   CHECK_ALSA_RETURN(LOGERROR,"hw_params_set_periods",nErr);
 
-  nErr = snd_pcm_hw_params_get_buffer_size(hw_params, &m_uiBufferSize);
-  CHECK_ALSA_RETURN(LOGERROR,"hw_params_get_buffer_size",nErr);
-
   /* Assign them to the playback handle and free the parameters structure */
   nErr = snd_pcm_hw_params(m_pPlayHandle, hw_params);
   CHECK_ALSA_RETURN(LOGERROR,"snd_pcm_hw_params",nErr);
+
+  nErr = snd_pcm_hw_params_get_buffer_size(hw_params, &m_uiBufferSize);
+  CHECK_ALSA_RETURN(LOGERROR,"hw_params_get_buffer_size",nErr);
 
   nErr = snd_pcm_sw_params_current(m_pPlayHandle, sw_params);
   CHECK_ALSA_RETURN(LOGERROR,"sw_params_current",nErr);

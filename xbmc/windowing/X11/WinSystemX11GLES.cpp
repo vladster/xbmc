@@ -369,7 +369,9 @@ bool CWinSystemX11GLES::RefreshEGLContext()
   if ((m_eglWindow == info.info.x11.window) && m_eglSurface && m_eglContext)
   {
     CLog::Log(LOGWARNING, "EGL: Same window as before, refreshing context");
+#ifndef HAS_MARVELL_DOVE /* Dove GL engine doesn't like the following. Probably EGL_NO_CONTEXT flag */
     eglMakeCurrent(m_eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+#endif
     eglMakeCurrent(m_eglDisplay, m_eglSurface,   m_eglSurface,   m_eglContext);
     return true;
   }

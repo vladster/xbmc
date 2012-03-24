@@ -75,12 +75,12 @@ protected:
   IppVmetaDecInfo                 m_VDecInfo;
   void                            *m_pDecState;
 
-  std::queue<IppVmetaBitstream*>  m_input_avaliable;
+  std::queue<IppVmetaBitstream*>  m_input_available;
   std::vector<IppVmetaBitstream*> m_input_buffers;
   unsigned int m_input_size;
 
   std::queue<IppVmetaPicture*>    m_output_ready;
-  std::queue<IppVmetaPicture*>    m_output_avaliable;
+  std::queue<IppVmetaPicture*>    m_output_available;
   std::vector<IppVmetaPicture*>   m_output_buffers;
   std::queue<double>              m_pts_queue;
 

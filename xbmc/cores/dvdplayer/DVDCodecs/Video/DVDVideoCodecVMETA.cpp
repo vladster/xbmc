@@ -203,7 +203,7 @@ bool CDVDVideoCodecVMETA::Open(CDVDStreamInfo &hints, CDVDCodecOptions &options)
     */
 
     m_input_buffers.push_back(pStream);
-    m_input_avaliable.push(pStream);
+    m_input_available.push(pStream);
   }
 
   for (size_t i = 0; i < STREAM_PICBUF_NUM; i++)
@@ -214,7 +214,7 @@ bool CDVDVideoCodecVMETA::Open(CDVDStreamInfo &hints, CDVDCodecOptions &options)
     pPicture->pUsrData0 = (void *)i;
 
     m_output_buffers.push_back(pPicture);
-    m_output_avaliable.push(pPicture);
+    m_output_available.push(pPicture);
   }
 
   m_Frames        = 0;
@@ -223,7 +223,7 @@ bool CDVDVideoCodecVMETA::Open(CDVDStreamInfo &hints, CDVDCodecOptions &options)
   if(bSendCodecConfig)
     SendCodecConfig();
 
-  CLog::Log(LOGDEBUG, "%s::%s - VMEDA Decoder opened with codec : %s [%dx%d]", CLASSNAME, __func__,
+  CLog::Log(LOGDEBUG, "%s::%s - VMETA Decoder opened with codec : %s [%dx%d]", CLASSNAME, __func__,
             m_video_codec_name.c_str(), m_decoded_width, m_decoded_height);
 
   return true;
@@ -270,8 +270,8 @@ void CDVDVideoCodecVMETA::Dispose()
 
   m_input_buffers.clear();
 
-  while(!m_input_avaliable.empty())
-    m_input_avaliable.pop();
+  while(!m_input_available.empty())
+    m_input_available.pop();
 
   for (size_t i = 0; i < m_output_buffers.size(); i++)
   {
@@ -283,8 +283,8 @@ void CDVDVideoCodecVMETA::Dispose()
 
   m_output_buffers.clear();
 
-  while(!m_output_avaliable.empty())
-    m_output_avaliable.pop();
+  while(!m_output_available.empty())
+    m_output_available.pop();
 
   m_Frames        = 0;
 
@@ -304,10 +304,10 @@ IppCodecStatus CDVDVideoCodecVMETA::SendCodecConfig()
 {
   IppCodecStatus retCodec;
 
-  if(m_extradata == NULL || m_extrasize == 0 || m_pDecState == NULL || m_input_avaliable.empty())
+  if(m_extradata == NULL || m_extrasize == 0 || m_pDecState == NULL || m_input_available.empty())
     return IPP_STATUS_ERR;
 
-  IppVmetaBitstream *pStream = m_input_avaliable.front();
+  IppVmetaBitstream *pStream = m_input_available.front();
 
   if(pStream->pBuf)
     m_DllVMETA->vdec_os_api_dma_free(pStream->pBuf);
@@ -333,7 +333,7 @@ IppCodecStatus CDVDVideoCodecVMETA::SendCodecConfig()
     return IPP_STATUS_ERR;
   }
 
-  m_input_avaliable.pop();
+  m_input_available.pop();
 
   return IPP_STATUS_NOERR;
 }
@@ -347,8 +347,8 @@ IppCodecStatus CDVDVideoCodecVMETA::DecodeInternal(uint8_t *pData, unsigned int 
 
   retCodec = m_DllVMETA->DecodeFrame_Vmeta(&m_VDecInfo, m_pDecState);
 
-  //printf("m_input_avaliable.size() %d m_output_avaliable.size() %d m_output_ready.size() %d\n",
-  //       m_input_avaliable.size(), m_output_avaliable.size(), m_output_ready.size());
+  //printf("m_input_available.size() %d m_output_available.size() %d m_output_ready.size() %d\n",
+  //       m_input_available.size(), m_output_available.size(), m_output_ready.size());
 
   switch(retCodec)
   {
@@ -356,12 +356,12 @@ IppCodecStatus CDVDVideoCodecVMETA::DecodeInternal(uint8_t *pData, unsigned int 
       //printf("IPP_STATUS_WAIT_FOR_EVENT\n");
       break;
     case IPP_STATUS_NEED_INPUT:
-      if(m_input_avaliable.empty())
+      if(m_input_available.empty())
          CLog::Log(LOGDEBUG, "IPP_STATUS_NEED_INPUT no free input buffers\n");
-      if(!m_input_avaliable.empty() && *iSize != 0)
+      if(!m_input_available.empty() && *iSize != 0)
       {
         //printf("IPP_STATUS_NEED_INPUT\n");
-        IppVmetaBitstream *pStream = m_input_avaliable.front();
+        IppVmetaBitstream *pStream = m_input_available.front();
 
         if(pStream->pBuf)
           m_DllVMETA->vdec_os_api_dma_free(pStream->pBuf);
@@ -389,7 +389,7 @@ IppCodecStatus CDVDVideoCodecVMETA::DecodeInternal(uint8_t *pData, unsigned int 
           return IPP_STATUS_ERR;
         }
 
-        m_input_avaliable.pop();
+        m_input_available.pop();
         *iSize = 0;
       }
       break;
@@ -397,13 +397,13 @@ IppCodecStatus CDVDVideoCodecVMETA::DecodeInternal(uint8_t *pData, unsigned int 
       //printf("IPP_STATUS_END_OF_STREAM\n");
       break;
     case IPP_STATUS_NEED_OUTPUT_BUF:
-      if(m_output_avaliable.empty())
+      if(m_output_available.empty())
         CLog::Log(LOGDEBUG, "IPP_STATUS_FRAME_COMPLETE no free pictures buffers\n");
       //printf("IPP_STATUS_NEED_OUTPUT_BUF\n");
-      if(!m_output_avaliable.empty())
+      if(!m_output_available.empty())
       {
-        IppVmetaPicture *pPicture = m_output_avaliable.front();
-        m_output_avaliable.pop();
+        IppVmetaPicture *pPicture = m_output_available.front();
+        m_output_available.pop();
         if(!pPicture)
           return IPP_STATUS_ERR;
 
@@ -420,7 +420,7 @@ IppCodecStatus CDVDVideoCodecVMETA::DecodeInternal(uint8_t *pData, unsigned int 
         if(pPicture->pBuf == NULL)
         {
           CLog::Log(LOGERROR, "%s::%s Error : Allocate picture\n", CLASSNAME, __func__);
-          m_output_avaliable.push(pPicture);
+          m_output_available.push(pPicture);
           return IPP_STATUS_ERR;
         }
         m_DllVMETA->DecoderPushBuffer_Vmeta(IPP_VMETA_BUF_TYPE_PIC, (void*)pPicture, m_pDecState);
@@ -434,7 +434,7 @@ IppCodecStatus CDVDVideoCodecVMETA::DecodeInternal(uint8_t *pData, unsigned int 
         pStream = (IppVmetaBitstream*)pPopTmp;
         if(pStream == NULL)
           break;
-        m_input_avaliable.push(pStream);
+        m_input_available.push(pStream);
       }
       break;
     case IPP_STATUS_FRAME_COMPLETE:
@@ -444,7 +444,7 @@ IppCodecStatus CDVDVideoCodecVMETA::DecodeInternal(uint8_t *pData, unsigned int 
         pStream = (IppVmetaBitstream*)pPopTmp;
         if(pStream == NULL)
           break;
-        m_input_avaliable.push(pStream);
+        m_input_available.push(pStream);
       }
       //printf("IPP_STATUS_FRAME_COMPLETE\n");
       {
@@ -493,7 +493,7 @@ IppCodecStatus CDVDVideoCodecVMETA::DecodeInternal(uint8_t *pData, unsigned int 
         pPicture = (IppVmetaPicture *)pPopTmp;
         if(pPicture == NULL)
           break;
-        m_output_avaliable.push(pPicture);
+        m_output_available.push(pPicture);
       }
       break;
     default:
@@ -625,7 +625,7 @@ bool CDVDVideoCodecVMETA::ClearPicture(DVDVideoPicture* pDvdVideoPicture)
   {
     IppVmetaPicture *pPicture = (IppVmetaPicture *)pDvdVideoPicture->vmeta;
     //printf("CDVDVideoCodecVMETA::ClearPicture 0x%08x 0x%08x 0x%08x\n", pDvdVideoPicture->vmeta, pPicture, pPicture->pBuf);
-    m_output_avaliable.push(pPicture);
+    m_output_available.push(pPicture);
     pDvdVideoPicture->vmeta = NULL;
   }
 
@@ -645,7 +645,7 @@ void CDVDVideoCodecVMETA::Reset(void)
   {
     pPicture = m_output_ready.front();
     m_output_ready.pop();
-    m_output_avaliable.push(pPicture);
+    m_output_available.push(pPicture);
   }
 
   pPicture = NULL;
@@ -654,7 +654,7 @@ void CDVDVideoCodecVMETA::Reset(void)
     m_DllVMETA->DecoderPopBuffer_Vmeta(IPP_VMETA_BUF_TYPE_STRM, (void**)&pStream, m_pDecState);
     if(pStream != NULL) 
     {
-      m_input_avaliable.push(pStream);      
+      m_input_available.push(pStream);      
     }
     else
     {
@@ -665,7 +665,7 @@ void CDVDVideoCodecVMETA::Reset(void)
     m_DllVMETA->DecoderPopBuffer_Vmeta(IPP_VMETA_BUF_TYPE_PIC, (void**)&pPicture, m_pDecState);
     if(pPicture != NULL) 
     {
-      m_output_avaliable.push(pPicture);      
+      m_output_available.push(pPicture);      
     }
     else
     {

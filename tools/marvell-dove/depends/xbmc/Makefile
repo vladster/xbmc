@@ -8,6 +8,8 @@ ifeq ($(USE_BUILDROOT),1)
 endif
 
 CONFIGURE=./configure --prefix=$(PREFIX) --build=$(BUILD) --host=$(HOST) \
+					--disable-vdpau --disable-vaapi --disable-crystalhd --disable-vdadecoder \
+					--disable-vtbdecoder --disable-vtbdecoder --disable-projectm \
 					--enable-gles --disable-pulse --disable-projectm --enable-dbus \
 					--disable-optimizations --enable-debug --with-platform=marvell-dove
 

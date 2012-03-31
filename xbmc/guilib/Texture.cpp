@@ -33,10 +33,13 @@
 #include "osx/DarwinUtils.h"
 #endif
 
+#include <map>
+
 /************************************************************************/
 /*                                                                      */
 /************************************************************************/
-CBaseTexture::CBaseTexture(unsigned int width, unsigned int height, unsigned int format)
+
+CBaseTexture::CBaseTexture(unsigned int width, unsigned int height, unsigned int format, bool allocate)
  : m_hasAlpha( true )
 {
 #ifndef HAS_DX 
@@ -44,7 +47,7 @@ CBaseTexture::CBaseTexture(unsigned int width, unsigned int height, unsigned int
 #endif
   m_pixels = NULL;
   m_loadedToGPU = false;
-  Allocate(width, height, format);
+  Allocate(width, height, format, allocate);
 }
 
 CBaseTexture::~CBaseTexture()
@@ -52,12 +55,15 @@ CBaseTexture::~CBaseTexture()
   delete[] m_pixels;
 }
 
-void CBaseTexture::Allocate(unsigned int width, unsigned int height, unsigned int format)
+void CBaseTexture::Allocate(unsigned int width, unsigned int height, unsigned int format, bool allocate)
 {
   m_imageWidth = width;
   m_imageHeight = height;
   m_format = format;
   m_orientation = 0;
+  m_texXOffset = 0;
+  m_texYOffset = 0;
+  m_loadedAtlas = false;
 
   m_textureWidth = m_imageWidth;
   m_textureHeight = m_imageHeight;
@@ -83,8 +89,13 @@ void CBaseTexture::Allocate(unsigned int width, unsigned int height, unsigned in
   CLAMP(m_textureHeight, g_Windowing.GetMaxTextureSize());
   CLAMP(m_imageWidth, m_textureWidth);
   CLAMP(m_imageHeight, m_textureHeight);
+
   delete[] m_pixels;
-  m_pixels = new unsigned char[GetPitch() * GetRows()];
+  m_pixels = NULL;
+  if(allocate)
+  {
+    m_pixels = new unsigned char[GetPitch() * GetRows()];
+  }
 }
 
 void CBaseTexture::Update(unsigned int width, unsigned int height, unsigned int pitch, unsigned int format, const unsigned char *pixels, bool loadToGPU)
@@ -154,6 +165,22 @@ void CBaseTexture::ClampToEdge()
       dst += texturePitch;
     }
   }
+}
+
+bool CBaseTexture::LoadFromAtlas(XBMC::TexturePtr texture, unsigned int width, unsigned int height, 
+                                 unsigned int texXOffset, unsigned int texYOffset, bool hasAlpha)
+{
+  m_loadedAtlas = true;
+  m_format = XB_FMT_A8R8G8B8;
+  m_texture = texture;
+  m_textureWidth = width;
+  m_textureHeight = height;
+  m_texXOffset = texXOffset;
+  m_texYOffset = texYOffset;
+  m_hasAlpha = hasAlpha;
+  m_loadedToGPU = true;
+
+  return true;
 }
 
 bool CBaseTexture::LoadFromFile(const CStdString& texturePath, unsigned int maxWidth, unsigned int maxHeight,
@@ -375,3 +402,4 @@ bool CBaseTexture::HasAlpha() const
 {
   return m_hasAlpha;
 }
+

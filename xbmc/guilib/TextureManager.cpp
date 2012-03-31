@@ -49,6 +49,10 @@ CTextureArray::CTextureArray(int width, int height, int loops,  bool texCoordsAr
   m_orientation = 0;
   m_texWidth = 0;
   m_texHeight = 0;
+  m_texXOffset = 0;
+  m_texYOffset = 0;
+  m_texCoordsScaleU = 0;
+  m_texCoordsScaleV = 0;
   m_texCoordsArePixels = false;
 }
 
@@ -78,6 +82,10 @@ void CTextureArray::Reset()
   m_orientation = 0;
   m_texWidth = 0;
   m_texHeight = 0;
+  m_texXOffset = 0;
+  m_texYOffset = 0;
+  m_texCoordsScaleU = 0;
+  m_texCoordsScaleV = 0;
   m_texCoordsArePixels = false;
 }
 
@@ -91,6 +99,10 @@ void CTextureArray::Add(CBaseTexture *texture, int delay)
 
   m_texWidth = texture->GetTextureWidth();
   m_texHeight = texture->GetTextureHeight();
+  m_texXOffset = texture->GetTextureXOffset();
+  m_texYOffset = texture->GetTextureYOffset();
+  m_texCoordsScaleU = 1.0f / m_texWidth;
+  m_texCoordsScaleV = 1.0f / m_texHeight;
   m_texCoordsArePixels = false;
 }
 

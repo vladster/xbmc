@@ -66,16 +66,6 @@ CGUITextureBase::CGUITextureBase(float posX, float posY, float width, float heig
 
   m_vertex.SetRect(m_posX, m_posY, m_posX + m_width, m_posY + m_height);
 
-  m_frameWidth = 0;
-  m_frameHeight = 0;
-
-  m_texCoordsScaleU = 1.0f;
-  m_texCoordsScaleV = 1.0f;
-  m_diffuseU = 1.0f;
-  m_diffuseV = 1.0f;
-  m_diffuseScaleU = 1.0f;
-  m_diffuseScaleV = 1.0f;
-
   // anim gifs
   m_currentFrame = 0;
   m_frameCounter = (unsigned int) -1;
@@ -103,16 +93,6 @@ CGUITextureBase::CGUITextureBase(const CGUITextureBase &right)
 
   // defaults
   m_vertex.SetRect(m_posX, m_posY, m_posX + m_width, m_posY + m_height);
-
-  m_frameWidth = 0;
-  m_frameHeight = 0;
-
-  m_texCoordsScaleU = 1.0f;
-  m_texCoordsScaleV = 1.0f;
-  m_diffuseU = 1.0f;
-  m_diffuseV = 1.0f;
-  m_diffuseScaleU = 1.0f;
-  m_diffuseScaleV = 1.0f;
 
   m_currentFrame = 0;
   m_frameCounter = (unsigned int) -1;
@@ -184,50 +164,87 @@ void CGUITextureBase::Render()
 
   // compute the texture coordinates
   float u1, u2, u3, v1, v2, v3;
+  float u4, u5, u6, v4, v5, v6;
+
   u1 = m_info.border.x1;
-  u2 = m_frameWidth - m_info.border.x2;
-  u3 = m_frameWidth;
+  u2 = (float)m_texture.m_width - m_info.border.x2;
+  u3 = (float)m_texture.m_width;
   v1 = m_info.border.y1;
-  v2 = m_frameHeight - m_info.border.y2;
-  v3 = m_frameHeight;
+  v2 = (float)m_texture.m_height - m_info.border.y2;
+  v3 = (float)m_texture.m_height;
 
   if (!m_texture.m_texCoordsArePixels)
   {
-    u1 *= m_texCoordsScaleU;
-    u2 *= m_texCoordsScaleU;
-    u3 *= m_texCoordsScaleU;
-    v1 *= m_texCoordsScaleV;
-    v2 *= m_texCoordsScaleV;
-    v3 *= m_texCoordsScaleV;
+    u1 *= m_texture.m_texCoordsScaleU;
+    u2 *= m_texture.m_texCoordsScaleU;
+    u3 *= m_texture.m_texCoordsScaleU;
+    v1 *= m_texture.m_texCoordsScaleV;
+    v2 *= m_texture.m_texCoordsScaleV;
+    v3 *= m_texture.m_texCoordsScaleV;
   }
+
+  // calculate diffuse
+  u4= m_info.border.x1;
+  u5 = (float)m_diffuse.m_width - m_info.border.x2;
+  u6 = (float)m_diffuse.m_width;
+  v4 = m_info.border.y1;
+  v5 = (float)m_diffuse.m_height - m_info.border.y2;
+  v6 = (float)m_diffuse.m_height;
+
+  if (!m_diffuse.m_texCoordsArePixels)
+  {
+    u4 *= m_diffuse.m_texCoordsScaleU;
+    u5 *= m_diffuse.m_texCoordsScaleU;
+    u6 *= m_diffuse.m_texCoordsScaleU;
+    v4 *= m_diffuse.m_texCoordsScaleV;
+    v5 *= m_diffuse.m_texCoordsScaleV;
+    v6 *= m_diffuse.m_texCoordsScaleV;
+  }
+
+  /*
+  printf("u1 %f u2 %f u3 %f v1 %f v2 %f v3 %f u4 %f u5 %f u6 %f v4 %f v5 %f v6 %f\n", 
+         u1, u2, u3, v1, v2, v3, u4, u5, u6, v4, v5, v6);
+  */
 
   // TODO: The diffuse coloring applies to all vertices, which will
   //       look weird for stuff with borders, as will the -ve height/width
   //       for flipping
+  // TODO: The diffuse coloring applies to all vertices, which will
+  //       look weird for stuff with borders, as will the -ve height/width
+  //       for flipping
 
-  // left segment (0,0,u1,v3)
+  // left segment (0,0,u1,v3) (0,0,u4,v6)
   if (m_info.border.x1)
   {
     if (m_info.border.y1)
-      Render(m_vertex.x1, m_vertex.y1, m_vertex.x1 + m_info.border.x1, m_vertex.y1 + m_info.border.y1, 0, 0, u1, v1, u3, v3);
-    Render(m_vertex.x1, m_vertex.y1 + m_info.border.y1, m_vertex.x1 + m_info.border.x1, m_vertex.y2 - m_info.border.y2, 0, v1, u1, v2, u3, v3);
+      Render(m_vertex.x1, m_vertex.y1, m_vertex.x1 + m_info.border.x1, m_vertex.y1 + m_info.border.y1, 
+             0, 0, u1, v1, u3, v3, 0, 0, u4, v4, u6, v6);
+    Render(m_vertex.x1, m_vertex.y1 + m_info.border.y1, m_vertex.x1 + m_info.border.x1, m_vertex.y2 - m_info.border.y2, 
+           0, v1, u1, v2, u3, v3, 0, v4, u4, v5, u6, v6);
     if (m_info.border.y2)
-      Render(m_vertex.x1, m_vertex.y2 - m_info.border.y2, m_vertex.x1 + m_info.border.x1, m_vertex.y2, 0, v2, u1, v3, u3, v3);
+      Render(m_vertex.x1, m_vertex.y2 - m_info.border.y2, m_vertex.x1 + m_info.border.x1, m_vertex.y2, 
+             0, v2, u1, v3, u3, v3, 0, v5, u4, v6, u6, v6);
   }
-  // middle segment (u1,0,u2,v3)
+  // middle segment (u1,0,u2,v3) (u4,0,u5,v6)
   if (m_info.border.y1)
-    Render(m_vertex.x1 + m_info.border.x1, m_vertex.y1, m_vertex.x2 - m_info.border.x2, m_vertex.y1 + m_info.border.y1, u1, 0, u2, v1, u3, v3);
-  Render(m_vertex.x1 + m_info.border.x1, m_vertex.y1 + m_info.border.y1, m_vertex.x2 - m_info.border.x2, m_vertex.y2 - m_info.border.y2, u1, v1, u2, v2, u3, v3);
+    Render(m_vertex.x1 + m_info.border.x1, m_vertex.y1, m_vertex.x2 - m_info.border.x2, m_vertex.y1 + m_info.border.y1, 
+           u1, 0, u2, v1, u3, v3, u4, 0, u5, v4, u6, v6);
+  Render(m_vertex.x1 + m_info.border.x1, m_vertex.y1 + m_info.border.y1, m_vertex.x2 - m_info.border.x2, m_vertex.y2 - m_info.border.y2, 
+         u1, v1, u2, v2, u3, v3, u4, v4, u5, v5, u6, v6);
   if (m_info.border.y2)
-    Render(m_vertex.x1 + m_info.border.x1, m_vertex.y2 - m_info.border.y2, m_vertex.x2 - m_info.border.x2, m_vertex.y2, u1, v2, u2, v3, u3, v3);
+    Render(m_vertex.x1 + m_info.border.x1, m_vertex.y2 - m_info.border.y2, m_vertex.x2 - m_info.border.x2, m_vertex.y2, 
+           u1, v2, u2, v3, u3, v3, u4, v5, u5, v6, u6, v6);
   // right segment
   if (m_info.border.x2)
   { // have a left border
     if (m_info.border.y1)
-      Render(m_vertex.x2 - m_info.border.x2, m_vertex.y1, m_vertex.x2, m_vertex.y1 + m_info.border.y1, u2, 0, u3, v1, u3, v3);
-    Render(m_vertex.x2 - m_info.border.x2, m_vertex.y1 + m_info.border.y1, m_vertex.x2, m_vertex.y2 - m_info.border.y2, u2, v1, u3, v2, u3, v3);
+      Render(m_vertex.x2 - m_info.border.x2, m_vertex.y1, m_vertex.x2, m_vertex.y1 + m_info.border.y1, 
+             u2, 0, u3, v1, u3, v3, u5, 0, u6, v4, u6, v6);
+    Render(m_vertex.x2 - m_info.border.x2, m_vertex.y1 + m_info.border.y1, m_vertex.x2, m_vertex.y2 - m_info.border.y2, 
+           u2, v1, u3, v2, u3, v3, u5, v4, u6, v5, u6, v6);
     if (m_info.border.y2)
-      Render(m_vertex.x2 - m_info.border.x2, m_vertex.y2 - m_info.border.y2, m_vertex.x2, m_vertex.y2, u2, v2, u3, v3, u3, v3);
+      Render(m_vertex.x2 - m_info.border.x2, m_vertex.y2 - m_info.border.y2, m_vertex.x2, m_vertex.y2, 
+             u2, v2, u3, v3, u3, v3, u5, v5, u6, v6, u6, v6);
   }
 
   // close off our renderer
@@ -237,28 +254,80 @@ void CGUITextureBase::Render()
     g_graphicsContext.RestoreClipRegion();
 }
 
-void CGUITextureBase::Render(float left, float top, float right, float bottom, float u1, float v1, float u2, float v2, float u3, float v3)
+void CGUITextureBase::Render(float left, float top, float right, float bottom, 
+                             float u1, float v1, float u2, float v2, float u3, float v3,
+                             float u4, float v4, float u5, float v5, float u6, float v6)
 {
-  CRect diffuse(u1, v1, u2, v2);
   CRect texture(u1, v1, u2, v2);
-  CRect vertex(left, top, right, bottom);
-  g_graphicsContext.ClipRect(vertex, texture, m_diffuse.size() ? &diffuse : NULL);
+  CRect diffuse(u4, v4, u5, v5);
+  CRect vertex(left, top , right, bottom);
 
-  if (vertex.IsEmpty())
-    return; // nothing to render
+  float texXOffset = (float)m_texture.m_texXOffset;
+  float texYOffset = (float)m_texture.m_texYOffset;
+  float diffuseXOffset = (float)m_diffuse.m_texXOffset;
+  float diffuseYOffset = (float)m_diffuse.m_texYOffset;
+
+  if (!m_texture.m_texCoordsArePixels)
+  {
+    texXOffset *= m_texture.m_texCoordsScaleU;
+    texYOffset *= m_texture.m_texCoordsScaleV;
+  }
+
+  if(!m_texture.m_textures[0]->IsAtlas())
+  {
+    texXOffset = 0;
+    texYOffset = 0;
+  }
+
+  if (m_diffuse.size())
+  {
+    if (!m_diffuse.m_texCoordsArePixels)
+    {
+      diffuseXOffset *= m_diffuse.m_texCoordsScaleU;
+      diffuseYOffset *= m_diffuse.m_texCoordsScaleV;
+    }
+
+    if(!m_diffuse.m_textures[0]->IsAtlas())
+    {
+      diffuseXOffset = 0;
+      diffuseYOffset = 0;
+    }
+  }
 
   int orientation = GetOrientation();
   OrientateTexture(texture, u3, v3, orientation);
 
   if (m_diffuse.size())
   {
-    // flip the texture as necessary.  Diffuse just gets flipped according to m_info.orientation.
-    // Main texture gets flipped according to GetOrientation().
-    diffuse.x1 *= m_diffuseScaleU / u3; diffuse.x2 *= m_diffuseScaleU / u3;
-    diffuse.y1 *= m_diffuseScaleV / v3; diffuse.y2 *= m_diffuseScaleV / v3;
-    diffuse += m_diffuseOffset;
-    OrientateTexture(diffuse, m_diffuseU, m_diffuseV, m_info.orientation);
+    if(m_aspect.scaleDiffuse)
+    {
+      diffuse += CPoint(0,0);
+    }
+    else
+    {
+      float m_diffuseScaleU = m_vertex.Width() / m_width;
+      float m_diffuseScaleV = m_vertex.Height() / m_height;
+      diffuse += CPoint((m_vertex.x1 - m_posX) / m_vertex.Width() * m_diffuseScaleU, 
+                        (m_vertex.y1 - m_posY) / m_vertex.Height() * m_diffuseScaleV);
+    }
+
+    OrientateTexture(diffuse, u6, v6, m_info.orientation);
   }
+
+  diffuse.x1 += diffuseXOffset;
+  diffuse.x2 += diffuseXOffset;
+  diffuse.y1 += diffuseYOffset;
+  diffuse.y2 += diffuseYOffset;
+
+  texture.x1 += texXOffset;
+  texture.x2 += texXOffset;
+  texture.y1 += texYOffset;
+  texture.y2 += texYOffset;
+
+  g_graphicsContext.ClipRect(vertex, texture, m_diffuse.size() ? &diffuse : NULL);
+
+  if (vertex.IsEmpty())
+    return; // nothing to render
 
   float x[4], y[4], z[4];
 
@@ -321,6 +390,7 @@ bool CGUITextureBase::AllocResources()
           return false;
 
         m_texture = texture;
+
         changed = true;
       }
       else
@@ -340,8 +410,6 @@ bool CGUITextureBase::AllocResources()
     m_texture = g_TextureManager.GetTexture(m_info.filename);
     changed = true;
   }
-  m_frameWidth = (float)m_texture.m_width;
-  m_frameHeight = (float)m_texture.m_height;
 
   // load the diffuse texture (if necessary)
   if (!m_info.diffuse.IsEmpty())
@@ -363,27 +431,24 @@ bool CGUITextureBase::CalculateSize()
   if (m_currentFrame >= m_texture.size())
     return false;
 
-  m_texCoordsScaleU = 1.0f / m_texture.m_texWidth;
-  m_texCoordsScaleV = 1.0f / m_texture.m_texHeight;
-
   if (m_width == 0)
-    m_width = m_frameWidth;
+    m_width = (float)m_texture.m_width;
   if (m_height == 0)
-    m_height = m_frameHeight;
+    m_height = (float)m_texture.m_height;
 
   float newPosX = m_posX;
   float newPosY = m_posY;
   float newWidth = m_width;
   float newHeight = m_height;
 
-  if (m_aspect.ratio != CAspectRatio::AR_STRETCH && m_frameWidth && m_frameHeight)
+  if (m_aspect.ratio != CAspectRatio::AR_STRETCH && (float)m_texture.m_width && (float)m_texture.m_height)
   {
     // to get the pixel ratio, we must use the SCALED output sizes
     float pixelRatio = g_graphicsContext.GetScalingPixelRatio();
 
-    float fSourceFrameRatio = m_frameWidth / m_frameHeight;
+    float fSourceFrameRatio = (float)m_texture.m_width / (float)m_texture.m_height;
     if (GetOrientation() & 4)
-      fSourceFrameRatio = m_frameHeight / m_frameWidth;
+      fSourceFrameRatio = (float)m_texture.m_height / (float)m_texture.m_width;
     float fOutputFrameRatio = fSourceFrameRatio / pixelRatio;
 
     // maximize the width
@@ -397,8 +462,8 @@ bool CGUITextureBase::CalculateSize()
     }
     if (m_aspect.ratio == CAspectRatio::AR_CENTER)
     { // keep original size + center
-      newWidth = m_frameWidth / sqrt(pixelRatio);
-      newHeight = m_frameHeight * sqrt(pixelRatio);
+      newWidth = (float)m_texture.m_width / sqrt(pixelRatio);
+      newHeight = (float)m_texture.m_height * sqrt(pixelRatio);
     }
 
     if (m_aspect.align & ASPECT_ALIGN_LEFT)
@@ -416,38 +481,6 @@ bool CGUITextureBase::CalculateSize()
   }
   
   m_vertex.SetRect(newPosX, newPosY, newPosX + newWidth, newPosY + newHeight);
-
-  // scale the diffuse coords as well
-  if (m_diffuse.size())
-  { // calculate scaling for the texcoords
-    if (m_diffuse.m_texCoordsArePixels)
-    {
-      m_diffuseU = float(m_diffuse.m_width);
-      m_diffuseV = float(m_diffuse.m_height);
-    }
-    else
-    {
-      m_diffuseU = float(m_diffuse.m_width) / float(m_diffuse.m_texWidth);
-      m_diffuseV = float(m_diffuse.m_height) / float(m_diffuse.m_texHeight);
-    }
-
-    if (m_aspect.scaleDiffuse)
-    {
-      m_diffuseScaleU = m_diffuseU;
-      m_diffuseScaleV = m_diffuseV;
-      m_diffuseOffset = CPoint(0,0);
-    }
-    else // stretch'ing diffuse
-    { // scale diffuse up or down to match output rect size, rather than image size
-      //(m_fX, mfY) -> (m_fX + m_fNW, m_fY + m_fNH)
-      //(0,0) -> (m_fU*m_diffuseScaleU, m_fV*m_diffuseScaleV)
-      // x = u/(m_fU*m_diffuseScaleU)*m_fNW + m_fX
-      // -> u = (m_posX - m_fX) * m_fU * m_diffuseScaleU / m_fNW
-      m_diffuseScaleU = m_diffuseU * m_vertex.Width() / m_width;
-      m_diffuseScaleV = m_diffuseV * m_vertex.Height() / m_height;
-      m_diffuseOffset = CPoint((m_vertex.x1 - m_posX) / m_vertex.Width() * m_diffuseScaleU, (m_vertex.y1 - m_posY) / m_vertex.Height() * m_diffuseScaleV);
-    }
-  }
 
   m_invalid = false;
   return true;
@@ -468,8 +501,6 @@ void CGUITextureBase::FreeResources(bool immediately /* = false */)
 
   m_currentFrame = 0;
   m_currentLoop = 0;
-  m_texCoordsScaleU = 1.0f;
-  m_texCoordsScaleV = 1.0f;
 
   // call our implementation
   Free();

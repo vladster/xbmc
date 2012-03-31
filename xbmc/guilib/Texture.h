@@ -39,6 +39,8 @@ struct COLOR {unsigned char b,g,r,x;};	// Windows GDI expects 4bytes per color
 #include "D3DResource.h"
 #endif
 
+#include <map>
+
 class CTexture;
 class CGLTexture;
 class CDXTexture;
@@ -53,19 +55,22 @@ class CBaseTexture
 {
 
 public:
-  CBaseTexture(unsigned int width = 0, unsigned int height = 0, unsigned int format = XB_FMT_A8R8G8B8);
+  CBaseTexture(unsigned int width = 0, unsigned int height = 0, unsigned int format = XB_FMT_A8R8G8B8, bool allocate = true);
   virtual ~CBaseTexture();
 
   bool LoadFromFile(const CStdString& texturePath, unsigned int maxHeight = 0, unsigned int maxWidth = 0,
                     bool autoRotate = false, unsigned int *originalWidth = NULL, unsigned int *originalHeight = NULL);
   bool LoadFromMemory(unsigned int width, unsigned int height, unsigned int pitch, unsigned int format, bool hasAlpha, unsigned char* pixels);
   bool LoadPaletted(unsigned int width, unsigned int height, unsigned int pitch, unsigned int format, const unsigned char *pixels, const COLOR *palette);
+  bool LoadFromAtlas(XBMC::TexturePtr texture, unsigned int width, unsigned int height, 
+                                 unsigned int texXOffset, unsigned int texYOffset, bool hasAlpha);
 
   bool HasAlpha() const;
 
   virtual void CreateTextureObject() = 0;
   virtual void DestroyTextureObject() = 0;
   virtual void LoadToGPU() = 0;
+  virtual bool IsAtlas() = 0;
 
   XBMC::TexturePtr GetTextureObject() const
   {
@@ -80,12 +85,14 @@ public:
   unsigned int GetRows() const { return GetRows(m_textureHeight); }
   unsigned int GetTextureWidth() const { return m_textureWidth; }
   unsigned int GetTextureHeight() const { return m_textureHeight; }
+  unsigned int GetTextureXOffset() const { return m_texXOffset; }
+  unsigned int GetTextureYOffset() const { return m_texYOffset; }
   unsigned int GetWidth() const { return m_imageWidth; }
   unsigned int GetHeight() const { return m_imageHeight; }
   int GetOrientation() const { return m_orientation; }
 
   void Update(unsigned int width, unsigned int height, unsigned int pitch, unsigned int format, const unsigned char *pixels, bool loadToGPU);
-  void Allocate(unsigned int width, unsigned int height, unsigned int format);
+  void Allocate(unsigned int width, unsigned int height, unsigned int format, bool allocate = true);
   void ClampToEdge();
 
   static unsigned int PadPow2(unsigned int x);
@@ -101,6 +108,8 @@ protected:
   unsigned int m_imageHeight;
   unsigned int m_textureWidth;
   unsigned int m_textureHeight;
+  unsigned int m_texXOffset;
+  unsigned int m_texYOffset;
 #ifdef HAS_DX
   CD3DTexture m_texture;
 #else
@@ -111,6 +120,7 @@ protected:
   unsigned int m_format;
   int m_orientation;
   bool m_hasAlpha;
+  bool m_loadedAtlas;
 };
 
 #if defined(HAS_GL) || defined(HAS_GLES)

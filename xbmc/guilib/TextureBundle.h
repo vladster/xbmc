@@ -22,7 +22,6 @@
  */
 
 #include "utils/StdString.h"
-#include "Texture.h"
 #include "TextureBundleXPR.h"
 #include "TextureBundleXBT.h"
 #include "TextureBundleAtlas.h"

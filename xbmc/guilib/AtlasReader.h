@@ -53,7 +53,7 @@ private:
   XFILE::CFile      m_file;
   std::map<CStdString, CXBTFFile> m_filesMap;
   bool m_loaded;
-  bool LoadXML(CStdString strFile);
+  bool LoadXML(const CStdString &strFile);
 };
 
 #endif

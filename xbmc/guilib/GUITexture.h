@@ -33,8 +33,6 @@
 #include "Geometry.h"
 #include "system.h" // HAS_GL, HAS_DX, etc
 
-#include <vector>
-
 typedef uint32_t color_t;
 
 // image alignment for <aspect>keep</aspect>, <aspect>scale</aspect> or <aspect>center</aspect>
@@ -168,8 +166,6 @@ protected:
 
   CTextureArray m_diffuse;
   CTextureArray m_texture;
-
-  std::vector<CTextureArray> m_textures;
 };
 
 

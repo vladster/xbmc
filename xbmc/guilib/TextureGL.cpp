@@ -55,12 +55,12 @@ void CGLTexture::DestroyTextureObject()
 
 void CGLTexture::LoadToGPU()
 {
-  if (!m_pixels || m_loadedToGPU)
+  if (!m_pixels)
   {
     // nothing to load - probably same image (no change)
     return;
   }
-  if (m_texture == 0 && !m_loadedToGPU)
+  if (m_texture == 0)
   {
     // Have OpenGL generate a texture object handle for us
     // this happens only one time - the first time the texture is loaded

@@ -47,7 +47,7 @@ bool CAtlasReader::IsOpen() const
   return m_loaded;
 }
 
-bool CAtlasReader::LoadXML(CStdString strFile)
+bool CAtlasReader::LoadXML(const CStdString &strFile)
 {
   TiXmlDocument xmlDoc;
 

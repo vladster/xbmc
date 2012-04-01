@@ -168,7 +168,7 @@ bool CTextureBundleAtlas::ConvertFrameToTexture(const CStdString &atlas, const C
 
   if(m_atlasTexture[strAtlas] == 0)
   {
-    pAtlas = new CTexture(frame.GetAtlasWidth(), frame.GetAtlasHeight(), XB_FMT_A8R8G8B8, false);
+    pAtlas = new CTexture(frame.GetAtlasWidth(), frame.GetAtlasHeight(), XB_FMT_A8R8G8B8);
     if(!pAtlas)
       return false;
 

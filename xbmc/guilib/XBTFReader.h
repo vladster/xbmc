@@ -44,6 +44,8 @@ private:
   CXBTF      m_xbtf;
   CStdString m_fileName;
   FILE*      m_file;
+  uint8_t    *m_fileBuffer;
+  unsigned int  m_fileSize;
   std::map<CStdString, CXBTFFile> m_filesMap;
 };
 

@@ -27,36 +27,74 @@
 #include "FileSystem/SpecialProtocol.h"
 #endif
 
+#include "settings/AdvancedSettings.h"
+#include "utils/log.h"
+
 #include <string.h>
 #include "PlatformDefs.h"
 
-#define READ_STR(str, size, file) \
-  if (!fread(str, size, 1, file)) \
-    return false;
+#define READ_STR(str, size, file)             \
+  if(g_advancedSettings.m_bufferXBTinMemory)  \
+  {                                           \
+    if((offset + size) > m_fileSize)          \
+      return false;                           \
+    memcpy(str, &m_fileBuffer[offset], size); \
+    offset += size;                           \
+  }                                           \
+  else                                        \
+  {                                           \
+    if (!fread(str, size, 1, file))           \
+      return false;                           \
+  }
 
-#define READ_U32(i, file) \
-  if (!fread(&i, 4, 1, file)) \
-    return false; \
+#define READ_U32(i, file)                     \
+  if(g_advancedSettings.m_bufferXBTinMemory)  \
+  {                                           \
+    if((offset + 4) > m_fileSize)             \
+      return false;                           \
+    memcpy(&i, &m_fileBuffer[offset], 4);     \
+    offset += 4;                              \
+  }                                           \
+  else                                        \
+  {                                           \
+    if (!fread(&i, 4, 1, file))               \
+      return false;                           \
+  }                                           \
   i = Endian_SwapLE32(i);
 
-#define READ_U64(i, file) \
-  if (!fread(&i, 8, 1, file)) \
-    return false; \
+#define READ_U64(i, file)                     \
+  if(g_advancedSettings.m_bufferXBTinMemory)  \
+  {                                           \
+    if (!fread(&i, 8, 1, file))               \
+      return false;                           \
+  }                                           \
+  else                                        \
+  {                                           \
+    if((offset + 8) > m_fileSize)             \
+      return false;                           \
+    memcpy(&i, &m_fileBuffer[offset], 8);     \
+    offset += 8;                              \
+  }                                           \
   i = Endian_SwapLE64(i);
 
 CXBTFReader::CXBTFReader()
 {
+  m_fileBuffer = NULL;
+  m_fileSize = 0;
   m_file = NULL;
 }
 
 bool CXBTFReader::IsOpen() const
 {
-  return m_file != NULL;
+  return m_file != NULL || m_fileBuffer != NULL;
 }
 
 bool CXBTFReader::Open(const CStdString& fileName)
 {
   m_fileName = fileName;
+
+  if(g_advancedSettings.m_bufferXBTinMemory)
+    CLog::Log(LOGDEBUG, "Buffer XBT Textures in memory");
 
 #ifdef _WIN32
   CStdStringW strPathW;
@@ -70,7 +108,22 @@ bool CXBTFReader::Open(const CStdString& fileName)
     return false;
   }
 
+  if(g_advancedSettings.m_bufferXBTinMemory)
+  {
+    fseek(m_file, 0L, SEEK_END);
+    m_fileSize = ftell(m_file);
+    fseek(m_file, 0L, SEEK_SET);
+    m_fileBuffer = (uint8_t *)malloc(m_fileSize);
+    if(!m_fileSize || !m_fileBuffer)
+    {
+      return false;
+    }
+    fread(m_fileBuffer, m_fileSize, 1, m_file);
+  }
+
   char magic[4];
+  unsigned int offset = 0;
+
   READ_STR(magic, 4, m_file);
 
   if (strncmp(magic, XBTF_MAGIC, sizeof(magic)) != 0)
@@ -87,6 +140,7 @@ bool CXBTFReader::Open(const CStdString& fileName)
   }
 
   unsigned int nofFiles;
+
   READ_U32(nofFiles, m_file);
   for (unsigned int i = 0; i < nofFiles; i++)
   {
@@ -141,6 +195,14 @@ bool CXBTFReader::Open(const CStdString& fileName)
 
 void CXBTFReader::Close()
 {
+  if(m_fileBuffer)
+  {
+    free(m_fileBuffer);
+    m_fileBuffer = NULL;
+  }
+
+  m_fileSize = 0;
+
   if (m_file)
   {
     fclose(m_file);
@@ -153,7 +215,7 @@ void CXBTFReader::Close()
 
 time_t CXBTFReader::GetLastModificationTimestamp()
 {
-  if (!m_file)
+  if (!m_file || g_advancedSettings.m_bufferXBTinMemory)
   {
     return 0;
   }
@@ -185,22 +247,33 @@ CXBTFFile* CXBTFReader::Find(const CStdString& name)
 
 bool CXBTFReader::Load(const CXBTFFrame& frame, unsigned char* buffer)
 {
-  if (!m_file)
+  if(g_advancedSettings.m_bufferXBTinMemory)
   {
-    return false;
+    if(!m_fileBuffer || (frame.GetOffset() + frame.GetPackedSize()) > m_fileSize)
+    {
+      return false;
+    }
+    memcpy(buffer, &m_fileBuffer[frame.GetOffset()], frame.GetPackedSize());
   }
+  else
+  {
+    if (!m_file)
+    {
+      return false;
+    }
 #if defined(__APPLE__) || defined(__FreeBSD__)
-    if (fseeko(m_file, (off_t)frame.GetOffset(), SEEK_SET) == -1)
+      if (fseeko(m_file, (off_t)frame.GetOffset(), SEEK_SET) == -1)
 #else
-    if (fseeko64(m_file, (off_t)frame.GetOffset(), SEEK_SET) == -1)
+      if (fseeko64(m_file, (off_t)frame.GetOffset(), SEEK_SET) == -1)
 #endif
-  {
-    return false;
-  }
+    {
+      return false;
+    }
 
-  if (fread(buffer, 1, (size_t)frame.GetPackedSize(), m_file) != frame.GetPackedSize())
-  {
-    return false;
+    if (fread(buffer, 1, (size_t)frame.GetPackedSize(), m_file) != frame.GetPackedSize())
+    {
+      return false;
+    }
   }
 
   return true;

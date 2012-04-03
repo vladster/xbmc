@@ -290,6 +290,8 @@ void CAdvancedSettings::Initialize()
   m_logEnableAirtunes = false;
   m_airTunesPort = 36666;
   m_airPlayPort = 36667;
+
+  m_bufferXBTinMemory = false;
 }
 
 bool CAdvancedSettings::Load()
@@ -959,6 +961,7 @@ void CAdvancedSettings::ParseSettingsFile(const CStdString &file)
     XMLUtils::GetBoolean(pElement, "visualizedirtyregions", m_guiVisualizeDirtyRegions);
     XMLUtils::GetInt(pElement, "algorithmdirtyregions",     m_guiAlgorithmDirtyRegions);
     XMLUtils::GetInt(pElement, "nofliptimeout",             m_guiDirtyRegionNoFlipTimeout);
+    XMLUtils::GetBoolean(pElement, "bufferxbtinmemory",     m_bufferXBTinMemory);
   }
 
   // load in the GUISettings overrides:

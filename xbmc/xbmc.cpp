@@ -98,5 +98,10 @@ int main(int argc, char* argv[])
     status = -1;
   }
 
+  // workaround for a bug in the Vivante gpu driver
+#if defined(TARGET_MARVELL_DOVE)
+  _exit(status);
+#else
   return status;
+#endif
 }

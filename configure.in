@@ -385,6 +385,12 @@ AC_ARG_ENABLE([texturepacker],
   [use_texturepacker=$enableval],
   [use_texturepacker=auto])
 
+AC_ARG_ENABLE([texturepacker-lzo],
+  [AS_HELP_STRING([--disable-texturepacker-lzo],
+  [disable texturepacker lzo support (default is no)])],
+  [use_texturepacker_lzo=$enableval],
+  [use_texturepacker_lzo=yes])
+
 AC_ARG_WITH([lirc-device],
   [AS_HELP_STRING([--with-lirc-device=file],
   [specify the default LIRC device (default is /dev/lircd)])],
@@ -1657,6 +1663,13 @@ if test "x$use_texturepacker" != "xno"; then
       USE_TEXTUREPACKER_NATIVE_ROOT= 
     fi
   fi
+  if test "x$use_texturepacker_lzo" != "xno"; then
+    USE_LZO_PACKING="1"
+    final_message="$final_message\n  TexturePacker lzo:Yes"
+  else
+    final_message="$final_message\n  TexturePacker lzo:No"
+    USE_LZO_PACKING="0"
+  fi
 else
   final_message="$final_message\n  TexturePacker:No"
   USE_TEXTUREPACKER=0
@@ -1959,6 +1972,7 @@ AC_SUBST(USE_AIRTUNES)
 AC_SUBST(USE_LIBUDEV)
 AC_SUBST(USE_LIBUSB)
 AC_SUBST(USE_LIBCEC)
+AC_SUBST(USE_LZO_PACKING)
 
 
 # pushd and popd are not available in other shells besides bash, so implement

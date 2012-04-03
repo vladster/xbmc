@@ -1,4 +1,8 @@
+ifeq (@USE_LZO_PACKING@,0)
+DEFINES += -D_LINUX
+else
 DEFINES += -D_LINUX -DUSE_LZO_PACKING
+endif
 ifneq ($(or $(findstring powerpc,@ARCH@),$(findstring ppc, @ARCH@)),)
 DEFINES += -DHOST_BIGENDIAN
 endif
@@ -23,7 +27,11 @@ else
 LIBS    += -L@abs_top_srcdir@/lib/libsquish -lsquish
 endif
 
+ifeq (@USE_LZO_PACKING@,0)
+LIBS    += -lSDL_image -lSDL
+else
 LIBS    += -lSDL_image -lSDL -llzo2
+endif
 
 SRCS = \
   md5.cpp \

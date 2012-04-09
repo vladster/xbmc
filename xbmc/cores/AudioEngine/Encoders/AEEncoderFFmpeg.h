@@ -59,7 +59,7 @@ private:
   AEAudioFormat     m_CurrentFormat;
   AVCodecContext   *m_CodecCtx;
   CAEChannelInfo    m_Layout;
-  uint8_t           m_Buffer[FF_MIN_BUFFER_SIZE];
+  uint8_t           m_Buffer[IEC61937_DATA_OFFSET + FF_MIN_BUFFER_SIZE];
   int               m_BufferSize;
   int               m_OutputSize;
   float             m_OutputRatio;

@@ -761,7 +761,6 @@ void CSoftAE::Run()
 
   CLog::Log(LOGINFO, "CSoftAE::Run - Thread Started");
 
-
   while(m_running)
   {
     m_reOpened = false;
@@ -902,7 +901,7 @@ void CSoftAE::RunOutputStage()
       wroteFrames = m_sink->AddPackets((uint8_t*)m_remapped, m_sinkFormat.m_frames);
     }
 
-    int wroteSamples = wroteFrames * m_chLayout.Count();
+    int wroteSamples = wroteFrames * m_sinkFormat.m_channelLayout.Count();
     int bytesLeft    = (m_bufferSamples - wroteSamples) * m_bytesPerSample;
     memmove((float*)m_buffer, (float*)m_buffer + wroteSamples, bytesLeft);
     m_bufferSamples -= wroteSamples;
@@ -920,7 +919,7 @@ void CSoftAE::RunRawOutputStage()
     uint8_t *rawBuffer = (uint8_t*)m_buffer;
     wroteFrames = m_sink->AddPackets(rawBuffer, m_sinkFormat.m_frames);
 
-    int wroteSamples = wroteFrames * m_sinkFormat.m_channelLayout.Count();;
+    int wroteSamples = wroteFrames * m_sinkFormat.m_channelLayout.Count();
     int bytesLeft    = (m_bufferSamples - wroteSamples) * m_bytesPerSample;
     memmove(rawBuffer, rawBuffer + (wroteSamples * m_bytesPerSample), bytesLeft);
     m_bufferSamples -= wroteSamples;
@@ -973,14 +972,16 @@ void CSoftAE::RunTranscodeStage()
   }
 
   /* if we have enough data to write */
-  if(m_encodedBufferFrames >= m_sinkFormat.m_frames)
+  while(m_encodedBufferFrames >= m_sinkFormat.m_frames)
   {
-    unsigned int wrote;
+    unsigned int wroteFrames;
+    unsigned int wroteBytes;
         
-    wrote = m_sink->AddPackets(m_encodedBuffer, m_sinkFormat.m_frames);
-    m_encodedBufferPos    -= wrote * m_sinkFormat.m_frameSize;
-    m_encodedBufferFrames -= wrote;
-    memmove(m_encodedBuffer, m_encodedBuffer + wrote * m_sinkFormat.m_frameSize, m_encodedBufferPos);
+    wroteFrames = m_sink->AddPackets(m_encodedBuffer, m_sinkFormat.m_frames);
+    wroteBytes  = wroteFrames * m_sinkFormat.m_frameSize;
+    m_encodedBufferPos    -= wroteBytes;
+    m_encodedBufferFrames -= wroteFrames;
+    memmove(m_encodedBuffer, m_encodedBuffer + wroteBytes, m_encodedBufferPos);
   }
 }
 

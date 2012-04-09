@@ -129,6 +129,7 @@ void CSoftAEStream::Initialize()
 
   m_bytesPerSample  = (CAEUtil::DataFormatToBits(useDataFormat) >> 3);
   m_bytesPerFrame   = m_bytesPerSample * m_initChannelLayout.Count();
+  m_samplesPerFrame = m_initChannelLayout.Count();
 
   m_aeChannelLayout = AE.GetChannelLayout();
   m_aePacketSamples = SOFTAE_FRAMES * m_aeChannelLayout.Count();
@@ -448,13 +449,12 @@ uint8_t* CSoftAEStream::GetFrame()
   uint8_t *ret      = (uint8_t*)m_packetPos;
   float   *vizData  = m_vizPacketPos;
 
-  ASSERT(m_packet.samples >= m_aeChannelLayout.Count());
-  m_packet.samples -= m_aeChannelLayout.Count();
+  m_packet.samples -= m_samplesPerFrame;
   if (AE_IS_RAW(m_initDataFormat))
     m_packetPos += m_bytesPerFrame;
   else
   {
-    m_packetPos += m_aeChannelLayout.Count() * sizeof(float);
+    m_packetPos += m_samplesPerFrame * sizeof(float);
     if(vizData)
       m_vizPacketPos += 2;
   }

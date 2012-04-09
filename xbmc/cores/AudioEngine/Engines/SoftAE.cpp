@@ -372,17 +372,16 @@ bool CSoftAE::OpenSink()
 
   m_remap.Initialize(m_chLayout, m_sinkFormat.m_channelLayout, true);
   
-  /* if we in raw passthrough, we are finished */
-  if (m_rawPassthrough)
-    return true;
-
   if (reInit)
   {
     /* re-init sounds */
-    CSingleLock soundLock(m_soundLock);
-    StopAllSounds();
-    for(SoundList::iterator itt = m_sounds.begin(); itt != m_sounds.end(); ++itt)
-      (*itt)->Initialize();
+    if (!m_rawPassthrough)
+    {
+      CSingleLock soundLock(m_soundLock);
+      StopAllSounds();
+      for(SoundList::iterator itt = m_sounds.begin(); itt != m_sounds.end(); ++itt)
+        (*itt)->Initialize();
+    }
 
     /* re-init streams */
     streamLock.Enter();
@@ -438,7 +437,6 @@ bool CSoftAE::Initialize()
 
   /* we start even if we failed to open a sink */
   OpenSink();
-  m_sinkOpened.Set();
   m_running = true;
   m_thread  = new CThread(this, "CSoftAE");
   m_thread->Create();
@@ -610,7 +608,7 @@ IAEStream *CSoftAE::MakeStream(enum AEDataFormat dataFormat, unsigned int sample
   bool wasEmpty = false;
   if (m_streams.empty())
   {
-    wasEmpty       = true;
+    wasEmpty = true;
     m_masterStream = stream;
   }  
 
@@ -625,9 +623,7 @@ IAEStream *CSoftAE::MakeStream(enum AEDataFormat dataFormat, unsigned int sample
   {
     if ((AE_IS_RAW(dataFormat)) || wasEmpty || m_audiophile)
     {
-      m_sinkOpened.Reset();
       m_reOpen = true;
-      m_sinkOpened.Wait();
     }
   }
 
@@ -804,7 +800,6 @@ void CSoftAE::Run()
       CLog::Log(LOGDEBUG, "CSoftAE::Run - Sink restart flagged");
       m_reOpen = false;
       OpenSink();
-      m_sinkOpened.Set();
     }
 
     if(!m_reOpened)

@@ -207,8 +207,15 @@ bool CSoftAE::OpenSink()
     {      
       if (!m_transcode)
         newFormat.m_channelLayout.ResolveChannels(m_stdChLayout);
+      else
+      {
+        if (masterStream->m_initChannelLayout == AE_CH_LAYOUT_2_0)
+          m_transcode = false;
+      }
     }
   }
+  else
+    m_transcode = false;
 
   if (!m_rawPassthrough && m_transcode)
     newFormat.m_dataFormat = AE_FMT_AC3;

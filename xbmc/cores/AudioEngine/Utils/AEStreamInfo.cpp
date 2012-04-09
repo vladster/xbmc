@@ -419,6 +419,7 @@ unsigned int CAEStreamInfo::SyncDTS(uint8_t *data, unsigned int size)
     unsigned int srate_code;
     unsigned int amode;
     unsigned int lfe;
+    int bits;
 
     switch(header)
     {
@@ -435,6 +436,7 @@ unsigned int CAEStreamInfo::SyncDTS(uint8_t *data, unsigned int size)
         amode       = data[8] & 0x3f;
         lfe         = (data[11] >> 1) & 0x3;
         m_dataIsLE  = false;
+        bits        = 14;
         break;
 
       /* 14bit LE */
@@ -450,28 +452,29 @@ unsigned int CAEStreamInfo::SyncDTS(uint8_t *data, unsigned int size)
         amode       = data[9] & 0x3f;
         lfe         = (data[10] >> 1) & 0x03;
         m_dataIsLE  = true;
+        bits        = 14;
         break;
 
       /* 16bit BE */
       case DTS_PREAMBLE_16BE:
-        m_dataIsLE  = false;
         m_dtsBlocks = ((data[5] >> 2) & 0x7f) + 1;
         m_fsize     = ((((data[5] & 0x3) << 8 | data[6]) << 4) | ((data[7] & 0xF0) >> 4)) + 1;
         srate_code  = (data[8] & 0x3C) >> 2;
         amode       = ((data[7] & 0x0F) << 2) | ((data[8] & 0xC0) >> 6);
         lfe         = (data[10] >> 1) & 0x3;
         m_dataIsLE  = false;
+        bits        = 16;
         break;
 
       /* 16bit LE */
       case DTS_PREAMBLE_16LE:
-        m_dataIsLE  = true;
         m_dtsBlocks = ((data[4] >> 2) & 0x7f) + 1;
         m_fsize     = ((((data[4] & 0x3) << 8 | data[7]) << 4) | ((data[6] & 0xF0) >> 4)) + 1;
         srate_code  = (data[9] & 0x3C) >> 2;
         amode       = ((data[6] & 0x0F) << 2) | ((data[9] & 0xC0) >> 6);
         lfe         = (data[11] >> 1) & 0x3;
         m_dataIsLE  = true;
+        bits        = 16;
         break;
 
       default:
@@ -562,7 +565,10 @@ unsigned int CAEStreamInfo::SyncDTS(uint8_t *data, unsigned int size)
         default                    : type = "dts"; break;
       }
 
-      CLog::Log(LOGINFO, "CAEStreamInfo::SyncDTS - %s stream detected (%d channels, %dHz)", type.c_str(), m_channels, m_sampleRate);
+      CLog::Log(LOGINFO, "CAEStreamInfo::SyncDTS - %s stream detected (%d channels, %dHz, %dbit %s)",
+        type.c_str(), m_channels, m_sampleRate,
+        bits, m_dataIsLE ? "LE" : "BE"
+      );
     }
 
     return skip;

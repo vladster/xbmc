@@ -192,6 +192,10 @@ bool CSoftAE::OpenSink()
   CSoftAEStream *masterStream = GetMasterStream();
   if (masterStream)
   {
+    /* dont encode 2.0 streams */
+    if (m_transcode && masterStream->m_initChannelLayout == AE_CH_LAYOUT_2_0)
+      m_transcode = false;
+
     /* choose the sample rate & channel layout based on the master stream */
     newFormat.m_sampleRate    = masterStream->GetSampleRate();
     newFormat.m_channelLayout = masterStream->m_initChannelLayout;    
@@ -204,10 +208,13 @@ bool CSoftAE::OpenSink()
       m_outputStageFn        = &CSoftAE::RunRawOutputStage;
     }
     else
-    {      
+    {
       if (!m_transcode)
         newFormat.m_channelLayout.ResolveChannels(m_stdChLayout);
     }
+  } else {
+    /* dont encode GUI sounds if we dont need to */
+    m_transcode = false;
   }
 
   if (!m_rawPassthrough && m_transcode)

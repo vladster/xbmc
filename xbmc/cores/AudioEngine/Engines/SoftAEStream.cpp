@@ -87,8 +87,7 @@ void CSoftAEStream::InitializeRemap()
     {
       InternalFlush();
       m_aeChannelLayout = AE.GetChannelLayout();
-      m_aeChannelCount  = AE.GetChannelCount();
-      m_aePacketSamples = SOFTAE_FRAMES * m_aeChannelCount;
+      m_aePacketSamples = SOFTAE_FRAMES * m_aeChannelLayout.Count();
     }
   }
 }
@@ -132,8 +131,7 @@ void CSoftAEStream::Initialize()
   m_bytesPerFrame   = m_bytesPerSample * m_initChannelLayout.Count();
 
   m_aeChannelLayout = AE.GetChannelLayout();
-  m_aeChannelCount  = AE.GetChannelCount();
-  m_aePacketSamples = SOFTAE_FRAMES * m_aeChannelCount;
+  m_aePacketSamples = SOFTAE_FRAMES * m_aeChannelLayout.Count();
   m_waterLevel      = SOFTAE_FRAMES * 8;
 
   m_format.m_dataFormat    = useDataFormat;
@@ -450,12 +448,13 @@ uint8_t* CSoftAEStream::GetFrame()
   uint8_t *ret      = (uint8_t*)m_packetPos;
   float   *vizData  = m_vizPacketPos;
 
-  m_packet.samples -= m_aeChannelCount;
+  ASSERT(m_packet.samples >= m_aeChannelLayout.Count());
+  m_packet.samples -= m_aeChannelLayout.Count();
   if (AE_IS_RAW(m_initDataFormat))
     m_packetPos += m_bytesPerFrame;
   else
   {
-    m_packetPos += m_aeChannelCount * sizeof(float);
+    m_packetPos += m_aeChannelLayout.Count() * sizeof(float);
     if(vizData)
       m_vizPacketPos += 2;
   }

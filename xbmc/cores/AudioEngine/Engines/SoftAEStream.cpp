@@ -163,8 +163,9 @@ void CSoftAEStream::Initialize()
   m_packet.data       = NULL;
   m_packet.vizData    = NULL;
 
-  if (!m_frameBuffer)
-    m_frameBuffer = (uint8_t*)_aligned_malloc(m_format.m_frames * m_bytesPerFrame, 16);
+  if (m_frameBuffer)
+    _aligned_free(m_frameBuffer);
+  m_frameBuffer = (uint8_t*)_aligned_malloc(m_format.m_frames * m_format.m_frameSize, 16);
 
   m_resample      = (m_forceResample || m_initSampleRate != AE.GetSampleRate()) && !AE_IS_RAW(m_initDataFormat);
   m_convert       = m_initDataFormat != AE_FMT_FLOAT && !AE_IS_RAW(m_initDataFormat);
@@ -258,7 +259,7 @@ unsigned int CSoftAEStream::AddData(void *data, unsigned int size)
   uint8_t *ptr = (uint8_t*)data;
   while(size)
   {
-    size_t room = (m_format.m_frames * m_bytesPerFrame) - m_frameBufferSize;
+    size_t room = (m_format.m_frames * m_format.m_frameSize) - m_frameBufferSize;
     size_t copy = std::min((size_t)size, room);
     if (copy == 0)
       break;

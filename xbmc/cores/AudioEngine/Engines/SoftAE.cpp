@@ -66,7 +66,6 @@ CSoftAE::CSoftAE():
   m_outputStageFn      (NULL ),
   m_streamStageFn      (NULL )
 {
-
 }
 
 CSoftAE::~CSoftAE()
@@ -432,8 +431,9 @@ bool CSoftAE::Initialize()
 
   /* we start even if we failed to open a sink */
   OpenSink();
+  m_sinkOpened.Set();
   m_running = true;
-  m_thread  = new CThread(this);
+  m_thread  = new CThread(this, "CSoftAE");
   m_thread->Create();
   m_thread->SetPriority(THREAD_PRIORITY_ABOVE_NORMAL);
 
@@ -617,7 +617,11 @@ IAEStream *CSoftAE::MakeStream(enum AEDataFormat dataFormat, unsigned int sample
   if ((options & AESTREAM_PAUSED) == 0)
   {
     if ((AE_IS_RAW(dataFormat)) || wasEmpty || m_audiophile)
+    {
+      m_sinkOpened.Reset();
       m_reOpen = true;
+      m_sinkOpened.Wait();
+    }
   }
 
   /* if the stream was not initialized, do it now */
@@ -793,17 +797,17 @@ void CSoftAE::Run()
       CLog::Log(LOGDEBUG, "CSoftAE::Run - Sink restart flagged");
       m_reOpen = false;
       OpenSink();
+      m_sinkOpened.Set();
     }
 
     if(!m_reOpened)
     {
       if (!m_rawPassthrough && mixed)
         RunNormalizeStage(m_chLayout.Count(), out, mixed);
-    }
 
-    /* buffer the samples into the output buffer */
-    if (!m_reOpened)
+      /* buffer the samples into the output buffer */
       RunBufferStage(out);
+    }
 
     /* update the current delay */
     m_delay = m_sink->GetDelay();

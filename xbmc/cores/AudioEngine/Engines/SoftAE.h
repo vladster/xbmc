@@ -124,6 +124,7 @@ private:
   bool m_audiophile;
 
   /* internal vars */
+  CEvent           m_sinkOpened;      /* event fires after OpenSink completes */
   bool             m_running, m_reOpen, m_reOpened;
   float            m_delay;           /* current delay time */
   CCriticalSection m_runningLock;     /* released when the thread exits */

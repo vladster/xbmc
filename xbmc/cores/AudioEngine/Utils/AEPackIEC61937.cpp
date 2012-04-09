@@ -83,6 +83,8 @@ int CAEPackIEC61937::PackEAC3(uint8_t *data, unsigned int size, uint8_t *dest)
 
 int CAEPackIEC61937::PackDTS_512(uint8_t *data, unsigned int size, uint8_t *dest)
 {
+  size += size & 0x1;
+
   assert(size <= OUT_FRAMESTOBYTES(DTS1_FRAME_SIZE));
   struct IEC61937Packet *packet = (struct IEC61937Packet*)dest;
   packet->m_preamble1 = IEC61937_PREAMBLE1;
@@ -105,6 +107,8 @@ int CAEPackIEC61937::PackDTS_512(uint8_t *data, unsigned int size, uint8_t *dest
 
 int CAEPackIEC61937::PackDTS_1024(uint8_t *data, unsigned int size, uint8_t *dest)
 {
+  size += size & 0x1;
+
   assert(size <= OUT_FRAMESTOBYTES(DTS2_FRAME_SIZE));
   struct IEC61937Packet *packet = (struct IEC61937Packet*)dest;
   packet->m_preamble1 = IEC61937_PREAMBLE1;
@@ -127,6 +131,8 @@ int CAEPackIEC61937::PackDTS_1024(uint8_t *data, unsigned int size, uint8_t *des
 
 int CAEPackIEC61937::PackDTS_2048(uint8_t *data, unsigned int size, uint8_t *dest)
 {
+  size += size & 0x1;
+
   assert(size <= OUT_FRAMESTOBYTES(DTS3_FRAME_SIZE));
   struct IEC61937Packet *packet = (struct IEC61937Packet*)dest;
   packet->m_preamble1 = IEC61937_PREAMBLE1;

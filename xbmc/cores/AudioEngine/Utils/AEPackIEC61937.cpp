@@ -200,7 +200,10 @@ int CAEPackIEC61937::PackDTSHD(uint8_t *data, unsigned int size, uint8_t *dest, 
   packet->m_preamble1 = IEC61937_PREAMBLE1;
   packet->m_preamble2 = IEC61937_PREAMBLE2;
   packet->m_type      = IEC61937_TYPE_DTSHD | (subtype << 8);
-  packet->m_length    = size;
+
+  /* Align so that (length_code & 0xf) == 0x8. This is reportedly needed
+   * with some receivers, but the exact requirement is unconfirmed. */
+  packet->m_length    = ((size + 0x9) &~ 0x9) - 0x8;
 
   if (data == NULL)
     data = packet->m_data;

@@ -39,19 +39,20 @@ int CAEPackIEC61937::PackAC3(uint8_t *data, unsigned int size, uint8_t *dest)
   assert(size <= OUT_FRAMESTOBYTES(AC3_FRAME_SIZE));
   struct IEC61937Packet *packet = (struct IEC61937Packet*)dest;
 
+  int bitstream_mode  = data[5] & 0x7;
   packet->m_preamble1 = IEC61937_PREAMBLE1;
   packet->m_preamble2 = IEC61937_PREAMBLE2;
-  if (data == NULL)
-    data = packet->m_data;
-  int bitstream_mode = data[5] & 0x7;
   packet->m_type      = IEC61937_TYPE_AC3 | (bitstream_mode << 8);
   packet->m_length    = size << 3;
 
+  if (data == NULL)
+    data = packet->m_data;
 #ifdef __BIG_ENDIAN__
   else
     memcpy(packet->m_data, data, size);
 #else
-  SwapEndian((uint16_t*)packet->m_data, (uint16_t*)data, size >> 1);
+  size += size & 0x1;
+  SwapEndian((uint16_t*)packet->m_data, (uint16_t*)data, (size + (size & 0x1)) >> 1);
 #endif
 
   memset(packet->m_data + size, 0, OUT_FRAMESTOBYTES(AC3_FRAME_SIZE) - IEC61937_DATA_OFFSET - size);
@@ -74,7 +75,8 @@ int CAEPackIEC61937::PackEAC3(uint8_t *data, unsigned int size, uint8_t *dest)
   else
     memcpy(packet->m_data, data, size);
 #else
-  SwapEndian((uint16_t*)packet->m_data, (uint16_t*)data, size >> 1);
+  size += size & 0x1;
+  SwapEndian((uint16_t*)packet->m_data, (uint16_t*)data, (size + (size & 0x1)) >> 1);
 #endif
 
   memset(packet->m_data + size, 0, OUT_FRAMESTOBYTES(EAC3_FRAME_SIZE) - IEC61937_DATA_OFFSET - size);
@@ -83,8 +85,6 @@ int CAEPackIEC61937::PackEAC3(uint8_t *data, unsigned int size, uint8_t *dest)
 
 int CAEPackIEC61937::PackDTS_512(uint8_t *data, unsigned int size, uint8_t *dest)
 {
-  size += size & 0x1;
-
   assert(size <= OUT_FRAMESTOBYTES(DTS1_FRAME_SIZE));
   struct IEC61937Packet *packet = (struct IEC61937Packet*)dest;
   packet->m_preamble1 = IEC61937_PREAMBLE1;
@@ -98,7 +98,8 @@ int CAEPackIEC61937::PackDTS_512(uint8_t *data, unsigned int size, uint8_t *dest
   else
     memcpy(packet->m_data, data, size);
 #else
-  SwapEndian((uint16_t*)packet->m_data, (uint16_t*)data, size >> 1);
+  size += size & 0x1;
+  SwapEndian((uint16_t*)packet->m_data, (uint16_t*)data, (size + (size & 0x1)) >> 1);
 #endif
 
   memset(packet->m_data + size, 0, OUT_FRAMESTOBYTES(DTS1_FRAME_SIZE) - IEC61937_DATA_OFFSET - size);
@@ -107,8 +108,6 @@ int CAEPackIEC61937::PackDTS_512(uint8_t *data, unsigned int size, uint8_t *dest
 
 int CAEPackIEC61937::PackDTS_1024(uint8_t *data, unsigned int size, uint8_t *dest)
 {
-  size += size & 0x1;
-
   assert(size <= OUT_FRAMESTOBYTES(DTS2_FRAME_SIZE));
   struct IEC61937Packet *packet = (struct IEC61937Packet*)dest;
   packet->m_preamble1 = IEC61937_PREAMBLE1;
@@ -122,7 +121,8 @@ int CAEPackIEC61937::PackDTS_1024(uint8_t *data, unsigned int size, uint8_t *des
   else
     memcpy(packet->m_data, data, size);
 #else
-  SwapEndian((uint16_t*)packet->m_data, (uint16_t*)data, size >> 1);
+  size += size & 0x1;
+  SwapEndian((uint16_t*)packet->m_data, (uint16_t*)data, (size + (size & 0x1)) >> 1);
 #endif
 
   memset(packet->m_data + size, 0, OUT_FRAMESTOBYTES(DTS2_FRAME_SIZE) - IEC61937_DATA_OFFSET - size);
@@ -131,8 +131,6 @@ int CAEPackIEC61937::PackDTS_1024(uint8_t *data, unsigned int size, uint8_t *des
 
 int CAEPackIEC61937::PackDTS_2048(uint8_t *data, unsigned int size, uint8_t *dest)
 {
-  size += size & 0x1;
-
   assert(size <= OUT_FRAMESTOBYTES(DTS3_FRAME_SIZE));
   struct IEC61937Packet *packet = (struct IEC61937Packet*)dest;
   packet->m_preamble1 = IEC61937_PREAMBLE1;
@@ -146,7 +144,8 @@ int CAEPackIEC61937::PackDTS_2048(uint8_t *data, unsigned int size, uint8_t *des
   else
     memcpy(packet->m_data, data, size);
 #else
-  SwapEndian((uint16_t*)packet->m_data, (uint16_t*)data, size >> 1);
+  size += size & 0x1;
+  SwapEndian((uint16_t*)packet->m_data, (uint16_t*)data, (size + (size & 0x1)) >> 1);
 #endif
 
   memset(packet->m_data + size, 0, OUT_FRAMESTOBYTES(DTS3_FRAME_SIZE) - IEC61937_DATA_OFFSET - size);
@@ -168,7 +167,8 @@ int CAEPackIEC61937::PackTrueHD(uint8_t *data, unsigned int size, uint8_t *dest)
   else
     memcpy(packet->m_data, data, size);
 #else
-  SwapEndian((uint16_t*)packet->m_data, (uint16_t*)data, size >> 1);
+  size += size & 0x1;
+  SwapEndian((uint16_t*)packet->m_data, (uint16_t*)data, (size + (size & 0x1)) >> 1);
 #endif
 
   memset(packet->m_data + size, 0, OUT_FRAMESTOBYTES(TRUEHD_FRAME_SIZE) - IEC61937_DATA_OFFSET - size);
@@ -203,7 +203,8 @@ int CAEPackIEC61937::PackDTSHD(uint8_t *data, unsigned int size, uint8_t *dest, 
   else
     memcpy(packet->m_data, data, size);
 #else
-  SwapEndian((uint16_t*)packet->m_data, (uint16_t*)data, size >> 1);
+  size += size & 0x1;
+  SwapEndian((uint16_t*)packet->m_data, (uint16_t*)data, (size + (size & 0x1)) >> 1);
 #endif
 
   unsigned int burstsize = period << 2;

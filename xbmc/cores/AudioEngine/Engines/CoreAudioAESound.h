@@ -23,8 +23,8 @@
 #define __COREAUDIOAESOUND_H__
 
 #include "utils/StdString.h"
-#include "AESound.h"
-#include "AEWAVLoader.h"
+#include "Interfaces/AESound.h"
+#include "Utils/AEWAVLoader.h"
 #include "threads/CriticalSection.h"
 #include "threads/SharedSection.h"
 
@@ -35,8 +35,9 @@ public:
   CCoreAudioAESound (const CStdString &filename);
   virtual ~CCoreAudioAESound();
 
+  virtual CStdString GetFileName();
   virtual void DeInitialize();
-  virtual bool Initialize(AEAudioFormat &outputFormat);
+  virtual bool Initialize();
 
   virtual void Play();
   virtual void Stop();
@@ -44,26 +45,18 @@ public:
 
   virtual void  SetVolume(float volume);
   virtual float GetVolume();
-  virtual void  SetFreeCallback(AECBFunc *func, void *arg);
 
   unsigned int GetSampleCount();
-
-  /* must be called before initialize to be sure we have exclusive access to our samples */
-  void Lock();
-  void UnLock();
 
   /* ReleaseSamples must be called for each time GetSamples has been called */
   virtual float* GetSamples    ();
   void           ReleaseSamples();
 private:
-  CCriticalSection m_MutexSound;
+  CCriticalSection m_critSection;
   CStdString       m_filename;
   CAEWAVLoader     m_wavLoader;
   float            m_volume;
   int              m_inUse;
-  AECBFunc        *m_freeCallback;
-  void            *m_freeCallbackArg;
-  bool             m_locked;
 };
 
 #endif

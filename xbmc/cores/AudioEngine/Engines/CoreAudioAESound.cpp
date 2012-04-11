@@ -19,7 +19,7 @@
  *
  */
 
-#include "AESound.h"
+#include "Interfaces/AESound.h"
 
 #include <samplerate.h>
 #include "threads/SingleLock.h"
@@ -47,13 +47,10 @@ typedef struct
 
 CCoreAudioAESound::CCoreAudioAESound(const CStdString &filename) :
   IAESound         (filename),
+  m_filename       (filename),
   m_volume         (1.0f    ),
-  m_inUse          (0       ),
-  m_freeCallback   (NULL    ),
-  m_freeCallbackArg(NULL    ),
-  m_locked         (false)
+  m_inUse          (0       )
 {
-  m_filename = filename;
 }
 
 CCoreAudioAESound::~CCoreAudioAESound()
@@ -61,21 +58,23 @@ CCoreAudioAESound::~CCoreAudioAESound()
   DeInitialize();
 }
 
+
+CStdString CCoreAudioAESound::GetFileName()
+{
+  return m_filename;
+}
+
 void CCoreAudioAESound::DeInitialize()
 {
   m_wavLoader.DeInitialize();
-  if(m_locked)
-    UnLock();
 }
 
-bool CCoreAudioAESound::Initialize(AEAudioFormat &outputFormat)
+bool CCoreAudioAESound::Initialize()
 {
   
   DeInitialize();
   
-  int sampleRate = outputFormat.m_sampleRate;
-
-  if (!m_wavLoader.Initialize(m_filename, sampleRate))
+  if (!m_wavLoader.Initialize(m_filename, AE.GetSampleRate()))
     return false;
 
   return m_wavLoader.Remap(AE.GetChannelLayout());
@@ -93,73 +92,41 @@ float CCoreAudioAESound::GetVolume()
 
 unsigned int CCoreAudioAESound::GetSampleCount()
 {
-  CSingleLock SoundLock(m_MutexSound);
-
-  int sampleCount = 0;
+  CSingleLock cs(m_critSection);
   if (m_wavLoader.IsValid())
-    sampleCount = m_wavLoader.GetSampleCount();
-
-  SoundLock.Leave();
-  
-  return sampleCount;
-}
-
-void CCoreAudioAESound::Lock()
-{
-  if(!m_locked)
-  {
-    m_locked = true;
-  }
-}
-
-void CCoreAudioAESound::UnLock()
-{
-  if(m_locked)
-  {
-    m_locked = false;
-  }
+    return m_wavLoader.GetSampleCount();
+  return 0;
 }
 
 float* CCoreAudioAESound::GetSamples()
 {
-  CSingleLock SoundLock(m_MutexSound);
+  CSingleLock cs(m_critSection);
   if (!m_wavLoader.IsValid())
-  {
-    SoundLock.Leave();
     return NULL;
-  }
 
   ++m_inUse;
-  SoundLock.Leave();
   return m_wavLoader.GetSamples();
 }
 
 void CCoreAudioAESound::ReleaseSamples()
 {
-  CSingleLock SoundLock(m_MutexSound);
+  CSingleLock cs(m_critSection);
+  ASSERT(m_inUse > 0);
   --m_inUse;
-  SoundLock.Leave();
 }
 
 bool CCoreAudioAESound::IsPlaying()
 {
-  CSingleLock SoundLock(m_MutexSound);
-  bool playing = m_inUse > 0;
-  SoundLock.Leave();
-
-  return playing;
-}
-
-void CCoreAudioAESound::SetFreeCallback(AECBFunc *callback, void *arg)
-{
-  m_freeCallback    = callback;
-  m_freeCallbackArg = arg;
+  CSingleLock cs(m_critSection);
+  return (m_inUse > 0);
 }
 
 void CCoreAudioAESound::Play()
 {
+  AE.PlaySound(this);
 }
 
 void CCoreAudioAESound::Stop()
 {
+  AE.StopSound(this);
 }

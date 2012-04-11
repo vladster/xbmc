@@ -25,26 +25,40 @@
 #include <samplerate.h>
 #include <list>
 
-#include "AEStream.h"
+#include "Interfaces/AEStream.h"
 #include "AEAudioFormat.h"
 #include "AEConvert.h"
 #include "AERemap.h"
 #include "CoreAudioRingBuffer.h"
 #include "threads/CriticalSection.h"
+#include <AudioUnit/AudioUnit.h>
+#include "ICoreAudioSource.h"
 
-class CCoreAudioAEStream : public IAEStream
+#if defined(TARGET_DARWIN_IOS)
+# include "CoreAudioAEHALIOS.h"
+#else
+# include "CoreAudioAEHALOSX.h"
+#endif
+
+class CCoreAudioAEStream : public IAEStream, public ICoreAudioSource
 {
 protected:
   friend class CCoreAudioAE;
-  CCoreAudioAEStream(enum AEDataFormat format, unsigned int sampleRate, unsigned int channelCount, AEChLayout channelLayout, unsigned int options);
+  CCoreAudioAEStream(enum AEDataFormat format, unsigned int sampleRate, CAEChannelInfo channelLayout, unsigned int options);
   virtual ~CCoreAudioAEStream();
+  
+  CAUOutputDevice    *m_outputUnit;
 
 public:
-  void Initialize(AEAudioFormat &outputFormat);
+  void ReinitConverter();
+  void CloseConverter();
+  void OpenConverter();
+
+  void Initialize();
   void InitializeRemap();
   virtual void Destroy();
 
-  virtual unsigned int GetFrameSize();
+  virtual const unsigned int GetFrameSize() const;
   virtual unsigned int GetSpace();
   virtual unsigned int AddData(void *data, unsigned int size);
   unsigned int GetFrames(uint8_t *buffer, unsigned int size);
@@ -68,10 +82,10 @@ public:
   virtual void  SetVolume(float volume);
   virtual void  SetReplayGain(float factor);
 
-  virtual unsigned int      GetChannelCount();
-  virtual unsigned int      GetSampleRate();
-  virtual enum AEDataFormat GetDataFormat();
-  virtual bool              IsRaw();
+  virtual const unsigned int      GetChannelCount() const;
+  virtual const unsigned int      GetSampleRate() const;
+  virtual const enum AEDataFormat GetDataFormat() const;
+  virtual const bool              IsRaw() const;
 
   /* for dynamic sample rate changes (smoothvideo) */
   virtual double GetResampleRatio();
@@ -82,33 +96,50 @@ public:
 
   virtual void FadeVolume(float from, float to, unsigned int time);
   virtual bool IsFading();
+  virtual void RegisterSlave(IAEStream *stream);
   
+  OSStatus Render(AudioUnitRenderActionFlags* actionFlags, 
+                  const AudioTimeStamp* pTimeStamp, 
+                  UInt32 busNumber, 
+                  UInt32 frameCount, 
+                  AudioBufferList* pBufList);
+  OSStatus OnRender(AudioUnitRenderActionFlags *ioActionFlags, 
+                    const AudioTimeStamp *inTimeStamp, 
+                    UInt32 inBusNumber, 
+                    UInt32 inNumberFrames, 
+                    AudioBufferList *ioData);
+
 private:
   void InternalFlush();
 
-  CCriticalSection        m_MutexStream;
-
+  AEDataFormat            m_rawDataFormat;
+  
   AEAudioFormat           m_OutputFormat;
+  unsigned int            m_chLayoutCountOutput;
   AEAudioFormat           m_StreamFormat;
+  unsigned int            m_chLayoutCountStream;
   unsigned int            m_StreamBytesPerSample;
   unsigned int            m_OutputBytesPerSample;
 
-  bool                    m_forceResample; /* true if we are to force resample even when the rates match */
-  bool                    m_resample;      /* true if the audio needs to be resampled  */
+  //bool                    m_forceResample; /* true if we are to force resample even when the rates match */
+  //bool                    m_resample;      /* true if the audio needs to be resampled  */
   bool                    m_convert;       /* true if the bitspersample needs converting */
   bool                    m_valid;         /* true if the stream is valid */
   bool                    m_delete;        /* true if CCoreAudioAE is to free this object */
   CAERemap                m_remap;         /* the remapper */
   float                   m_volume;        /* the volume level */
   float                   m_rgain;         /* replay gain level */
+  IAEStream               *m_slave;        /* slave aestream */
 
   CAEConvert::AEConvertToFn m_convertFn;
 
   CoreAudioRingBuffer    *m_Buffer;
   float                  *m_convertBuffer;      /* buffer for converted data */
   int                     m_convertBufferSize;
-  float                  *m_resampleBuffer;     /* buffer for resample data */
-  int                     m_resampleBufferSize;
+  //float                  *m_resampleBuffer;     /* buffer for resample data */
+  //int                     m_resampleBufferSize;
+  uint8_t                *m_upmixBuffer;        /* buffer for remap data */
+  int                     m_upmixBufferSize;
   uint8_t                *m_remapBuffer;        /* buffer for remap data */
   int                     m_remapBufferSize;
   uint8_t                *m_vizRemapBuffer;     /* buffer for remap data */
@@ -125,11 +156,16 @@ private:
   IAudioCallback         *m_audioCallback;
 
   /* fade values */
-  bool               m_fadeRunning;
-  bool               m_fadeDirUp;
-  float              m_fadeStep;
-  float              m_fadeTarget;
-  unsigned int       m_fadeTime;
+  bool              m_fadeRunning;
+  bool              m_fadeDirUp;
+  float             m_fadeStep;
+  float             m_fadeTarget;
+  unsigned int      m_fadeTime;
+  bool              m_isRaw;
+  unsigned int      m_frameSize;
+  bool              m_doRemap;
+  void              Upmix(void *input, unsigned int channelsInput, void *output, unsigned int channelsOutput, unsigned int frames, AEDataFormat dataFormat);
+  bool              m_firstInput;
 };
 
 #endif

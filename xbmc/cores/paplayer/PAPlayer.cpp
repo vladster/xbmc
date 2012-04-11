@@ -359,6 +359,7 @@ void PAPlayer::Process()
     float delay = 1.0f;
     float buffer = 1.0f;
     ProcessStreams(delay, buffer);
+#ifndef TARGET_DARWIN_IOS
     if (buffer > 0.2)
     {
       /* try to keep the buffer 75% full */
@@ -366,6 +367,7 @@ void PAPlayer::Process()
       delay = delay * mul;
       Sleep(MathUtils::round_int(delay));
     }
+#endif
   }
   
   m_callback.OnPlayBackEnded();
@@ -405,7 +407,6 @@ inline void PAPlayer::ProcessStreams(float &delay, float &buffer)
     StreamInfo* si = *itt;
     if (!m_currentStream && !si->m_started)
       m_currentStream = si;
-
     /* if the stream is finishing */
     if ((si->m_fadeOutTriggered && si->m_stream && !si->m_stream->IsFading()) || !PrepareStream(si) || !ProcessStream(si, delay, buffer))
     {

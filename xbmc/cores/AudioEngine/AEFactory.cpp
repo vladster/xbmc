@@ -38,7 +38,7 @@ bool CAEFactory::LoadEngine()
 
   CStdString engine;
 
-#if defined(__LINUX__) || defined(__APPLE__)
+#if defined(__LINUX__) && !defined(__APPLE__)
   if (getenv("AE_ENGINE"))
   {
     engine = ((CStdString)getenv("AE_ENGINE")).ToUpper();
@@ -57,10 +57,10 @@ bool CAEFactory::LoadEngine()
 #ifdef __APPLE__
   if (!loaded)
     loaded = CAEFactory::LoadEngine(AE_ENGINE_COREAUDIO);
-#endif
-
+#else
   if (!loaded)
     loaded = CAEFactory::LoadEngine(AE_ENGINE_SOFT);
+#endif
 
   return loaded;
 }

@@ -216,7 +216,11 @@ bool CAEWAVLoader::Initialize(const CStdString &filename, unsigned int resampleR
     data.data_out      = (float*)_aligned_malloc(sizeof(float) * space, 16);
     data.output_frames = space / m_channelCount;
     data.src_ratio     = (double)resampleRate / (double)m_sampleRate;
+#ifdef TARGET_DARWIN_IOS
+    if (src_simple(&data, SRC_SINC_FASTEST, m_channelCount) != 0)
+#else
     if (src_simple(&data, SRC_SINC_MEDIUM_QUALITY, m_channelCount) != 0)
+#endif
     {
       CLog::Log(LOGERROR, "CAEWAVLoader::Initialize - Failed to resample audio: %s", m_filename.c_str());
       _aligned_free(data.data_out);

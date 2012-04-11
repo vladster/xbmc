@@ -37,11 +37,12 @@ class CPulseAEStream;
 class CPulseAESound;
 class CPulseAE : public IAE
 {
-public:
-  /* this should NEVER be called directly, use CAEFactory */
+protected:
+  friend class CAEFactory;
   CPulseAE();
   virtual ~CPulseAE();
 
+public:
   virtual bool  Initialize      ();
   virtual void  OnSettingsChange(CStdString setting);
 

@@ -50,11 +50,12 @@ class IAESink;
 
 class CSoftAE : public IThreadedAE
 {
-public:
-  /* this should NEVER be called directly, use CAEFactory */
+protected:
+  friend class CAEFactory;
   CSoftAE();
   virtual ~CSoftAE();
 
+public:
   virtual void  Shutdown();
   virtual bool  Initialize      ();
   virtual void  OnSettingsChange(CStdString setting);

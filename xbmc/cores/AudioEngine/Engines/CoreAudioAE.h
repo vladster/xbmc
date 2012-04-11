@@ -55,14 +55,15 @@ class CCoreAudioAEEventThread;
 class CCoreAudioAE : public IAE, public ICoreAudioSource
 {
 protected:
+  friend class CAEFactory;
+  CCoreAudioAE();
+  virtual ~CCoreAudioAE();
+
   /* Give the HAL access to the engine */
   friend class CCoreAudioAEHAL;
   CCoreAudioAEHAL  *HAL;
   
 public:
-  /* this should NEVER be called directly, use CAEFactory */
-  CCoreAudioAE();
-  virtual ~CCoreAudioAE();
   virtual void Shutdown();
 
   virtual bool  Initialize();

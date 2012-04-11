@@ -91,7 +91,7 @@ public:
   virtual IAEStream *FreeStream(IAEStream *stream);
     
   /* returns a new sound object */
-  virtual IAESound *MakeSound(CStdString file);
+  virtual IAESound *MakeSound(const CStdString& file);
   void StopAllSounds();
   virtual void FreeSound(IAESound *sound);
   virtual void PlaySound(IAESound *sound);

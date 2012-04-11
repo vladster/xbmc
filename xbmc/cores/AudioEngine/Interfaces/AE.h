@@ -101,7 +101,7 @@ public:
    * @param file The WAV file to load, this supports XBMC's VFS
    * @return A new IAESound if the file could be loaded, otherwise NULL
    */
-  virtual IAESound *MakeSound(CStdString file) = 0;
+  virtual IAESound *MakeSound(const CStdString &file) = 0;
 
   /**
    * Free the supplied IAESound object

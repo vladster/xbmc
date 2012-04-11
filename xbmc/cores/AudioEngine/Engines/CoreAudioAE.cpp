@@ -472,7 +472,7 @@ void CCoreAudioAE::StopSound(IAESound *sound)
   }
 }
 
-IAESound *CCoreAudioAE::MakeSound(CStdString file)
+IAESound *CCoreAudioAE::MakeSound(const CStdString& file)
 {
   CSingleLock soundLock(m_soundLock);
 

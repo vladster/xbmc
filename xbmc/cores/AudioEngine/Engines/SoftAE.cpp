@@ -611,7 +611,7 @@ IAEStream *CSoftAE::MakeStream(enum AEDataFormat dataFormat, unsigned int sample
   return stream;
 }
 
-IAESound *CSoftAE::MakeSound(CStdString file)
+IAESound *CSoftAE::MakeSound(const CStdString& file)
 {
   CSingleLock soundLock(m_soundLock);
 

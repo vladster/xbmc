@@ -20,6 +20,8 @@
  *
  */
 
+#include "system.h"
+
 /**
  * This class wraps a block of 16 byte aligned memory for simple buffer
  * operations, if _DEBUG is defined then size is always verified.

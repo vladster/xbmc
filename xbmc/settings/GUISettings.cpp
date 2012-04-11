@@ -453,9 +453,6 @@ void CGUISettings::Initialize()
 #if !defined(TARGET_DARWIN)
   AddBool(aocat, "audiooutput.passthroughaac"   , 299, false);
   AddBool(aocat, "audiooutput.multichannellpcm" , 348, true );
-  AddBool(aocat, "audiooutput.passthroughmp1"   , 300, false);
-  AddBool(aocat, "audiooutput.passthroughmp2"   , 301, false);
-  AddBool(aocat, "audiooutput.passthroughmp3"   , 302, false);
   AddBool(aocat, "audiooutput.truehdpassthrough", 349, true );
   AddBool(aocat, "audiooutput.dtshdpassthrough" , 407, true );
 #endif
@@ -1217,9 +1214,6 @@ void CGUISettings::LoadXML(TiXmlElement *pRootElement, bool hideSettings /* = fa
   CLog::Log(LOGINFO, "AC3 pass through is %s", GetBool("audiooutput.ac3passthrough") ? "enabled" : "disabled");
   CLog::Log(LOGINFO, "DTS pass through is %s", GetBool("audiooutput.dtspassthrough") ? "enabled" : "disabled");
   CLog::Log(LOGINFO, "AAC pass through is %s", GetBool("audiooutput.passthroughaac") ? "enabled" : "disabled");
-  CLog::Log(LOGINFO, "MP1 pass through is %s", GetBool("audiooutput.passthroughmp1") ? "enabled" : "disabled");
-  CLog::Log(LOGINFO, "MP2 pass through is %s", GetBool("audiooutput.passthroughmp2") ? "enabled" : "disabled");
-  CLog::Log(LOGINFO, "MP3 pass through is %s", GetBool("audiooutput.passthroughmp3") ? "enabled" : "disabled");
 
   g_guiSettings.m_LookAndFeelResolution = GetResolution();
 #ifdef __APPLE__

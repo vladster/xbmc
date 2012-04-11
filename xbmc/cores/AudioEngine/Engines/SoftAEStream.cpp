@@ -319,7 +319,6 @@ unsigned int CSoftAEStream::ProcessFrameBuffer()
   {
     data     = (uint8_t*)m_convertBuffer;
     frames   = samples / m_chLayoutCount;
-    samples  = frames * m_chLayoutCount;
     consumed = frames * m_bytesPerFrame;
   }
 
@@ -332,11 +331,12 @@ unsigned int CSoftAEStream::ProcessFrameBuffer()
   /* buffer the data */
   m_framesBuffered += frames;
 
-  const unsigned int inputBlockSize     = m_format.m_frames * m_format.m_channelLayout.Count() * sizeof(float);
-  const unsigned int outputBlockSize    = m_format.m_frames * m_aeChannelLayout       .Count() * sizeof(float); 
+  const unsigned int sampleSize         = AE_IS_RAW(m_initDataFormat) ? m_bytesPerSample : sizeof(float);
+  const unsigned int inputBlockSize     = m_format.m_frames * m_format.m_channelLayout.Count() * sampleSize;
+  const unsigned int outputBlockSize    = m_format.m_frames * m_aeChannelLayout       .Count() * sampleSize;
   const unsigned int outputBlockSizeViz = m_format.m_frames * 2 * sizeof(float);
 
-  size_t remaining = samples * m_bytesPerSample;
+  size_t remaining = samples * sampleSize;
   while(remaining)
   {
     size_t copy = std::min(m_newPacket->data.Free(), remaining);
@@ -423,8 +423,9 @@ uint8_t* CSoftAEStream::GetFrame()
       else
       {
         /* underrun, we need to refill our buffers */
-        m_refillBuffer = m_waterLevel - m_framesBuffered;
         CLog::Log(LOGDEBUG, "CSoftAEStream::GetFrame - Underrun");
+        ASSERT(m_waterLevel > m_framesBuffered);
+        m_refillBuffer = m_waterLevel - m_framesBuffered;
         return NULL;
       }
     }
@@ -435,7 +436,7 @@ uint8_t* CSoftAEStream::GetFrame()
   }
   
   /* fetch one frame of data */
-  ssize_t bytes = (AE_IS_RAW(m_initDataFormat)) ? m_bytesPerFrame : m_samplesPerFrame * sizeof(float);
+  ssize_t bytes = AE_IS_RAW(m_initDataFormat) ? m_bytesPerFrame : (m_samplesPerFrame * sizeof(float));
   uint8_t *ret  = (uint8_t*)m_packet->data.CursorRead(bytes);
 
   /* we have a frame, if we have a viz we need to hand the data to it */
@@ -521,15 +522,11 @@ void CSoftAEStream::InternalFlush()
   m_newPacket->data.Empty();
   
   /*
-    clear the current buffered packet we cant delete the data as it may be
-    in use by the AE thread, so we just set the packet count to 0, it will
-    get freed by the next call to GetFrame or destruction
+    clear the current buffered packet, we cant delete the data as it may be
+    in use by the AE thread, so we just seek to the end of the buffer
   */
   if (m_packet)
-  {
-    delete m_packet;
-    m_packet = NULL;
-  }
+    m_packet->data.CursorSeek(m_packet->data.Size());
 
   /* clear any other buffered packets */
   while(!m_outBuffer.empty()) {    

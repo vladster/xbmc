@@ -141,6 +141,14 @@ void* CAEBuffer::Raw(const size_t size)
   return m_buffer;
 }
 
+void CAEBuffer::CursorSeek(const size_t pos)
+{
+#ifdef _DEBUG
+  ASSERT(pos <= m_bufferSize);
+#endif
+  m_cursorPos = pos;
+}
+
 void* CAEBuffer::CursorRead(const size_t size)
 {
 #ifdef _DEBUG

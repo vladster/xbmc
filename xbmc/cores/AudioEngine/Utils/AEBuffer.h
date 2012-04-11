@@ -63,5 +63,6 @@ public:
   /* cursor methods */
   inline void  CursorReset() { m_cursorPos = 0; }
   inline bool  CursorEnd  () { return m_cursorPos == m_bufferSize; }
-  void*        CursorRead(const size_t size);
+  void         CursorSeek (const size_t pos );
+  void*        CursorRead (const size_t size);
 };

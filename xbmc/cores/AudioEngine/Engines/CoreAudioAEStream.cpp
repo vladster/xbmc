@@ -440,46 +440,53 @@ unsigned int CCoreAudioAEStream::GetFrames(uint8_t *buffer, unsigned int size)
   unsigned int readsize = std::min(m_Buffer->GetReadSize(), size);
   m_Buffer->Read(buffer, readsize);
 
-  /* we have a frame, if we have a viz we need to hand the data to it.
-     Keep in mind that our buffer is already in output format. 
-     So we remap output format to viz format !!!*/
-//#if defined(TARGET_DARWIN_OSX)
-  if(!m_isRaw && (m_OutputFormat.m_dataFormat == AE_FMT_FLOAT))
+  if(!m_isRaw)
   {
-    // TODO : Why the hell is vizdata limited ?
-    unsigned int samples   = readsize / m_OutputBytesPerSample;
-    unsigned int frames    = samples / m_chLayoutCountOutput;
-
-    if(samples) {
-      // Viz channel count is 2
-      CheckOutputBufferSize((void **)&m_vizRemapBuffer, &m_vizRemapBufferSize, frames * 2 * sizeof(float));
+    float *floatBuffer      = (float *)buffer;
+    unsigned int samples    = readsize / m_OutputBytesPerSample;        
+  
+    /* we have a frame, if we have a viz we need to hand the data to it.
+      Keep in mind that our buffer is already in output format. 
+      So we remap output format to viz format !!!*/  
+    if(m_OutputFormat.m_dataFormat == AE_FMT_FLOAT)
+    {
+      // TODO : Why the hell is vizdata limited ?
+      unsigned int frames         = samples / m_chLayoutCountOutput;
+      unsigned int samplesClamped = (samples > 512) ? 512 : samples;
+      if(samplesClamped) {
+        // Viz channel count is 2
+        CheckOutputBufferSize((void **)&m_vizRemapBuffer, &m_vizRemapBufferSize, frames * 2 * sizeof(float));
       
-      samples  = (samples > 512) ? 512 : samples;
-      
-      m_vizRemap.Remap((float*)buffer, (float*)m_vizRemapBuffer, frames);
-      if (m_audioCallback)
-      {
-        m_audioCallback->OnAudioData((float *)m_vizRemapBuffer, samples);
+        m_vizRemap.Remap(floatBuffer, (float*)m_vizRemapBuffer, frames);
+        if (m_audioCallback)
+        {
+          m_audioCallback->OnAudioData((float *)m_vizRemapBuffer, samplesClamped);
+        }
       }
     }
-  }
-//#endif
-
-  /* if we are fading */
-  if (m_fadeRunning && !m_isRaw)
-  {
-    // TODO: check if we correctly respect the amount of our blockoperation
-    m_volume += (m_fadeStep * ((float)readsize / (float)m_OutputFormat.m_frameSize));
-    m_volume = std::min(1.0f, std::max(0.0f, m_volume));
-    if (m_fadeDirUp)
+    
+    /* if we are fading */
+    if (m_fadeRunning)
     {
-      if (m_volume >= m_fadeTarget)
-        m_fadeRunning = false;
-    }
-    else
-    {
-      if (m_volume <= m_fadeTarget)
-        m_fadeRunning = false;
+      // TODO: check if we correctly respect the amount of our blockoperation
+      m_volume += (m_fadeStep * ((float)readsize / (float)m_OutputFormat.m_frameSize));
+      m_volume = std::min(1.0f, std::max(0.0f, m_volume));
+      if (m_fadeDirUp)
+      {
+        if (m_volume >= m_fadeTarget)
+          m_fadeRunning = false;
+      }
+      else
+      {
+        if (m_volume <= m_fadeTarget)
+          m_fadeRunning = false;
+      }
+#ifdef __SSE__
+      CAEUtil::SSEMulClampArray(floatBuffer, m_volume, samples);
+#else
+      for(unsigned int i = 0; i < samples; ++i)
+        floatBuffer[i] = CAEUtil::SoftClamp(floatBuffer[i] * m_volume);
+#endif
     }
   }
   //m_fadeRunning = false;

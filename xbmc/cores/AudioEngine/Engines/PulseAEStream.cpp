@@ -436,8 +436,9 @@ double CPulseAEStream::GetResampleRatio()
   return 1.0;
 }
 
-void CPulseAEStream::SetResampleRatio(double ratio)
+bool CPulseAEStream::SetResampleRatio(double ratio)
 {
+  return false;
 }
 
 void CPulseAEStream::RegisterAudioCallback(IAudioCallback* pCallback)

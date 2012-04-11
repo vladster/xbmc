@@ -163,10 +163,10 @@ public:
 
   /**
    * Sets the resample ratio
-   * @note This function will silently fail if the stream is not resampling, if you wish to use this be sure to set the AESTREAM_FORCE_RESAMPLE option
+   * @note This function may return false if the stream is not resampling, if you wish to use this be sure to set the AESTREAM_FORCE_RESAMPLE option
    * @param ratio the new sample rate ratio, calculated by ((double)desiredRate / (double)GetSampleRate())
    */
-  virtual void SetResampleRatio(double ratio) = 0;
+  virtual bool SetResampleRatio(double ratio) = 0;
 
   /**
    * Registers the audio callback to call with each block of data, this is used by Audio Visualizations

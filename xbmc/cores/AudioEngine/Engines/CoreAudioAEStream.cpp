@@ -669,8 +669,9 @@ double CCoreAudioAEStream::GetResampleRatio()
   return 1.0f;
 }
 
-void CCoreAudioAEStream::SetResampleRatio(double ratio)
+bool CCoreAudioAEStream::SetResampleRatio(double ratio)
 {
+  return false;
   /*
   if (!m_resample)
     return;

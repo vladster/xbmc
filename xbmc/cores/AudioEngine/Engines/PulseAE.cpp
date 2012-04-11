@@ -199,7 +199,7 @@ IAEStream *CPulseAE::FreeStream(IAEStream *stream)
   return NULL;
 }
 
-IAESound *CPulseAE::MakeSound(CStdString file)
+IAESound *CPulseAE::MakeSound(const CStdString& file)
 {
   CSingleLock lock(m_lock);
 

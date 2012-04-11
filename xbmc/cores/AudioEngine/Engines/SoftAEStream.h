@@ -74,7 +74,7 @@ public:
   virtual const enum AEDataFormat GetDataFormat  () const  { return m_initDataFormat; }
   
   virtual double            GetResampleRatio();
-  virtual void              SetResampleRatio(double ratio);
+  virtual bool              SetResampleRatio(double ratio);
   virtual void              RegisterAudioCallback(IAudioCallback* pCallback);
   virtual void              UnRegisterAudioCallback();
   virtual void              FadeVolume(float from, float to, unsigned int time);

@@ -89,7 +89,7 @@ public:
 
   /* for dynamic sample rate changes (smoothvideo) */
   virtual double GetResampleRatio();
-  virtual void   SetResampleRatio(double ratio);
+  virtual bool   SetResampleRatio(double ratio);
 
   virtual void RegisterAudioCallback(IAudioCallback* pCallback);
   virtual void UnRegisterAudioCallback();

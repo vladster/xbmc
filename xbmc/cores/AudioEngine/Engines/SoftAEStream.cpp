@@ -544,10 +544,10 @@ double CSoftAEStream::GetResampleRatio()
   return m_ssrcData.src_ratio;
 }
 
-void CSoftAEStream::SetResampleRatio(double ratio)
+bool CSoftAEStream::SetResampleRatio(double ratio)
 {
   if (!m_resample)
-    return;
+    return false;
 
   CSharedLock lock(m_lock);
 
@@ -565,6 +565,7 @@ void CSoftAEStream::SetResampleRatio(double ratio)
     m_ssrcData.data_out      = (float*)_aligned_malloc(m_format.m_frameSamples * std::ceil(m_ssrcData.src_ratio) * sizeof(float), 16);
     m_ssrcData.output_frames = m_format.m_frames * std::ceil(m_ssrcData.src_ratio);
   }
+  return true;
 }
 
 void CSoftAEStream::RegisterAudioCallback(IAudioCallback* pCallback)

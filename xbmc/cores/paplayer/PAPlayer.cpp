@@ -450,14 +450,14 @@ inline void PAPlayer::ProcessStreams(float &delay, float &buffer)
       continue;
     
     /* is it time to prepare the next stream? */
-    if (!si->m_prepareTriggered && si->m_framesSent >= si->m_prepareNextAtFrame)
+    if (si->m_prepareNextAtFrame > 0 && !si->m_prepareTriggered && si->m_framesSent >= si->m_prepareNextAtFrame)
     {
       si->m_prepareTriggered = true;
       m_callback.OnQueueNextItem();
     }
     
     /* it is time to start playing the next stream? */
-    if (!si->m_playNextTriggered && si->m_framesSent >= si->m_playNextAtFrame)
+    if (si->m_playNextAtFrame > 0 && !si->m_playNextTriggered && si->m_framesSent >= si->m_playNextAtFrame)
     {
       if (!si->m_prepareTriggered)
       {

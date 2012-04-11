@@ -40,7 +40,7 @@ static const enum AEChannel AEChannelNames[] = {AE_CH_FL, AE_CH_FR, AE_CH_FC, AE
 
 struct DSDevice
 {
-  CStdString name;
+  std::string name;
   LPGUID     lpGuid;
 };
 
@@ -76,7 +76,7 @@ CAESinkDirectSound::~CAESinkDirectSound()
   Deinitialize();
 }
 
-bool CAESinkDirectSound::Initialize(AEAudioFormat &format, CStdString &device)
+bool CAESinkDirectSound::Initialize(AEAudioFormat &format, std::string &device)
 {
   CSingleLock lock(m_runLock);
   if(m_initialized) return false;
@@ -229,7 +229,7 @@ void CAESinkDirectSound::Deinitialize()
   m_dwBufferLen = 0;
 }
 
-bool CAESinkDirectSound::IsCompatible(const AEAudioFormat format, const CStdString device)
+bool CAESinkDirectSound::IsCompatible(const AEAudioFormat format, const std::string device)
 {
   CSingleLock lock(m_runLock);
   if(!m_initialized) return false;
@@ -331,7 +331,7 @@ void CAESinkDirectSound::EnumerateDevices(AEDeviceList &devices, bool passthroug
 
   for(it = dev.begin(); it != dev.end(); it++)
   {
-    devices.push_back(AEDevice((*it).name, CStdString("DIRECTSOUND:") + (*it).name));
+    devices.push_back(AEDevice((*it).name, std::string("DIRECTSOUND:") + (*it).name));
   }
 }
 

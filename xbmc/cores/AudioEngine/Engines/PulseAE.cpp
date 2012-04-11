@@ -145,7 +145,7 @@ bool CPulseAE::Initialize()
   return true;
 }
 
-void CPulseAE::OnSettingsChange(CStdString setting)
+void CPulseAE::OnSettingsChange(std::string setting)
 {
 }
 
@@ -199,7 +199,7 @@ IAEStream *CPulseAE::FreeStream(IAEStream *stream)
   return NULL;
 }
 
-IAESound *CPulseAE::MakeSound(const CStdString& file)
+IAESound *CPulseAE::MakeSound(const std::string& file)
 {
   CSingleLock lock(m_lock);
 

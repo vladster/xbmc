@@ -30,7 +30,7 @@
 #include "AEStream.h"
 #include "AESound.h"
 
-typedef std::pair<CStdString, CStdString> AEDevice;
+typedef std::pair<std::string, std::string> AEDevice;
 typedef std::vector<AEDevice> AEDeviceList;
 
 /* forward declarations */
@@ -64,7 +64,7 @@ public:
    * Callback to alert the AudioEngine of setting changes
    * @param setting The name of the setting that was changed
    */
-  virtual void OnSettingsChange(CStdString setting) {}
+  virtual void OnSettingsChange(std::string setting) {}
 
   /**
    * Returns the current master volume level of the AudioEngine
@@ -101,7 +101,7 @@ public:
    * @param file The WAV file to load, this supports XBMC's VFS
    * @return A new IAESound if the file could be loaded, otherwise NULL
    */
-  virtual IAESound *MakeSound(const CStdString &file) = 0;
+  virtual IAESound *MakeSound(const std::string &file) = 0;
 
   /**
    * Free the supplied IAESound object

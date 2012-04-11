@@ -198,12 +198,12 @@ const enum AEChannel CAEChannelInfo::operator[](unsigned int i) const
   return m_channels[i];
 }
 
-CAEChannelInfo::operator CStdString()
+CAEChannelInfo::operator std::string()
 {
   if (m_channelCount == 0)
     return "NULL";
 
-  CStdString s;
+  std::string s;
   for(unsigned int i = 0; i < m_channelCount - 1; ++i)
   {
     s.append(GetChName(m_channels[i]));

@@ -29,7 +29,7 @@ public:
   CAEWAVLoader();
   ~CAEWAVLoader();
 
-  bool Initialize  (const CStdString &filename, unsigned int resampleRate = 0);
+  bool Initialize  (const std::string &filename, unsigned int resampleRate = 0);
   void DeInitialize();
 
   bool IsValid() { return m_valid; }
@@ -41,7 +41,7 @@ public:
   float* GetSamples();
 
 private:
-  CStdString   m_filename;
+  std::string  m_filename;
   bool         m_valid;
 
   unsigned int m_sampleRate;

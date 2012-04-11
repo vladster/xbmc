@@ -55,7 +55,7 @@ CAEWAVLoader::~CAEWAVLoader()
   DeInitialize();
 }
 
-bool CAEWAVLoader::Initialize(const CStdString &filename, unsigned int resampleRate /* = 0 */)
+bool CAEWAVLoader::Initialize(const std::string &filename, unsigned int resampleRate /* = 0 */)
 {
   DeInitialize();
   m_filename = filename;
@@ -68,7 +68,7 @@ bool CAEWAVLoader::Initialize(const CStdString &filename, unsigned int resampleR
   }
 
   struct __stat64 st;
-  if (!file->Open(m_filename) || file->Stat(&st) < 0)
+  if (!file->Open(CStdString(m_filename)) || file->Stat(&st) < 0)
   {
     CLog::Log(LOGERROR, "CAEWAVLoader::Initialize - Failed to stat file: %s", m_filename.c_str());
     delete file;

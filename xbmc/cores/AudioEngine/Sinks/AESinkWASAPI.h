@@ -35,9 +35,9 @@ public:
     CAESinkWASAPI();
     virtual ~CAESinkWASAPI();
 
-    virtual bool Initialize  (AEAudioFormat &format, CStdString &device);
+    virtual bool Initialize  (AEAudioFormat &format, std::string &device);
     virtual void Deinitialize();
-    virtual bool IsCompatible(const AEAudioFormat format, const CStdString device);
+    virtual bool IsCompatible(const AEAudioFormat format, const std::string device);
 
     virtual float        GetDelay         ();
     virtual unsigned int AddPackets       (uint8_t *data, unsigned int frames);
@@ -62,7 +62,7 @@ private:
     unsigned int        m_encodedChannels;
     unsigned int        m_encodedSampleRate;
     CAEChannelInfo      m_channelLayout;
-    CStdString          m_device;
+    std::string          m_device;
 
     bool                m_running;
     bool                m_initialized;

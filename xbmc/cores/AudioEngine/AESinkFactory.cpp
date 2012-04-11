@@ -38,13 +38,13 @@
 #include "Sinks/AESinkProfiler.h"
 #include "Sinks/AESinkNULL.h"
 
-void CAESinkFactory::ParseDevice(CStdString &device, CStdString &driver)
+void CAESinkFactory::ParseDevice(std::string &device, std::string &driver)
 {
   int pos = device.find_first_of(':');
   if (pos > 0)
   {
     driver = device.substr(0, pos);
-    driver = driver.ToUpper();
+    std::transform(driver.begin(), driver.end(), driver.begin(), ::toupper);
 
     /* check that it is a valid driver name */
     if (
@@ -61,10 +61,10 @@ void CAESinkFactory::ParseDevice(CStdString &device, CStdString &driver)
         )
       device = device.substr(pos + 1, device.length() - pos - 1);
     else
-      driver.Empty();
+      driver.clear();
   }
   else
-    driver.Empty();
+    driver.clear();
 }
 
 #define TRY_SINK(SINK) \
@@ -82,16 +82,16 @@ void CAESinkFactory::ParseDevice(CStdString &device, CStdString &driver)
   delete sink; \
 }
 
-IAESink *CAESinkFactory::Create(CStdString &device, AEAudioFormat &desiredFormat, bool rawPassthrough)
+IAESink *CAESinkFactory::Create(std::string &device, AEAudioFormat &desiredFormat, bool rawPassthrough)
 {
 #if !defined __APPLE__
   /* extract the driver from the device string if it exists */
-  CStdString driver;  
+  std::string driver;  
   ParseDevice(device, driver);
   
   AEAudioFormat  tmpFormat;
-  IAESink        *sink;
-  CStdString     tmpDevice;
+  IAESink       *sink;
+  std::string    tmpDevice;
 
   if (driver == "PROFILER")
     TRY_SINK(Profiler);
@@ -99,23 +99,23 @@ IAESink *CAESinkFactory::Create(CStdString &device, AEAudioFormat &desiredFormat
 
 #ifdef _WIN32
 
-  if ((driver.IsEmpty() && g_sysinfo.IsVistaOrHigher() && !g_advancedSettings.m_audioForceDirectSound) || driver == "WASAPI")
+  if ((driver.empty() && g_sysinfo.IsVistaOrHigher() && !g_advancedSettings.m_audioForceDirectSound) || driver == "WASAPI")
     TRY_SINK(WASAPI)
     
-  if (driver.IsEmpty() || driver == "DIRECTSOUND")
+  if (driver.empty() || driver == "DIRECTSOUND")
     TRY_SINK(DirectSound)
     
 #elif defined _LINUX && !defined __APPLE__
 
   #ifdef HAS_ALSA
-  if (driver.IsEmpty() || driver == "ALSA")
+  if (driver.empty() || driver == "ALSA")
     TRY_SINK(ALSA)
   #endif
-  if (driver.IsEmpty() || driver == "OSS")
+  if (driver.empty() || driver == "OSS")
     TRY_SINK(OSS)
   
   /* no need to try others as both will have been attempted if driver is empty */
-  if (driver.IsEmpty())
+  if (driver.empty())
     TRY_SINK(NULL);
 
   /* if we failed to get a sink, try to open one of the others */

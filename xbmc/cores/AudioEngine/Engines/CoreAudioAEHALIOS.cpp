@@ -39,7 +39,7 @@
 // CIOSCoreAudioHardware
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-AudioComponentInstance CIOSCoreAudioHardware::FindAudioDevice(CStdString searchName)
+AudioComponentInstance CIOSCoreAudioHardware::FindAudioDevice(std::string searchName)
 {
   if (!searchName.length())
     return 0;
@@ -746,7 +746,7 @@ bool CCoreAudioGraph::Open(ICoreAudioSource *pSource, AEAudioFormat &format, boo
     return false;
   }
   
-  CStdString formatString;
+  std::string formatString;
   AudioStreamBasicDescription inputDesc_end, outputDesc_end;
   m_audioUnit->GetFormat(&inputDesc_end, kAudioUnitScope_Input, kOutputBus);
   m_audioUnit->GetFormat(&outputDesc_end, kAudioUnitScope_Output, kInputBus);
@@ -974,7 +974,7 @@ CAUOutputDevice *CCoreAudioGraph::CreateUnit(AEAudioFormat &format)
   if (!m_audioUnit || !m_mixerUnit)
     return NULL;
   
-  CStdString formatString;
+  std::string formatString;
   AudioStreamBasicDescription inputFormat;
   AudioStreamBasicDescription outputFormat;
   
@@ -1148,7 +1148,7 @@ bool CCoreAudioAEHALIOS::InitializePCMEncoded(ICoreAudioSource *pSource, AEAudio
   return true;  
 }
 
-bool CCoreAudioAEHALIOS::Initialize(ICoreAudioSource *ae, bool passThrough, AEAudioFormat &format, AEDataFormat rawDataFormat, CStdString &device)
+bool CCoreAudioAEHALIOS::Initialize(ICoreAudioSource *ae, bool passThrough, AEAudioFormat &format, AEDataFormat rawDataFormat, std::string &device)
 { 
   m_ae = (CCoreAudioAE *)ae;
   
@@ -1266,10 +1266,10 @@ void CCoreAudioAEHALIOS::EnumerateOutputDevices(AEDeviceList &devices, bool pass
   // Add default output device if GetOutputDevices return nothing
   devices.push_back(AEDevice("Default", "IOSCoreAudio:default"));
   
-  CStdString deviceName;
+  std::string deviceName;
   for (int i = 0; !deviceList.empty(); i++)
   {
-    CStdString deviceName_Internal = CStdString("IOSCoreAudio:") + deviceName;
+    std::string deviceName_Internal = std::string("IOSCoreAudio:") + deviceName;
     devices.push_back(AEDevice(deviceName, deviceName_Internal));
     
     deviceList.pop_front();

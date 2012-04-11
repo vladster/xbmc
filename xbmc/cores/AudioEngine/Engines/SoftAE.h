@@ -58,7 +58,7 @@ protected:
 public:
   virtual void  Shutdown();
   virtual bool  Initialize      ();
-  virtual void  OnSettingsChange(CStdString setting);
+  virtual void  OnSettingsChange(std::string setting);
 
   virtual void  Run();
   virtual void  Stop();
@@ -72,7 +72,7 @@ public:
   virtual IAEStream *FreeStream(IAEStream *stream);
 
   /* returns a new sound object */
-  virtual IAESound *MakeSound(const CStdString& file);
+  virtual IAESound *MakeSound(const std::string& file);
   virtual void      FreeSound(IAESound *sound);
   void PlaySound(IAESound *sound);
   void StopSound(IAESound *sound);
@@ -117,12 +117,12 @@ private:
   bool SetupEncoder(AEAudioFormat &format);
   void Deinitialize();
 
-  IAESink *GetSink(AEAudioFormat &desiredFormat, bool passthrough, CStdString &device);
+  IAESink *GetSink(AEAudioFormat &desiredFormat, bool passthrough, std::string &device);
   void StopAllSounds();
 
   enum AEStdChLayout m_stdChLayout;
-  CStdString m_device;
-  CStdString m_passthroughDevice;
+  std::string m_device;
+  std::string m_passthroughDevice;
   bool m_audiophile;
 
   /* internal vars */

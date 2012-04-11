@@ -282,7 +282,7 @@ void CCoreAudioHardware::ResetStream(AudioStreamID stream)
   }
 }
 
-AudioDeviceID CCoreAudioHardware::FindAudioDevice(CStdString searchName)
+AudioDeviceID CCoreAudioHardware::FindAudioDevice(std::string searchName)
 {
   if (!searchName.length())
     return 0;
@@ -312,7 +312,7 @@ AudioDeviceID CCoreAudioHardware::FindAudioDevice(CStdString searchName)
   }
   
   // Attempt to locate the requested device
-  CStdString deviceName;
+  std::string deviceName;
   for (UInt32 dev = 0; dev < deviceCount; dev++)
   {
     CCoreAudioDevice device;
@@ -344,7 +344,7 @@ AudioDeviceID CCoreAudioHardware::GetDefaultOutputDevice()
   return deviceId;
 }
 
-void CCoreAudioHardware::GetOutputDeviceName(CStdString& name)
+void CCoreAudioHardware::GetOutputDeviceName(std::string& name)
 {
   UInt32 size = 0;
   char *m_buffer;
@@ -591,7 +591,7 @@ bool CCoreAudioDevice::RemoveIOProc()
   return true;
 }
 
-const char* CCoreAudioDevice::GetName(CStdString& name)
+const char* CCoreAudioDevice::GetName(std::string& name)
 {
   if (!m_DeviceId)
     return NULL;
@@ -983,7 +983,7 @@ void CCoreAudioStream::Close()
   if (!m_StreamId)
     return;
   
-  CStdString formatString;
+  std::string formatString;
   
   // Revert any format changes we made
   if (m_OriginalVirtualFormat.mFormatID && m_StreamId)
@@ -1063,7 +1063,7 @@ bool CCoreAudioStream::SetVirtualFormat(AudioStreamBasicDescription* pDesc)
   if (!pDesc || !m_StreamId)
     return false;
   
-  CStdString formatString;
+  std::string formatString;
   
   if (!m_OriginalVirtualFormat.mFormatID)
   {
@@ -1121,7 +1121,7 @@ bool CCoreAudioStream::SetPhysicalFormat(AudioStreamBasicDescription* pDesc)
   if (!pDesc || !m_StreamId)
     return false;
   
-  CStdString formatString;
+  std::string formatString;
   
   if (!m_OriginalPhysicalFormat.mFormatID)
   {
@@ -2056,14 +2056,14 @@ CCoreAudioMixMap *CCoreAudioMixMap::CreateMixMap(CAUOutputDevice  *audioUnit, AE
   free(pInLayout);
   pInLayout = NULL;
   
-  CStdString strInLayout;
+  std::string strInLayout;
   CLog::Log(LOGINFO, "CCoreAudioGraph::CreateMixMap: Source Stream Layout: %s", CCoreAudioChannelLayout::ChannelLayoutToString(*(AudioChannelLayout*)sourceLayout, strInLayout));
   
   // Get User-Configured (XBMC) Speaker Configuration
   AudioChannelLayout guiLayout;
   guiLayout.mChannelLayoutTag = layoutTag;
   CCoreAudioChannelLayout userLayout(guiLayout);
-  CStdString strUserLayout;
+  std::string strUserLayout;
   CLog::Log(LOGINFO, "CCoreAudioGraph::CreateMixMap: User-Configured Speaker Layout: %s", CCoreAudioChannelLayout::ChannelLayoutToString(*(AudioChannelLayout*)userLayout, strUserLayout));
   
   // Get OS-Configured (Audio MIDI Setup) Speaker Configuration (Channel Layout)
@@ -2075,7 +2075,7 @@ CCoreAudioMixMap *CCoreAudioMixMap::CreateMixMap(CAUOutputDevice  *audioUnit, AE
   //if(deviceLayout.AllChannelUnknown())
   //  deviceLayout.CopyLayout(guiLayout);
   
-  CStdString strOutLayout;
+  std::string strOutLayout;
   CLog::Log(LOGINFO, "CCoreAudioGraph::CreateMixMap: Output Device Layout: %s", CCoreAudioChannelLayout::ChannelLayoutToString(*(AudioChannelLayout*)deviceLayout, strOutLayout));
   
   // TODO: 
@@ -2226,7 +2226,7 @@ const char* CCoreAudioChannelLayout::ChannelLabelToString(UInt32 label)
   return g_ChannelLabels[label];
 }
 
-const char* CCoreAudioChannelLayout::ChannelLayoutToString(AudioChannelLayout& layout, CStdString& str)
+const char* CCoreAudioChannelLayout::ChannelLayoutToString(AudioChannelLayout& layout, std::string& str)
 {
   AudioChannelLayout* pLayout = NULL;
   
@@ -2495,7 +2495,7 @@ bool CCoreAudioGraph::Open(ICoreAudioSource *pSource, AEAudioFormat &format, Aud
       return false;
   }
   
-  CStdString formatString;
+  std::string formatString;
   // asume we are in dd-wave mode
   if(!m_ATV1 && !m_inputUnit)
   {
@@ -2952,7 +2952,7 @@ bool CCoreAudioAEHALOSX::InitializePCMEncoded(ICoreAudioSource *pSource, AEAudio
 
 bool CCoreAudioAEHALOSX::InitializeEncoded(AudioDeviceID outputDevice, AEAudioFormat &format)
 {  
-  CStdString formatString;
+  std::string formatString;
   AudioStreamBasicDescription outputFormat = {0};
   AudioStreamID outputStream = 0;
   
@@ -3066,7 +3066,7 @@ bool CCoreAudioAEHALOSX::InitializeEncoded(AudioDeviceID outputDevice, AEAudioFo
   return true;
 }
 
-bool CCoreAudioAEHALOSX::Initialize(ICoreAudioSource *ae, bool passThrough, AEAudioFormat &format, AEDataFormat rawDataFormat, CStdString &device)
+bool CCoreAudioAEHALOSX::Initialize(ICoreAudioSource *ae, bool passThrough, AEAudioFormat &format, AEDataFormat rawDataFormat, std::string &device)
 { 
   // Reset all the devices to a default 'non-hog' and mixable format.
   // If we don't do this we may be unable to find the Default Output device.
@@ -3206,16 +3206,16 @@ void CCoreAudioAEHALOSX::EnumerateOutputDevices(AEDeviceList &devices, bool pass
   CoreAudioDeviceList deviceList;
   CCoreAudioHardware::GetOutputDevices(&deviceList);
   
-  CStdString defaultDeviceName;
+  std::string defaultDeviceName;
   CCoreAudioHardware::GetOutputDeviceName(defaultDeviceName);
   
-  CStdString deviceName;
+  std::string deviceName;
   for (int i = 0; !deviceList.empty(); i++)
   {
     CCoreAudioDevice device(deviceList.front());
     device.GetName(deviceName);
 
-    CStdString deviceName_Internal = CStdString("CoreAudio:") + deviceName;
+    std::string deviceName_Internal = std::string("CoreAudio:") + deviceName;
     devices.push_back(AEDevice(deviceName, deviceName_Internal));
 
     printf("deviceName_Internal %s\n", deviceName_Internal.c_str());

@@ -44,7 +44,7 @@ protected:
 
 public:
   virtual bool  Initialize      ();
-  virtual void  OnSettingsChange(CStdString setting);
+  virtual void  OnSettingsChange(std::string setting);
 
   virtual float GetVolume();
   virtual void  SetVolume(float volume);
@@ -55,7 +55,7 @@ public:
   void RemoveStream(IAEStream *stream);
 
   /* returns a new sound object */
-  virtual IAESound *MakeSound(const CStdString& file);
+  virtual IAESound *MakeSound(const std::string& file);
   virtual void      FreeSound(IAESound *sound);
 
   /* free's sounds that have expired */

@@ -50,7 +50,7 @@ CAESinkOSS::~CAESinkOSS()
   Deinitialize();
 }
 
-CStdString CAESinkOSS::GetDeviceUse(const AEAudioFormat format, const CStdString device)
+std::string CAESinkOSS::GetDeviceUse(const AEAudioFormat format, const std::string device)
 {
 #ifdef OSS4
   if (AE_IS_RAW(format.m_dataFormat))
@@ -70,7 +70,7 @@ CStdString CAESinkOSS::GetDeviceUse(const AEAudioFormat format, const CStdString
   return device;
 }
 
-bool CAESinkOSS::Initialize(AEAudioFormat &format, CStdString &device)
+bool CAESinkOSS::Initialize(AEAudioFormat &format, std::string &device)
 {
   m_initFormat = format;
   format.m_channelLayout = GetChannelLayout(format);
@@ -329,7 +329,7 @@ inline CAEChannelInfo CAESinkOSS::GetChannelLayout(AEAudioFormat format)
   return info;
 }
 
-bool CAESinkOSS::IsCompatible(const AEAudioFormat format, const CStdString device)
+bool CAESinkOSS::IsCompatible(const AEAudioFormat format, const std::string device)
 {
   AEAudioFormat tmp  = format;
   tmp.m_channelLayout = GetChannelLayout(format);
@@ -383,7 +383,7 @@ void CAESinkOSS::EnumerateDevices(AEDeviceList &devices, bool passthrough)
 {
   int mixerfd;
   const char * mixerdev = "/dev/mixer";
-  CStdString devicepath;
+  std::string devicepath;
 
   devices.push_back(AEDevice("default", "/dev/dsp"));
 

@@ -24,7 +24,7 @@
 #include "utils/log.h"
 
 // Helper Functions
-CStdString GetError(OSStatus error)
+std::string GetError(OSStatus error)
 {
   char buffer[128];
   
@@ -39,7 +39,7 @@ CStdString GetError(OSStatus error)
     sprintf(buffer, "%d", (int)error);
   }
   
-  return CStdString(buffer);
+  return std::string(buffer);
 }
 
 char* UInt32ToFourCC(UInt32* pVal) // NOT NULL TERMINATED! Modifies input value.
@@ -54,7 +54,7 @@ char* UInt32ToFourCC(UInt32* pVal) // NOT NULL TERMINATED! Modifies input value.
   return fourCC;
 }
 
-const char* StreamDescriptionToString(AudioStreamBasicDescription desc, CStdString& str)
+const char* StreamDescriptionToString(AudioStreamBasicDescription desc, std::string& str)
 {
   UInt32 formatId = desc.mFormatID;
   char* fourCC = UInt32ToFourCC(&formatId);

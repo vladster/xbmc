@@ -28,7 +28,7 @@ class IAESound
 {
 protected:
   friend class IAE;
-  IAESound(const CStdString &filename) {}
+  IAESound(const std::string &filename) {}
   virtual ~IAESound() {}
 
 public:

@@ -91,7 +91,7 @@ CAESinkWASAPI::~CAESinkWASAPI()
 
 }
 
-bool CAESinkWASAPI::Initialize(AEAudioFormat &format, CStdString &device)
+bool CAESinkWASAPI::Initialize(AEAudioFormat &format, std::string &device)
 {
   if(m_initialized) return false;
 
@@ -134,8 +134,8 @@ bool CAESinkWASAPI::Initialize(AEAudioFormat &format, CStdString &device)
       goto failed;
     }
 
-    CStdStringW strRawDevName(varName.pwszVal);
-    CStdString strDevName;
+    std::stringW strRawDevName(varName.pwszVal);
+    std::string strDevName;
     g_charsetConverter.ucs2CharsetToStringCharset(strRawDevName, strDevName);
 
     if(device == strDevName)
@@ -163,8 +163,8 @@ bool CAESinkWASAPI::Initialize(AEAudioFormat &format, CStdString &device)
 
     hr = pProperty->GetValue(PKEY_Device_FriendlyName, &varName);
 
-    CStdStringW strRawDevName(varName.pwszVal);
-    CStdString strDevName;
+    std::stringW strRawDevName(varName.pwszVal);
+    std::string strDevName;
     g_charsetConverter.ucs2CharsetToStringCharset(strRawDevName, strDevName);
 
     CLog::Log(LOGINFO, __FUNCTION__": Found default sound device \"%s\"", strDevName.c_str());
@@ -251,7 +251,7 @@ void CAESinkWASAPI::Deinitialize()
   m_initialized = false;
 }
 
-bool CAESinkWASAPI::IsCompatible(const AEAudioFormat format, const CStdString device)
+bool CAESinkWASAPI::IsCompatible(const AEAudioFormat format, const std::string device)
 {
   if(!m_initialized) return false;
 
@@ -284,7 +284,7 @@ bool CAESinkWASAPI::IsCompatible(const AEAudioFormat format, const CStdString de
 
   for (int i = 0; i < numTests ; i++)
   {
-    strDiffBecause += (notCompatible & 0x01) ? (CStdString) compatibleParams[i] : "";
+    strDiffBecause += (notCompatible & 0x01) ? (std::string) compatibleParams[i] : "";
     notCompatible    = notCompatible >> 1;
   }
 
@@ -471,8 +471,8 @@ void CAESinkWASAPI::EnumerateDevices(AEDeviceList &devices, bool passthrough)
       goto failed;
     }
 
-    CStdStringW strRawDevName(varName.pwszVal);
-    CStdString strDevName;
+    std::stringW strRawDevName(varName.pwszVal);
+    std::string strDevName;
     g_charsetConverter.wToUTF8(strRawDevName, strDevName);
 
     CLog::Log(LOGDEBUG, __FUNCTION__": found endpoint device: %s", strDevName.c_str());
@@ -486,7 +486,7 @@ void CAESinkWASAPI::EnumerateDevices(AEDeviceList &devices, bool passthrough)
         hr = pClient->IsFormatSupported(AUDCLNT_SHAREMODE_EXCLUSIVE, &wfxex.Format, NULL);
 
         if(SUCCEEDED(hr))
-          devices.push_back(AEDevice(strDevName, CStdString("WASAPI:").append(strDevName)));
+          devices.push_back(AEDevice(strDevName, std::string("WASAPI:").append(strDevName)));
 
         pClient->Release();
       }
@@ -497,7 +497,7 @@ void CAESinkWASAPI::EnumerateDevices(AEDeviceList &devices, bool passthrough)
     }
     else
     {
-        devices.push_back(AEDevice(strDevName, CStdString("WASAPI:").append(strDevName)));
+        devices.push_back(AEDevice(strDevName, std::string("WASAPI:").append(strDevName)));
     }
 
     SAFE_RELEASE(pDevice);
@@ -706,7 +706,7 @@ bool CAESinkWASAPI::InitializeExclusive(AEAudioFormat &format)
   CLog::Log(LOGDEBUG, "  Avg. Bytes Sec  : %d", wfxex.Format.nAvgBytesPerSec);
   CLog::Log(LOGDEBUG, "  Samples/Block   : %d", wfxex.Samples.wSamplesPerBlock);
   CLog::Log(LOGDEBUG, "  Format cBSize   : %d", wfxex.Format.cbSize);
-  CLog::Log(LOGDEBUG, "  Channel Layout  : %s", ((CStdString)format.m_channelLayout).c_str());
+  CLog::Log(LOGDEBUG, "  Channel Layout  : %s", ((std::string)format.m_channelLayout).c_str());
   CLog::Log(LOGDEBUG, "  Enc. Channels   : %d", wfxex_iec61937.dwEncodedChannelCount);
   CLog::Log(LOGDEBUG, "  Enc. Samples/Sec: %d", wfxex_iec61937.dwEncodedSamplesPerSec);
   CLog::Log(LOGDEBUG, "  Channel Mask    : %d", wfxex.dwChannelMask);
@@ -864,7 +864,7 @@ initialize:
   CLog::Log(LOGDEBUG, "  Avg. Bytes Sec  : %d", wfxex.Format.nAvgBytesPerSec);
   CLog::Log(LOGDEBUG, "  Samples/Block   : %d", wfxex.Samples.wSamplesPerBlock);
   CLog::Log(LOGDEBUG, "  Format cBSize   : %d", wfxex.Format.cbSize);
-  CLog::Log(LOGDEBUG, "  Channel Layout  : %s", ((CStdString)format.m_channelLayout).c_str());
+  CLog::Log(LOGDEBUG, "  Channel Layout  : %s", ((std::string)format.m_channelLayout).c_str());
   CLog::Log(LOGDEBUG, "  Enc. Channels   : %d", wfxex_iec61937.dwEncodedChannelCount);
   CLog::Log(LOGDEBUG, "  Enc. Samples/Sec: %d", wfxex_iec61937.dwEncodedSamplesPerSec);
   CLog::Log(LOGDEBUG, "  Channel Mask    : %d", wfxex.dwChannelMask);

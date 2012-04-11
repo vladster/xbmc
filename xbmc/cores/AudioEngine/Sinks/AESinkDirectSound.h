@@ -34,9 +34,9 @@ public:
   CAESinkDirectSound();
   virtual ~CAESinkDirectSound();
 
-  virtual bool Initialize  (AEAudioFormat &format, CStdString &device);
+  virtual bool Initialize  (AEAudioFormat &format, std::string &device);
   virtual void Deinitialize();
-  virtual bool IsCompatible(const AEAudioFormat format, const CStdString device);
+  virtual bool IsCompatible(const AEAudioFormat format, const std::string device);
 
   virtual void         Stop             ();
   virtual float        GetDelay         ();
@@ -55,7 +55,7 @@ private:
 
   AEAudioFormat       m_format;
   CAEChannelInfo      m_channelLayout;
-  CStdString          m_device;
+  std::string          m_device;
 
   unsigned int        m_AvgBytesPerSec;
 

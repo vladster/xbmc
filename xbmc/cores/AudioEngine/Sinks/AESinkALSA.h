@@ -39,9 +39,9 @@ public:
   CAESinkALSA();
   virtual ~CAESinkALSA();
 
-  virtual bool Initialize  (AEAudioFormat &format, CStdString &device);
+  virtual bool Initialize  (AEAudioFormat &format, std::string &device);
   virtual void Deinitialize();
-  virtual bool IsCompatible(const AEAudioFormat format, const CStdString device);
+  virtual bool IsCompatible(const AEAudioFormat format, const std::string device);
 
   virtual void         Stop            ();
   virtual float        GetDelay        ();
@@ -50,14 +50,14 @@ public:
   static void          EnumerateDevices(AEDeviceList &devices, bool passthrough);
 private:
   CAEChannelInfo GetChannelLayout(AEAudioFormat format);
-  CStdString     GetDeviceUse    (const AEAudioFormat format, CStdString device, bool passthrough);
+  std::string     GetDeviceUse    (const AEAudioFormat format, std::string device, bool passthrough);
 
-  CStdString        m_initDevice;
+  std::string        m_initDevice;
   AEAudioFormat     m_initFormat;
   AEAudioFormat     m_format;
   bool              m_passthrough;
   CAEChannelInfo    m_channelLayout;
-  CStdString        m_device;
+  std::string        m_device;
   snd_pcm_t        *m_pcm;
   int               m_timeout;
 
@@ -66,8 +66,8 @@ private:
   bool InitializeHW(AEAudioFormat &format);
   bool InitializeSW(AEAudioFormat &format);
 
-  static bool SoundDeviceExists(const CStdString& device);
-  static void GenSoundLabel(AEDeviceList& devices, CStdString sink, CStdString card, CStdString readableCard);
+  static bool SoundDeviceExists(const std::string& device);
+  static void GenSoundLabel(AEDeviceList& devices, std::string sink, std::string card, std::string readableCard);
 };
 #endif
 

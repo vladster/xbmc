@@ -132,7 +132,7 @@ bool CCoreAudioAE::OpenCoreAudio(unsigned int sampleRate, bool forceRaw, enum AE
       
   if (m_rawPassthrough) CLog::Log(LOGINFO, "CCoreAudioAE::OpenCoreAudio - RAW passthrough enabled");
 
-  CStdString m_outputDevice =  g_guiSettings.GetString("audiooutput.audiodevice");
+  std::string m_outputDevice =  g_guiSettings.GetString("audiooutput.audiodevice");
   
   /* on iOS devices we set fixed to two channels. */
   m_stdChLayout = AE_CH_LAYOUT_2_0;
@@ -230,7 +230,7 @@ bool CCoreAudioAE::OpenCoreAudio(unsigned int sampleRate, bool forceRaw, enum AE
   CLog::Log(LOGINFO, "  Sample Rate   : %d", m_format.m_sampleRate);
   CLog::Log(LOGINFO, "  Sample Format : %s", CAEUtil::DataFormatToStr(m_format.m_dataFormat));
   CLog::Log(LOGINFO, "  Channel Count : %d", m_chLayoutCount);
-  CLog::Log(LOGINFO, "  Channel Layout: %s", ((CStdString)m_format.m_channelLayout).c_str());
+  CLog::Log(LOGINFO, "  Channel Layout: %s", ((std::string)m_format.m_channelLayout).c_str());
   CLog::Log(LOGINFO, "  Frame Size    : %d", m_format.m_frameSize);
   CLog::Log(LOGINFO, "  Volume Level  : %f", m_volume);
   CLog::Log(LOGINFO, "  Passthrough   : %d", m_rawPassthrough);
@@ -284,7 +284,7 @@ void CCoreAudioAE::Deinitialize()
   CLog::Log(LOGINFO, "CCoreAudioAE::Deinitialize: Audio device has been closed.");
 }
 
-void CCoreAudioAE::OnSettingsChange(CStdString setting)
+void CCoreAudioAE::OnSettingsChange(std::string setting)
 {
   if (setting == "audiooutput.dontnormalizelevels")
   {
@@ -374,7 +374,7 @@ IAEStream *CCoreAudioAE::MakeStream(enum AEDataFormat dataFormat,
   CLog::Log(LOGINFO, "CCoreAudioAE::MakeStream - %s, %u, %s",
             CAEUtil::DataFormatToStr(dataFormat),
             sampleRate,
-            ((CStdString)channelInfo).c_str()
+            ((std::string)channelInfo).c_str()
             );
 
   CSingleLock streamLock(m_streamLock);
@@ -472,7 +472,7 @@ void CCoreAudioAE::StopSound(IAESound *sound)
   }
 }
 
-IAESound *CCoreAudioAE::MakeSound(const CStdString& file)
+IAESound *CCoreAudioAE::MakeSound(const std::string& file)
 {
   CSingleLock soundLock(m_soundLock);
 

@@ -35,7 +35,7 @@ class ICoreAudioSource;
 class ICoreAudioSource
 {
 private:
-  CStdString        m_inputName;
+  std::string        m_inputName;
   AudioUnitElement  m_inputBus;
 public:
   // Function to request rendered data from a data source
@@ -44,8 +44,8 @@ public:
                           UInt32 busNumber, 
                           UInt32 frameCount, 
                           AudioBufferList* pBufList) = 0;
-  //CStdString InputName() { return m_inputName; };
-  //void InputName(CStdString inputName) { m_inputName = inputName; };
+  //std::string InputName() { return m_inputName; };
+  //void InputName(std::string inputName) { m_inputName = inputName; };
 
   //AudioUnitElement InputBus() { return m_inputBus; };
   //void InputBus(AudioUnitElement inputBus) { m_inputBus = m_inputBus; };

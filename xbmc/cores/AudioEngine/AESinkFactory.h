@@ -26,8 +26,8 @@
 class CAESinkFactory
 {
 public:
-  static void     ParseDevice(CStdString &device, CStdString &driver);
-  static IAESink *Create(CStdString &device, AEAudioFormat &desiredFormat, bool rawPassthrough);
+  static void     ParseDevice(std::string &device, std::string &driver);
+  static IAESink *Create(std::string &device, AEAudioFormat &desiredFormat, bool rawPassthrough);
   static void     Enumerate(AEDeviceList &devices, bool passthrough);
 };
 

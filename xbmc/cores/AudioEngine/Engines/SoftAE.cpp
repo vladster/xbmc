@@ -84,7 +84,7 @@ CSoftAE::~CSoftAE()
   }
 }
 
-IAESink *CSoftAE::GetSink(AEAudioFormat &newFormat, bool passthrough, CStdString &device)
+IAESink *CSoftAE::GetSink(AEAudioFormat &newFormat, bool passthrough, std::string &device)
 {
   device = passthrough ? m_passthroughDevice : m_device;
 
@@ -216,14 +216,14 @@ bool CSoftAE::OpenSink()
 
   streamLock.Leave();
 
-  CStdString device, driver;
+  std::string device, driver;
   if (m_transcode || m_rawPassthrough)
     device = m_passthroughDevice;
   else
     device = m_device;
   
   CAESinkFactory::ParseDevice(device, driver);
-  if (driver.IsEmpty() && m_sink)
+  if (driver.empty() && m_sink)
     driver = m_sink->GetName();
 
        if (m_rawPassthrough) CLog::Log(LOGINFO, "CSoftAE::OpenSink - RAW passthrough enabled");
@@ -251,7 +251,14 @@ bool CSoftAE::OpenSink()
   }
 
   /* only re-open the sink if its not compatible with what we need */
-  if (!m_sink || ((CStdString)m_sink->GetName()).ToUpper() != driver || !m_sink->IsCompatible(newFormat, device))
+  std::string sinkName;
+  if (m_sink)
+  {
+    sinkName = m_sink->GetName();
+    std::transform(sinkName.begin(), sinkName.end(), sinkName.begin(), ::toupper);
+  }
+
+  if (!m_sink || sinkName != driver || !m_sink->IsCompatible(newFormat, device))
   {
     CLog::Log(LOGINFO, "CSoftAE::OpenSink - sink incompatible, re-starting");
 
@@ -269,7 +276,7 @@ bool CSoftAE::OpenSink()
     }
 
     /* if we already have a driver, prepend it to the device string */
-    if (!driver.IsEmpty())
+    if (!driver.empty())
       device = driver + ":" + device;
     
     /* create the new sink */
@@ -280,7 +287,7 @@ bool CSoftAE::OpenSink()
     CLog::Log(LOGINFO, "  Sample Rate   : %d", newFormat.m_sampleRate);
     CLog::Log(LOGINFO, "  Sample Format : %s", CAEUtil::DataFormatToStr(newFormat.m_dataFormat));
     CLog::Log(LOGINFO, "  Channel Count : %d", newFormat.m_channelLayout.Count());
-    CLog::Log(LOGINFO, "  Channel Layout: %s", ((CStdString)newFormat.m_channelLayout).c_str());
+    CLog::Log(LOGINFO, "  Channel Layout: %s", ((std::string)newFormat.m_channelLayout).c_str());
     CLog::Log(LOGINFO, "  Frames        : %d", newFormat.m_frames);
     CLog::Log(LOGINFO, "  Frame Samples : %d", newFormat.m_frameSamples);
     CLog::Log(LOGINFO, "  Frame Size    : %d", newFormat.m_frameSize);
@@ -340,7 +347,7 @@ bool CSoftAE::OpenSink()
       m_convertFn      = CAEConvert::FrFloat(m_encoderFormat.m_dataFormat);
       neededBufferSize = m_encoderFormat.m_frames * sizeof(float) * m_chLayout.Count();
       
-      CLog::Log(LOGDEBUG, "CSoftAE::Initialize - Encoding using layout: %s", ((CStdString)m_chLayout).c_str());
+      CLog::Log(LOGDEBUG, "CSoftAE::Initialize - Encoding using layout: %s", ((std::string)m_chLayout).c_str());
     }
     else
     {
@@ -424,7 +431,7 @@ bool CSoftAE::Initialize()
   return true;
 }
 
-void CSoftAE::OnSettingsChange(CStdString setting)
+void CSoftAE::OnSettingsChange(std::string setting)
 {
   if (setting == "audiooutput.dontnormalizelevels")
   {
@@ -480,10 +487,10 @@ void CSoftAE::LoadSettings()
   if (m_passthroughDevice == "custom")
     m_passthroughDevice = g_guiSettings.GetString("audiooutput.custompassthrough");
 
-  if (m_passthroughDevice.IsEmpty())
+  if (m_passthroughDevice.empty())
     m_passthroughDevice = g_guiSettings.GetString("audiooutput.audiodevice");
 
-  if (m_passthroughDevice.IsEmpty())
+  if (m_passthroughDevice.empty())
     m_passthroughDevice = "default";
 #endif
 
@@ -491,7 +498,7 @@ void CSoftAE::LoadSettings()
   if (m_device == "custom")
     m_device = g_guiSettings.GetString("audiooutput.customdevice");
 
-  if (m_device.IsEmpty())
+  if (m_device.empty())
     m_device = "default";
 
   m_transcode = (
@@ -576,7 +583,7 @@ IAEStream *CSoftAE::MakeStream(enum AEDataFormat dataFormat, unsigned int sample
   CLog::Log(LOGINFO, "CSoftAE::MakeStream - %s, %u, %s",
     CAEUtil::DataFormatToStr(dataFormat),
     sampleRate,
-    ((CStdString)channelInfo).c_str()
+    ((std::string)channelInfo).c_str()
   );
 
   CSingleLock streamLock(m_streamLock);
@@ -611,7 +618,7 @@ IAEStream *CSoftAE::MakeStream(enum AEDataFormat dataFormat, unsigned int sample
   return stream;
 }
 
-IAESound *CSoftAE::MakeSound(const CStdString& file)
+IAESound *CSoftAE::MakeSound(const std::string& file)
 {
   CSingleLock soundLock(m_soundLock);
 

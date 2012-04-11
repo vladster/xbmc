@@ -67,7 +67,7 @@ public:
   virtual void Shutdown();
 
   virtual bool  Initialize();
-  virtual void  OnSettingsChange(CStdString setting);
+  virtual void  OnSettingsChange(std::string setting);
 
   unsigned int      GetSampleRate();
   CAEChannelInfo    GetChannelLayout();
@@ -92,7 +92,7 @@ public:
   virtual IAEStream *FreeStream(IAEStream *stream);
     
   /* returns a new sound object */
-  virtual IAESound *MakeSound(const CStdString& file);
+  virtual IAESound *MakeSound(const std::string& file);
   void StopAllSounds();
   virtual void FreeSound(IAESound *sound);
   virtual void PlaySound(IAESound *sound);

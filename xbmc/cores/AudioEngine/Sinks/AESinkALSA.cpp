@@ -25,6 +25,7 @@
 #include "AESinkALSA.h"
 #include <stdint.h>
 #include <limits.h>
+#include <sstream>
 
 #include "Utils/AEUtil.h"
 #include "utils/StdString.h"
@@ -89,16 +90,16 @@ inline CAEChannelInfo CAESinkALSA::GetChannelLayout(AEAudioFormat format)
   return info;
 }
 
-CStdString CAESinkALSA::GetDeviceUse(AEAudioFormat format, CStdString device, bool passthrough)
+std::string CAESinkALSA::GetDeviceUse(AEAudioFormat format, std::string device, bool passthrough)
 {
   int pos;
-  CStdString cardName;
+  std::string cardName;
   
   pos = device.find_first_of(':');
   if (pos > 0)
     cardName = device.substr(pos + 1, device.length() - pos - 1);
   else
-    cardName.Empty();
+    cardName.clear();
 
   if (device != "default" && !SoundDeviceExists(device))
     device = "default";
@@ -113,7 +114,7 @@ CStdString CAESinkALSA::GetDeviceUse(AEAudioFormat format, CStdString device, bo
         device = "iec958";
     }
 
-    if (cardName.IsEmpty())
+    if (cardName.empty())
       device += ":AES0=0x06,AES1=0x82,AES2=0x00";
     else
       device += ",AES0=0x06,AES1=0x82,AES2=0x00";
@@ -145,7 +146,7 @@ CStdString CAESinkALSA::GetDeviceUse(AEAudioFormat format, CStdString device, bo
   return device;
 }
 
-bool CAESinkALSA::Initialize(AEAudioFormat &format, CStdString &device)
+bool CAESinkALSA::Initialize(AEAudioFormat &format, std::string &device)
 {
   m_initDevice = device;
   m_initFormat = format;
@@ -200,7 +201,7 @@ bool CAESinkALSA::Initialize(AEAudioFormat &format, CStdString &device)
   return true;
 }
 
-bool CAESinkALSA::IsCompatible(const AEAudioFormat format, const CStdString device)
+bool CAESinkALSA::IsCompatible(const AEAudioFormat format, const std::string device)
 {
   return (
       /* compare against the requested format and the real format */
@@ -540,18 +541,21 @@ void CAESinkALSA::EnumerateDevices(AEDeviceList &devices, bool passthrough)
   snd_ctl_t *handle;
   snd_ctl_card_info_t *info;
   snd_ctl_card_info_alloca( &info );
-  CStdString strHwName;
+  std::string strHwName;
   n_cards = -1;
 
   while(snd_card_next( &n_cards ) == 0 && n_cards >= 0)
   {
-    strHwName.Format("hw:%d", n_cards);
+    std::stringstream sstr;
+    sstr << "hw:" << n_cards;
+    strHwName = sstr.str();
+
     if (snd_ctl_open( &handle, strHwName.c_str(), 0 ) == 0)
     {
       if (snd_ctl_card_info( handle, info ) == 0)
       {
-        CStdString strReadableCardName = snd_ctl_card_info_get_name( info );
-        CStdString strCardName = snd_ctl_card_info_get_id( info );
+        std::string strReadableCardName = snd_ctl_card_info_get_name( info );
+        std::string strCardName = snd_ctl_card_info_get_id( info );
 
         if (!passthrough)
           GenSoundLabel(devices, "default", strCardName, strReadableCardName);
@@ -567,7 +571,7 @@ void CAESinkALSA::EnumerateDevices(AEDeviceList &devices, bool passthrough)
   }
 }
 
-bool CAESinkALSA::SoundDeviceExists(const CStdString& device)
+bool CAESinkALSA::SoundDeviceExists(const std::string& device)
 {
   void **hints, **n;
   char *name;
@@ -579,9 +583,9 @@ bool CAESinkALSA::SoundDeviceExists(const CStdString& device)
     {
       if ((name = snd_device_name_get_hint(*n, "NAME")) != NULL)
       {
-        CStdString strName = name;
+        std::string strName = name;
         free(name);
-        if (strName.find(device) != CStdString::npos)
+        if (strName.find(device) != std::string::npos)
         {
           retval = true;
           break;
@@ -593,17 +597,14 @@ bool CAESinkALSA::SoundDeviceExists(const CStdString& device)
   return retval;
 }
 
-void CAESinkALSA::GenSoundLabel(AEDeviceList& devices, CStdString sink, CStdString card, CStdString readableCard)
+void CAESinkALSA::GenSoundLabel(AEDeviceList& devices, std::string sink, std::string card, std::string readableCard)
 {
-  CStdString deviceString;
-  deviceString.Format("%s:CARD=%s", sink, card.c_str());
-  if (sink.Equals("default") || SoundDeviceExists(deviceString.c_str()))
-  {
-    CStdString finalSink;
-    finalSink.Format("alsa:%s", deviceString.c_str());
-    CStdString label = readableCard + " " + sink;
-    devices.push_back(AEDevice(label, finalSink));
-  }
+  std::stringstream sstr;
+  sstr << sink << ":CARD=" << card;
+  std::string deviceString = sstr.str();
+
+  if (sink == "default" || SoundDeviceExists(deviceString.c_str()))
+    devices.push_back(AEDevice(readableCard + " " + sink, "alsa:" + deviceString));
 }
 #endif
 

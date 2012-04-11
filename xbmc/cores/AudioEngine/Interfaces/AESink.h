@@ -40,7 +40,7 @@ public:
     if however it does not honour what is requested, it MUST update device/format
     with what it does support.
   */
-  virtual bool Initialize  (AEAudioFormat &format, CStdString &device) = 0;
+  virtual bool Initialize  (AEAudioFormat &format, std::string &device) = 0;
 
   /*
     Deinitialize the sink for destruction
@@ -50,7 +50,7 @@ public:
   /*
     Return true if the supplied format and device are compatible with the current open sink
   */
-  virtual bool IsCompatible(const AEAudioFormat format, const CStdString device) = 0;
+  virtual bool IsCompatible(const AEAudioFormat format, const std::string device) = 0;
 
   /*
     This method must return the delay in seconds till new data will be sent out

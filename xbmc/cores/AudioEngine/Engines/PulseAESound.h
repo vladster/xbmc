@@ -31,7 +31,7 @@ class CPulseAESound : public IAESound
 {
 public:
   /* this should NEVER be called directly, use AE.GetSound */
-  CPulseAESound(const CStdString &filename, pa_context *context, pa_threaded_mainloop *mainLoop);
+  CPulseAESound(const std::string &filename, pa_context *context, pa_threaded_mainloop *mainLoop);
   virtual ~CPulseAESound();
 
   virtual void DeInitialize();
@@ -48,8 +48,8 @@ private:
   static void StreamWriteCallback(pa_stream *s, size_t length, void *userdata);
   void Upload(size_t length);
 
-  CStdString    m_pulseName;
-  CStdString    m_filename;
+  std::string    m_pulseName;
+  std::string    m_filename;
   CAEWAVLoader  m_wavLoader;
   size_t        m_dataSent;
 

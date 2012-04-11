@@ -45,7 +45,7 @@ typedef struct
   uint32_t chunksize;
 } WAVE_CHUNK;
 
-CCoreAudioAESound::CCoreAudioAESound(const CStdString &filename) :
+CCoreAudioAESound::CCoreAudioAESound(const std::string &filename) :
   IAESound         (filename),
   m_filename       (filename),
   m_volume         (1.0f    ),
@@ -59,7 +59,7 @@ CCoreAudioAESound::~CCoreAudioAESound()
 }
 
 
-CStdString CCoreAudioAESound::GetFileName()
+std::string CCoreAudioAESound::GetFileName()
 {
   return m_filename;
 }

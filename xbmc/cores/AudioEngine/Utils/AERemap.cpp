@@ -227,12 +227,12 @@ bool CAERemap::Initialize(CAEChannelInfo input, CAEChannelInfo output, bool fina
     AEMixInfo *info = &m_mixInfo[output[o]];
     if (info->srcCount == 0) continue;
   
-    CStdString s = CAEChannelInfo::GetChName(output[o]) + CStdString(" =");
+    std::string s = CAEChannelInfo::GetChName(output[o]) + std::string(" =");
     for(int i = 0; i < info->srcCount; ++i)
     {
-      CStdString lvl;
+      std::string lvl;
       lvl.Format("(%1.4f)", info->srcIndex[i].level);
-      s.append(CStdString(" ") + CAEChannelInfo::GetChName(input[info->srcIndex[i].index]) + lvl);
+      s.append(std::string(" ") + CAEChannelInfo::GetChName(input[info->srcIndex[i].index]) + lvl);
     }
 
     CLog::Log(LOGINFO, "%s", s.c_str());

@@ -29,7 +29,7 @@
 #include "MathUtils.h"
 #include "StringUtils.h"
 
-CPulseAESound::CPulseAESound(const CStdString &filename, pa_context *context, pa_threaded_mainloop *mainLoop) :
+CPulseAESound::CPulseAESound(const std::string &filename, pa_context *context, pa_threaded_mainloop *mainLoop) :
   IAESound         (filename),
   m_filename       (filename),
   m_dataSent       (0       ),

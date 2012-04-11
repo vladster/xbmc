@@ -36,12 +36,14 @@ bool CAEFactory::LoadEngine()
 {
   bool loaded = false;
 
-  CStdString engine;
+  std::string engine;
 
 #if defined(__LINUX__) && !defined(__APPLE__)
   if (getenv("AE_ENGINE"))
   {
-    engine = ((CStdString)getenv("AE_ENGINE")).ToUpper();
+    engine = (std::string)getenv("AE_ENGINE");
+    std::transform(engine.begin(), engine.end(), engine.begin(), ::toupper);
+
     #ifdef HAS_PULSEAUDIO
     if (!loaded && engine == "PULSE") loaded = CAEFactory::LoadEngine(AE_ENGINE_PULSE);
     #endif

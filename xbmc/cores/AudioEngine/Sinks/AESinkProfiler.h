@@ -33,9 +33,9 @@ public:
   CAESinkProfiler();
   virtual ~CAESinkProfiler();
 
-  virtual bool Initialize  (AEAudioFormat &format, CStdString &device);
+  virtual bool Initialize  (AEAudioFormat &format, std::string &device);
   virtual void Deinitialize();
-  virtual bool IsCompatible(const AEAudioFormat format, const CStdString device);
+  virtual bool IsCompatible(const AEAudioFormat format, const std::string device);
 
   virtual float        GetDelay        ();
   virtual unsigned int AddPackets      (uint8_t *data, unsigned int frames);

@@ -186,7 +186,7 @@ CPulseAEStream::CPulseAEStream(pa_context *context, pa_threaded_mainloop *mainLo
   CLog::Log(LOGINFO, "  Sample Rate   : %d", m_sampleRate);
   CLog::Log(LOGINFO, "  Sample Format : %s", CAEUtil::DataFormatToStr(m_format));
   CLog::Log(LOGINFO, "  Channel Count : %d", m_channelLayout.Count());
-  CLog::Log(LOGINFO, "  Channel Layout: %s", ((CStdString)m_channelLayout).c_str());
+  CLog::Log(LOGINFO, "  Channel Layout: %s", ((std::string)m_channelLayout).c_str());
   CLog::Log(LOGINFO, "  Frame Size    : %d", m_frameSize);
   CLog::Log(LOGINFO, "  Cache Size    : %d", m_cacheSize);
 

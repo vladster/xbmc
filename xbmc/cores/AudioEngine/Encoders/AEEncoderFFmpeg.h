@@ -51,7 +51,7 @@ private:
   DllAvFormat m_dllAvFormat;
   DllAvUtil   m_dllAvUtil;
 
-  CStdString                m_CodecName;
+  std::string                m_CodecName;
   CodecID                   m_CodecID;
   unsigned int              m_BitRate;
   CAEPackIEC61937::PackFunc m_PackFunc;

@@ -32,10 +32,10 @@ class CWAVLoader;
 class CCoreAudioAESound : public IAESound
 {
 public:
-  CCoreAudioAESound (const CStdString &filename);
+  CCoreAudioAESound (const std::string &filename);
   virtual ~CCoreAudioAESound();
 
-  virtual CStdString GetFileName();
+  virtual std::string GetFileName();
   virtual void DeInitialize();
   virtual bool Initialize();
 
@@ -53,7 +53,7 @@ public:
   void           ReleaseSamples();
 private:
   CCriticalSection m_critSection;
-  CStdString       m_filename;
+  std::string       m_filename;
   CAEWAVLoader     m_wavLoader;
   float            m_volume;
   int              m_inUse;

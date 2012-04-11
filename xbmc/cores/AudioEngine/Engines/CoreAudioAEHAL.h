@@ -31,9 +31,9 @@
 #endif
 
 // Helper Functions
-CStdString GetError(OSStatus error);
+std::string GetError(OSStatus error);
 char* UInt32ToFourCC(UInt32* val);
-const char* StreamDescriptionToString(AudioStreamBasicDescription desc, CStdString& str);
+const char* StreamDescriptionToString(AudioStreamBasicDescription desc, std::string& str);
 void CheckOutputBufferSize(void **buffer, int *oldSize, int newSize);
 
 #endif

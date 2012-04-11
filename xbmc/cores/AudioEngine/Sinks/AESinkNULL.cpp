@@ -42,7 +42,7 @@ CAESinkNULL::~CAESinkNULL()
 {
 }
 
-bool CAESinkNULL::Initialize(AEAudioFormat &format, CStdString &device)
+bool CAESinkNULL::Initialize(AEAudioFormat &format, std::string &device)
 {
   m_msPerFrame           = 1000.0f / format.m_sampleRate;
   m_ts                   = 0;
@@ -69,7 +69,7 @@ void CAESinkNULL::Deinitialize()
 {
 }
 
-bool CAESinkNULL::IsCompatible(const AEAudioFormat format, const CStdString device)
+bool CAESinkNULL::IsCompatible(const AEAudioFormat format, const std::string device)
 {
   return false;
 }

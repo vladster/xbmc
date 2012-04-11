@@ -79,9 +79,9 @@ public:
   static AudioStreamID *StreamsList(AudioDeviceID device);
   static void ResetAudioDevices();
   static void ResetStream(AudioStreamID stream);
-  static AudioDeviceID FindAudioDevice(CStdString deviceName);
+  static AudioDeviceID FindAudioDevice(std::string deviceName);
   static AudioDeviceID GetDefaultOutputDevice();
-  static void GetOutputDeviceName(CStdString& name);
+  static void GetOutputDeviceName(std::string& name);
   static UInt32 GetOutputDevices(CoreAudioDeviceList* pList);
 };
 
@@ -105,7 +105,7 @@ public:
   bool SetObjectListenerProc(AudioObjectPropertyListenerProc callback, void* pClientData);
   
   AudioDeviceID GetId() {return m_DeviceId;}
-  const char* GetName(CStdString& name);
+  const char* GetName(std::string& name);
   UInt32 GetTotalOutputChannels();
   bool GetStreams(AudioStreamIdList* pList);
   bool IsRunning();
@@ -289,7 +289,7 @@ public:
   bool CopyLayout(AudioChannelLayout& layout);
   static UInt32 GetChannelCountForLayout(AudioChannelLayout& layout);
   static const char* ChannelLabelToString(UInt32 label);
-  static const char* ChannelLayoutToString(AudioChannelLayout& layout, CStdString& str);
+  static const char* ChannelLayoutToString(AudioChannelLayout& layout, std::string& str);
   bool AllChannelUnknown();
 protected:
   AudioChannelLayout* m_pLayout;
@@ -358,7 +358,7 @@ public:
   virtual bool  InitializePCM(ICoreAudioSource *pSource, AEAudioFormat &format, bool allowMixing, AudioDeviceID outputDevice);
   virtual bool  InitializePCMEncoded(ICoreAudioSource *pSource, AEAudioFormat &format, AudioDeviceID outputDevice);
   virtual bool  InitializeEncoded(AudioDeviceID outputDevice, AEAudioFormat &format);
-  virtual bool  Initialize(ICoreAudioSource *ae, bool passThrough, AEAudioFormat &format, AEDataFormat rawDataFormat, CStdString &device);
+  virtual bool  Initialize(ICoreAudioSource *ae, bool passThrough, AEAudioFormat &format, AEDataFormat rawDataFormat, std::string &device);
   virtual void  Deinitialize();
   virtual void  EnumerateOutputDevices(AEDeviceList &devices, bool passthrough);
   virtual void  SetDirectInput(ICoreAudioSource *pSource, AEAudioFormat &format);

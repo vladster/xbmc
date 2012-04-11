@@ -30,7 +30,7 @@ class CWAVLoader;
 class CSoftAESound : public IAESound
 {
 public:
-  CSoftAESound (const CStdString &filename);
+  CSoftAESound (const std::string &filename);
   virtual ~CSoftAESound();
 
   virtual void DeInitialize();
@@ -50,7 +50,7 @@ public:
   void           ReleaseSamples();
 private:
   CCriticalSection m_critSection;
-  CStdString       m_filename;
+  std::string       m_filename;
   CAEWAVLoader     m_wavLoader;
   float            m_volume;
   int              m_inUse;

@@ -33,9 +33,9 @@ public:
   CAESinkOSS();
   virtual ~CAESinkOSS();
 
-  virtual bool Initialize  (AEAudioFormat &format, CStdString &device);
+  virtual bool Initialize  (AEAudioFormat &format, std::string &device);
   virtual void Deinitialize();
-  virtual bool IsCompatible(const AEAudioFormat format, const CStdString device);
+  virtual bool IsCompatible(const AEAudioFormat format, const std::string device);
 
   virtual void         Stop            ();
   virtual float        GetDelay        ();
@@ -44,11 +44,11 @@ public:
   static void          EnumerateDevices(AEDeviceList &devices, bool passthrough);
 private:
   int m_fd;
-  CStdString      m_device;
+  std::string      m_device;
   AEAudioFormat   m_initFormat;
   AEAudioFormat   m_format;
 
   CAEChannelInfo  GetChannelLayout(AEAudioFormat format);
-  CStdString      GetDeviceUse(const AEAudioFormat format, const CStdString device);
+  std::string      GetDeviceUse(const AEAudioFormat format, const std::string device);
 };
 

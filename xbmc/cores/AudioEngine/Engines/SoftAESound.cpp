@@ -45,7 +45,7 @@ typedef struct
   uint32_t chunksize;
 } WAVE_CHUNK;
 
-CSoftAESound::CSoftAESound(const CStdString &filename) :
+CSoftAESound::CSoftAESound(const std::string &filename) :
   IAESound         (filename),
   m_filename       (filename),
   m_volume         (1.0f    ),

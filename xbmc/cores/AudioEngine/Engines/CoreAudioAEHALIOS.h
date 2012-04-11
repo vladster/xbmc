@@ -55,7 +55,7 @@ typedef std::list<AudioComponentInstance> IOSCoreAudioDeviceList;
 class CIOSCoreAudioHardware
 {
 public:
-  static AudioComponentInstance FindAudioDevice(CStdString deviceName);
+  static AudioComponentInstance FindAudioDevice(std::string deviceName);
   static AudioComponentInstance GetDefaultOutputDevice();
   static UInt32 GetOutputDevices(IOSCoreAudioDeviceList* pList);
 };
@@ -188,7 +188,7 @@ public:
   
   virtual bool  InitializePCM(ICoreAudioSource *pSource, AEAudioFormat &format, bool allowMixing);
   virtual bool  InitializePCMEncoded(ICoreAudioSource *pSource, AEAudioFormat &format);
-  virtual bool  Initialize(ICoreAudioSource *ae, bool passThrough, AEAudioFormat &format, AEDataFormat rawDataFormat, CStdString &device);
+  virtual bool  Initialize(ICoreAudioSource *ae, bool passThrough, AEAudioFormat &format, AEDataFormat rawDataFormat, std::string &device);
   virtual void  Deinitialize();
   virtual void  EnumerateOutputDevices(AEDeviceList &devices, bool passthrough);
   virtual void  SetDirectInput(ICoreAudioSource *pSource, AEAudioFormat &format);

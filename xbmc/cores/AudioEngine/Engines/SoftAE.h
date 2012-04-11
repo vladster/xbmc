@@ -167,10 +167,7 @@ private:
 
   /* the encoder */
   IAEEncoder    *m_encoder;
-  uint8_t       *m_encodedBuffer;
-  unsigned int   m_encodedBufferSize;
-  unsigned int   m_encodedBufferPos;
-  unsigned int   m_encodedBufferFrames;
+  CAEBuffer      m_encodedBuffer;
 
   /* the channel remapper  */
   CAERemap        m_remap;

@@ -52,10 +52,6 @@ CSoftAE::CSoftAE():
   m_transcode          (false),
   m_rawPassthrough     (false),
   m_encoder            (NULL ),
-  m_encodedBuffer      (NULL ),
-  m_encodedBufferSize  (0    ),
-  m_encodedBufferPos   (0    ),
-  m_encodedBufferFrames(0    ),
   m_remapped           (NULL ),
   m_remappedSize       (0    ),
   m_converted          (NULL ),
@@ -387,14 +383,7 @@ void CSoftAE::ResetEncoder()
 {
   if (m_encoder)
     m_encoder->Reset();
-
-  if (m_encodedBuffer)
-    free(m_encodedBuffer);
-
-  m_encodedBuffer       = NULL;
-  m_encodedBufferSize   = 0;
-  m_encodedBufferPos    = 0;
-  m_encodedBufferFrames = 0;
+  m_encodedBuffer.Empty();
 }
 
 bool CSoftAE::SetupEncoder(AEAudioFormat &format)
@@ -802,7 +791,7 @@ void CSoftAE::Run()
     /* update the current delay */
     m_delay = m_sink->GetDelay();
     if (m_transcode && m_encoder && !m_rawPassthrough)
-      m_delay += m_encoder->GetDelay(m_encodedBufferFrames - m_encodedBufferPos);
+      m_delay += m_encoder->GetDelay(m_encodedBuffer.Used() / m_encoderFormat.m_frameSize);
     unsigned int buffered = m_buffer.Used() / m_sinkFormat.m_frameSize;
     m_delay += (float)buffered / (float)m_sinkFormat.m_sampleRate;
   }
@@ -918,9 +907,10 @@ void CSoftAE::RunRawOutputStage()
 void CSoftAE::RunTranscodeStage()
 {
   /* if we dont have enough samples to encode yet, return */
-  unsigned int block = m_encoderFormat.m_frames * m_encoderFormat.m_frameSize;
+  unsigned int block     = m_encoderFormat.m_frames * m_encoderFormat.m_frameSize;
+  unsigned int sinkBlock = m_sinkFormat.m_frames    * m_sinkFormat.m_frameSize;
 
-  if (m_buffer.Used() >= block && m_encodedBufferFrames < m_sinkFormat.m_frames * 2)
+  if (m_buffer.Used() >= block && m_encodedBuffer.Used() < sinkBlock * 2)
   {
     FinalizeSamples((float*)m_buffer.Raw(block), m_encoderFormat.m_frameSamples);    
 
@@ -951,28 +941,18 @@ void CSoftAE::RunTranscodeStage()
     unsigned int size = m_encoder->GetData(&packet);
 
     /* if there is not enough space for another encoded packet enlarge the buffer */
-    if (m_encodedBufferSize - m_encodedBufferPos < size)
-    {
-      m_encodedBufferSize += size - (m_encodedBufferSize - m_encodedBufferPos);
-      m_encodedBuffer     = (uint8_t*)realloc(m_encodedBuffer, m_encodedBufferSize);
-    }
+    if (m_encodedBuffer.Free() < size)
+      m_encodedBuffer.ReAlloc(m_encodedBuffer.Used() + size);
 
-    memcpy(m_encodedBuffer + m_encodedBufferPos, packet, size);
-    m_encodedBufferPos    += size;
-    m_encodedBufferFrames += size / m_sinkFormat.m_frameSize;
+    m_encodedBuffer.Push(packet, size);
   }
 
   /* if we have enough data to write */
-  while(m_encodedBufferFrames >= m_sinkFormat.m_frames)
+  while(m_encodedBuffer.Used() >= sinkBlock)
   {
-    unsigned int wroteFrames;
-    unsigned int wroteBytes;
-        
-    wroteFrames = m_sink->AddPackets(m_encodedBuffer, m_sinkFormat.m_frames);
-    wroteBytes  = wroteFrames * m_sinkFormat.m_frameSize;
-    m_encodedBufferPos    -= wroteBytes;
-    m_encodedBufferFrames -= wroteFrames;
-    memmove(m_encodedBuffer, m_encodedBuffer + wroteBytes, m_encodedBufferPos);
+    unsigned int wroteFrames;        
+    wroteFrames = m_sink->AddPackets((uint8_t*)m_encodedBuffer.Raw(sinkBlock), m_sinkFormat.m_frames);
+    m_encodedBuffer.Shift(NULL, wroteFrames * m_sinkFormat.m_frameSize);
   }
 }
 

@@ -48,8 +48,6 @@ CSoftAEStream::CSoftAEStream(enum AEDataFormat dataFormat, unsigned int sampleRa
   m_rgain           (1.0f ),
   m_refillBuffer    (0    ),
   m_convertFn       (NULL ),
-  m_frameBuffer     (NULL ),
-  m_frameBufferSize (0    ),
   m_ssrc            (NULL ),
   m_framesBuffered  (0    ),
   m_newPacket       (NULL ),
@@ -162,9 +160,7 @@ void CSoftAEStream::Initialize()
 
   m_packet = NULL;
 
-  if (m_frameBuffer)
-    _aligned_free(m_frameBuffer);
-  m_frameBuffer = (uint8_t*)_aligned_malloc(m_format.m_frames * m_format.m_frameSize, 16);
+  m_inputBuffer.Alloc(m_format.m_frames * m_format.m_frameSize);
 
   m_resample      = (m_forceResample || m_initSampleRate != AE.GetSampleRate()) && !AE_IS_RAW(m_initDataFormat);
   m_convert       = m_initDataFormat != AE_FMT_FLOAT && !AE_IS_RAW(m_initDataFormat);
@@ -179,7 +175,7 @@ void CSoftAEStream::Initialize()
     else             m_valid         = false;
   }
   else
-    m_convertBuffer = (float*)m_frameBuffer;
+    m_convertBuffer = (float*)m_inputBuffer.Raw(m_format.m_frames * m_format.m_frameSize);
 
   /* if we need to resample, set it up */
   if (m_resample)
@@ -210,7 +206,6 @@ CSoftAEStream::~CSoftAEStream()
   CExclusiveLock lock(m_lock);
 
   InternalFlush();
-  _aligned_free(m_frameBuffer);
   if (m_convert)
     _aligned_free(m_convertBuffer);
 
@@ -232,7 +227,7 @@ unsigned int CSoftAEStream::GetSpace()
   if (m_framesBuffered >= m_waterLevel)
     return 0;
 
-  return (m_format.m_frames * m_bytesPerFrame) - m_frameBufferSize;
+  return m_inputBuffer.Free();
 }
 
 unsigned int CSoftAEStream::AddData(void *data, unsigned int size)
@@ -256,26 +251,19 @@ unsigned int CSoftAEStream::AddData(void *data, unsigned int size)
   uint8_t *ptr = (uint8_t*)data;
   while(size)
   {
-    size_t room = (m_format.m_frames * m_format.m_frameSize) - m_frameBufferSize;
-    size_t copy = std::min((size_t)size, room);
+    size_t copy = std::min(m_inputBuffer.Free(), (size_t)size);
     if (copy == 0)
       break;
 
-    memcpy(m_frameBuffer + m_frameBufferSize, ptr, copy);
-    size              -= copy;
-    m_frameBufferSize += copy;
-    ptr               += copy;
+    m_inputBuffer.Push(ptr, copy);
+    size -= copy;
+    ptr  += copy;
 
-    if(m_frameBufferSize / m_bytesPerSample < m_format.m_frameSamples)
+    if(m_inputBuffer.Used() / m_bytesPerSample < m_format.m_frameSamples)
       continue;
 
     unsigned int consumed = ProcessFrameBuffer();
-    if (consumed)
-    {
-      m_frameBufferSize -= consumed;
-      memmove(m_frameBuffer + consumed, m_frameBuffer, m_frameBufferSize);
-      continue;
-    }
+    m_inputBuffer.Shift(NULL, consumed);
   }
 
   return ptr - (uint8_t*)data;
@@ -284,19 +272,25 @@ unsigned int CSoftAEStream::AddData(void *data, unsigned int size)
 unsigned int CSoftAEStream::ProcessFrameBuffer()
 {
   uint8_t     *data;
-  unsigned int frames, consumed;
+  unsigned int frames, consumed, sampleSize;
 
   /* convert the data if we need to */
   unsigned int samples;
   if (m_convert)
   {
-    data    = (uint8_t*)m_convertBuffer;
-    samples = m_convertFn(m_frameBuffer, m_frameBufferSize / m_bytesPerSample, m_convertBuffer);
+    data       = (uint8_t*)m_convertBuffer;
+    samples    = m_convertFn(
+      (uint8_t*)m_inputBuffer.Raw(m_inputBuffer.Used()),
+      m_inputBuffer.Used() / m_bytesPerSample,
+      m_convertBuffer
+    );
+    sampleSize = sizeof(float);
   }
   else
   {
-    data    = (uint8_t*)m_frameBuffer;
-    samples = m_frameBufferSize / m_bytesPerSample;
+    data       = (uint8_t*)m_inputBuffer.Raw(m_inputBuffer.Used());
+    samples    = m_inputBuffer.Used() / m_bytesPerSample;
+    sampleSize = m_bytesPerSample;
   }
 
   if (samples == 0)
@@ -331,7 +325,6 @@ unsigned int CSoftAEStream::ProcessFrameBuffer()
   /* buffer the data */
   m_framesBuffered += frames;
 
-  const unsigned int sampleSize         = AE_IS_RAW(m_initDataFormat) ? m_bytesPerSample : sizeof(float);
   const unsigned int inputBlockSize     = m_format.m_frames * m_format.m_channelLayout.Count() * sampleSize;
   const unsigned int outputBlockSize    = m_format.m_frames * m_aeChannelLayout       .Count() * sampleSize;
   const unsigned int outputBlockSizeViz = m_format.m_frames * 2 * sizeof(float);
@@ -344,41 +337,44 @@ unsigned int CSoftAEStream::ProcessFrameBuffer()
     data      += copy;
     remaining -= copy;
 
-    /* if we have a full block of data */
-    if (m_newPacket->data.Free() == 0)
-    {
-      if (AE_IS_RAW(m_initDataFormat))
-      {
-        m_outBuffer.push_back(m_newPacket);
-        m_newPacket = new PPacket();
-        m_newPacket->data.Alloc(inputBlockSize);
-        continue;
-      }
+    /* wait till we have a full packet, or no more data before processing the packet */
+    if((!m_draining || remaining) && m_newPacket->data.Free() > 0)
+      continue;
 
-      /* downmix/remap the data */
-      PPacket *pkt = new PPacket();
-      pkt->data.Alloc(outputBlockSize);
-      m_remap.Remap(
-        (float*)m_newPacket->data.Raw(inputBlockSize ),
-        (float*)pkt->data.Raw        (outputBlockSize),
+    /* if we have a full block of data */
+    if (AE_IS_RAW(m_initDataFormat))
+    {
+      m_outBuffer.push_back(m_newPacket);
+      m_newPacket = new PPacket();
+      m_newPacket->data.Alloc(inputBlockSize);
+      continue;
+    }
+
+    /* make a new packet for downmix/remap */
+    PPacket *pkt = new PPacket();
+    pkt->data.Alloc(outputBlockSize);
+
+    /* downmix/remap the data */
+    m_remap.Remap(
+      (float*)m_newPacket->data.Raw(inputBlockSize ),
+      (float*)pkt->data.Raw        (outputBlockSize),
+      m_format.m_frames
+    );
+
+    /* downmix for the viz if we have one */
+    if (m_audioCallback)
+    {
+      pkt->vizData.Alloc(outputBlockSizeViz);
+      m_vizRemap.Remap(
+        (float*)m_newPacket->data   .Raw(inputBlockSize    ),
+        (float*)pkt        ->vizData.Raw(outputBlockSizeViz),
         m_format.m_frames
       );
-
-      /* downmix for the viz if we have one */
-      if (m_audioCallback)
-      {
-        pkt->vizData.Alloc(outputBlockSizeViz);
-        m_vizRemap.Remap(
-          (float*)m_newPacket->data   .Raw(inputBlockSize    ),
-          (float*)pkt        ->vizData.Raw(outputBlockSizeViz),
-          m_format.m_frames
-        );
-      }
-
-      /* add the packet to the output */
-      m_outBuffer.push_back(pkt);
-      m_newPacket->data.Empty();
     }
+
+    /* add the packet to the output */
+    m_outBuffer.push_back(pkt);
+    m_newPacket->data.Empty();
   }
 
   return consumed;
@@ -507,7 +503,7 @@ void CSoftAEStream::Flush()
   InternalFlush();
 
   /* internal flush does not do this as these samples are still valid if we are re-initializing */
-  m_frameBufferSize = 0;
+  m_inputBuffer.Empty();
 }
 
 void CSoftAEStream::InternalFlush()

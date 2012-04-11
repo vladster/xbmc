@@ -290,8 +290,9 @@ AudioDeviceID CCoreAudioHardware::FindAudioDevice(std::string searchName)
   UInt32 size = 0;
   AudioDeviceID deviceId = 0;
   OSStatus ret;
-  
-  if (searchName.Equals("default"))
+
+  std::transform( searchName.begin(), searchName.end(), searchName.begin(), ::tolower );
+  if (searchName.compare("default") == 0)
   {
     AudioDeviceID defaultDevice = GetDefaultOutputDevice();
     CLog::Log(LOGDEBUG, "CCoreAudioHardware::FindAudioDevice: Returning default device [0x%04x].", defaultDevice);
@@ -320,7 +321,10 @@ AudioDeviceID CCoreAudioHardware::FindAudioDevice(std::string searchName)
     device.GetName(deviceName);
     UInt32 totalChannels = device.GetTotalOutputChannels();
     CLog::Log(LOGDEBUG, "CCoreAudioHardware::FindAudioDevice:   Device[0x%04x] - Name: '%s', Total Ouput Channels: %u. ", pDevices[dev], deviceName.c_str(), totalChannels);
-    if (searchName.Equals(deviceName))
+
+    std::transform( searchName.begin(), searchName.end(), searchName.begin(), ::tolower );
+    std::transform( deviceName.begin(), deviceName.end(), deviceName.begin(), ::tolower );
+    if (searchName.compare(deviceName) == 0)
       deviceId = pDevices[dev];
     if (deviceId)
       break;
@@ -598,7 +602,10 @@ const char* CCoreAudioDevice::GetName(std::string& name)
   
   UInt32 size = 0;
   AudioDeviceGetPropertyInfo(m_DeviceId,0, false, kAudioDevicePropertyDeviceName, &size, NULL); // TODO: Change to kAudioObjectPropertyObjectName
-  OSStatus ret = AudioDeviceGetProperty(m_DeviceId, 0, false, kAudioDevicePropertyDeviceName, &size, name.GetBufferSetLength(size));  
+  char *buff = new char[size];
+  OSStatus ret = AudioDeviceGetProperty(m_DeviceId, 0, false, kAudioDevicePropertyDeviceName, &size, buff);
+  name.assign(buff, size);
+  delete [] buff;
   if (ret)
   {
     CLog::Log(LOGERROR, "CCoreAudioDevice::GetName: Unable to get device name - id: 0x%04x. Error = %s", GetError(ret).c_str());
@@ -3091,7 +3098,8 @@ bool CCoreAudioAEHALOSX::Initialize(ICoreAudioSource *ae, bool passThrough, AEAu
     return false;
   }
 
-  device.Replace("CoreAudio:", "");
+  if(device.find("CoreAudio:"))
+    device.erase(0, strlen("CoreAudio:"));
   
   AudioDeviceID outputDevice = CCoreAudioHardware::FindAudioDevice(device);
   
@@ -3215,7 +3223,8 @@ void CCoreAudioAEHALOSX::EnumerateOutputDevices(AEDeviceList &devices, bool pass
     CCoreAudioDevice device(deviceList.front());
     device.GetName(deviceName);
 
-    std::string deviceName_Internal = std::string("CoreAudio:") + deviceName;
+    std::string deviceName_Internal = std::string("CoreAudio:");
+    deviceName_Internal.append(deviceName);
     devices.push_back(AEDevice(deviceName, deviceName_Internal));
 
     printf("deviceName_Internal %s\n", deviceName_Internal.c_str());

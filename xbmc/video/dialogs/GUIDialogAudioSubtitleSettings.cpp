@@ -214,7 +214,7 @@ void CGUIDialogAudioSubtitleSettings::OnSettingChanged(SettingInfo &setting)
   if (setting.id == AUDIO_SETTINGS_VOLUME)
   {
     g_settings.m_fVolumeLevel = m_volume;
-    g_application.SetVolume(m_volume);
+    g_application.SetVolume(m_volume, false);//false - value is not in percent
   }
   else if (setting.id == AUDIO_SETTINGS_VOLUME_AMPLIFICATION)
   {

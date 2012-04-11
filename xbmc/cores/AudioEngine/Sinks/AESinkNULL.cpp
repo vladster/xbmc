@@ -51,8 +51,6 @@ bool CAESinkNULL::Initialize(AEAudioFormat &format, std::string &device)
   format.m_frameSamples  = format.m_channelLayout.Count();
   format.m_frameSize     = format.m_frameSamples * (CAEUtil::DataFormatToBits(format.m_dataFormat) >> 3);
 
-  return true;
-
   /* display failure notification */
   CGUIDialogKaiToast::QueueNotification(
     CGUIDialogKaiToast::Error,

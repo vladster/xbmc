@@ -689,10 +689,7 @@ void CGUIWindowSettingsCategory::UpdateSettings()
              strSetting.Equals("audiooutput.passthroughdevice") ||
              strSetting.Equals("audiooutput.ac3passthrough") ||
              strSetting.Equals("audiooutput.dtspassthrough") ||
-             strSetting.Equals("audiooutput.passthroughaac") ||
-             strSetting.Equals("audiooutput.passthroughmp1") ||
-             strSetting.Equals("audiooutput.passthroughmp2") ||
-             strSetting.Equals("audiooutput.passthroughmp3"))
+             strSetting.Equals("audiooutput.passthroughaac"))
     { // only visible if we are in digital mode
       CGUIControl *pControl = (CGUIControl *)GetControl(pSettingControl->GetID());
       if (pControl) pControl->SetEnabled(AUDIO_IS_BITSTREAM(g_guiSettings.GetInt("audiooutput.mode")));
@@ -1219,26 +1216,6 @@ void CGUIWindowSettingsCategory::OnSettingChanged(CBaseSettingControl *pSettingC
     g_guiSettings.m_replayGain.iNoGainPreAmp = g_guiSettings.GetInt("musicplayer.replaygainnogainpreamp");
     g_guiSettings.m_replayGain.bAvoidClipping = g_guiSettings.GetBool("musicplayer.replaygainavoidclipping");
   }
-  else if (strSetting.Equals("audiooutput.audiodevice"))
-  {
-      CGUISpinControlEx *pControl = (CGUISpinControlEx *)GetControl(pSettingControl->GetID());
-#if !defined(__APPLE__)
-      g_guiSettings.SetString("audiooutput.audiodevice", m_AnalogAudioSinkMap[pControl->GetCurrentLabel()]);
-#else
-      g_guiSettings.SetString("audiooutput.audiodevice", pControl->GetCurrentLabel());
-#endif
-  }
-#if defined(_LINUX)
-  else if (strSetting.Equals("audiooutput.passthroughdevice"))
-  {
-    CGUISpinControlEx *pControl = (CGUISpinControlEx *)GetControl(pSettingControl->GetID());
-#if defined(_LINUX) && !defined(__APPLE__)
-      g_guiSettings.SetString("audiooutput.passthroughdevice", m_DigitalAudioSinkMap[pControl->GetCurrentLabel()]);
-#elif !defined(__arm__)
-      g_guiSettings.SetString("audiooutput.passthroughdevice", pControl->GetCurrentLabel());
-#endif
-  }
-#endif
 #ifdef HAS_LCD
   else if (strSetting.Equals("videoscreen.haslcd"))
   {
@@ -1844,15 +1821,17 @@ void CGUIWindowSettingsCategory::OnSettingChanged(CBaseSettingControl *pSettingC
       g_guiSettings.SetString("audiooutput.audiodevice", pControl->GetCurrentLabel());
 #endif
     }
+#if defined(_LINUX)
     else if (strSetting.Equals("audiooutput.passthroughdevice"))
     {
       CGUISpinControlEx *pControl = (CGUISpinControlEx *)GetControl(pSettingControl->GetID());
-#if !defined(__APPLE__)
+#if defined(_LINUX) && !defined(__APPLE__)
       g_guiSettings.SetString("audiooutput.passthroughdevice", m_DigitalAudioSinkMap[pControl->GetCurrentLabel()]);
-#else
+#elif !defined(__arm__)
       g_guiSettings.SetString("audiooutput.passthroughdevice", pControl->GetCurrentLabel());
 #endif
     }
+#endif
     
     CAEFactory::AE->OnSettingsChange(strSetting);
   }

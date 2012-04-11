@@ -22,6 +22,7 @@
 #include "CoreAudioAE.h"
 #include "CoreAudioAEHAL.h"
 #include "utils/log.h"
+#include <sstream>
 
 // Helper Functions
 std::string GetError(OSStatus error)
@@ -57,32 +58,53 @@ char* UInt32ToFourCC(UInt32* pVal) // NOT NULL TERMINATED! Modifies input value.
 const char* StreamDescriptionToString(AudioStreamBasicDescription desc, std::string& str)
 {
   UInt32 formatId = desc.mFormatID;
-  char* fourCC = UInt32ToFourCC(&formatId);
+  char fourCC[5];
+  fourCC[0]='\0';
+  strncat(fourCC, UInt32ToFourCC(&formatId), 4);
+  std::stringstream sstr;
   
   switch (desc.mFormatID)
   {
     case kAudioFormatLinearPCM:
-      str.Format("[%4.4s] %s%sInterleaved %u Channel %u-bit %s %s(%uHz)",
-                 fourCC,
-                 (desc.mFormatFlags & kAudioFormatFlagIsNonMixable) ? "" : "Mixable ",
-                 (desc.mFormatFlags & kAudioFormatFlagIsNonInterleaved) ? "Non-" : "",
-                 desc.mChannelsPerFrame,
-                 desc.mBitsPerChannel,
-                 (desc.mFormatFlags & kAudioFormatFlagIsFloat) ? "Floating Point" : "Signed Integer",
-                 (desc.mFormatFlags & kAudioFormatFlagIsBigEndian) ? "BE" : "LE",
-                 (UInt32)desc.mSampleRate);
+      sstr  << "[" 
+            << fourCC
+            << "] "
+            << ((desc.mFormatFlags & kAudioFormatFlagIsNonMixable) ? "" : "Mixable " )
+            << ((desc.mFormatFlags & kAudioFormatFlagIsNonInterleaved) ? "Non-" : "" )
+            << "Interleaved "
+            << desc.mChannelsPerFrame
+            << " Channel "
+            << desc.mBitsPerChannel
+            << "-bit "
+            << ((desc.mFormatFlags & kAudioFormatFlagIsFloat) ? "Floating Point " : "Signed Integer ")
+            << ((desc.mFormatFlags & kAudioFormatFlagIsBigEndian) ? "BE" : "LE")
+            << " ("
+            << (UInt32)desc.mSampleRate
+            << "Hz)";
+      str = sstr.str();
       break;
     case kAudioFormatAC3:
-      str.Format("[%4.4s] AC-3/DTS (%uHz)",
-                 fourCC,
-                 (desc.mFormatFlags & kAudioFormatFlagIsBigEndian) ? "BE" : "LE",
-                 (UInt32)desc.mSampleRate);
+      sstr  << "[" 
+            << fourCC
+            << "] "
+            << ((desc.mFormatFlags & kAudioFormatFlagIsBigEndian) ? "BE" : "LE")
+            << " AC-3/DTS ("
+            << (UInt32)desc.mSampleRate
+            << "Hz)";
+      str = sstr.str();                 
       break;
     case kAudioFormat60958AC3:
-      str.Format("[%4.4s] AC-3/DTS for S/PDIF (%uHz)", fourCC, (UInt32)desc.mSampleRate);
+      sstr  << "["
+            << fourCC
+            << "] AC-3/DTS for S/PDIF ("
+            << (UInt32)desc.mSampleRate
+            << "Hz)";
+      str = sstr.str();
       break;
     default:
-      str.Format("[%4.4s]", fourCC);
+      sstr  << "["
+            << fourCC
+            << "]";
       break;
   }
   return str.c_str();

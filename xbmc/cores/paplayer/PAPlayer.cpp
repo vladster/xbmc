@@ -378,7 +378,6 @@ inline void PAPlayer::ProcessStreams(float &delay, float &buffer)
   CSharedLock sharedLock(m_streamsLock);
   if (m_isFinished && m_streams.empty() && m_finishing.empty())
   {
-    m_callback.OnPlayBackStopped();    
     m_isPlaying = false;
     delay       = 0;
     return;

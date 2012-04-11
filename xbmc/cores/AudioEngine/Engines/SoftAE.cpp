@@ -551,14 +551,14 @@ void CSoftAE::PauseStream(CSoftAEStream *stream)
 {  
   CSingleLock streamLock(m_streamLock);
   RemoveStream(m_playingStreams, stream);
+  stream->m_paused = true;
 }
 
 void CSoftAE::ResumeStream(CSoftAEStream *stream)
 {
   CSingleLock streamLock(m_streamLock);
   m_playingStreams.push_back(stream);
-  streamLock.Leave();
-
+  stream->m_paused = false;
   m_reOpen = true;
 }
 
@@ -980,10 +980,10 @@ unsigned int CSoftAE::RunRawStreamStage(unsigned int channelCount, void *out, bo
       continue;
 
     /* consume data from streams even though we cant use it */
-    sitt->GetFrame();
+    uint8_t *frame = sitt->GetFrame();
 
     /* flag the stream's slave to be resumed if it has drained */
-    if (sitt->IsDrained() && sitt->m_slave && sitt->m_slave->m_paused)
+    if (!frame && sitt->IsDrained() && sitt->m_slave && sitt->m_slave->IsPaused())
       resumeStreams.push_back(sitt);
   }
 
@@ -996,7 +996,7 @@ unsigned int CSoftAE::RunRawStreamStage(unsigned int channelCount, void *out, bo
     mixed = 1;
   }
 
-  if (masterStream->IsDrained() && masterStream->m_slave && masterStream->m_slave->m_paused)
+  if (!frame && masterStream->IsDrained() && masterStream->m_slave && masterStream->m_slave->IsPaused())
     resumeStreams.push_back(masterStream);
 
   ResumeSlaveStreams(resumeStreams);
@@ -1028,7 +1028,7 @@ unsigned int CSoftAE::RunStreamStage(unsigned int channelCount, void *out, bool 
     CSoftAEStream *stream = *itt;
 
     float *frame = (float*)stream->GetFrame();
-    if (stream->IsDrained() && stream->m_slave && stream->m_slave->IsPaused())
+    if (!frame && stream->IsDrained() && stream->m_slave && stream->m_slave->IsPaused())
       resumeStreams.push_back(stream);
 
     if (!frame)

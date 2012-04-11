@@ -32,7 +32,6 @@ SRCS=AlarmClock.cpp \
      LCDFactory.cpp \
      log.cpp \
      md5.cpp \
-     PCMAmplifier.cpp \
      PerformanceSample.cpp \
      PerformanceStats.cpp \
      RecentlyAddedJob.cpp \

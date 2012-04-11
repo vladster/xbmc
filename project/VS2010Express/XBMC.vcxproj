@@ -312,12 +312,12 @@
     <ClCompile Include="..\..\xbmc\cores\AudioEngine\Sinks\AESinkProfiler.cpp" />
     <ClCompile Include="..\..\xbmc\cores\AudioEngine\Sinks\AESinkWASAPI.cpp" />
     <ClCompile Include="..\..\xbmc\cores\AudioEngine\Utils\AEBitstreamPacker.cpp" />
+    <ClCompile Include="..\..\xbmc\cores\AudioEngine\Utils\AEBuffer.cpp" />
     <ClCompile Include="..\..\xbmc\cores\AudioEngine\Utils\AEChannelInfo.cpp" />
     <ClCompile Include="..\..\xbmc\cores\AudioEngine\Utils\AEConvert.cpp" />
     <ClCompile Include="..\..\xbmc\cores\AudioEngine\Utils\AEPackIEC61937.cpp" />
     <ClCompile Include="..\..\xbmc\cores\AudioEngine\Utils\AERemap.cpp" />
     <ClCompile Include="..\..\xbmc\cores\AudioEngine\Utils\AEStreamInfo.cpp" />
-    <ClCompile Include="..\..\xbmc\cores\AudioEngine\Utils\AEStreamList.cpp" />
     <ClCompile Include="..\..\xbmc\cores\AudioEngine\Utils\AEUtil.cpp" />
     <ClCompile Include="..\..\xbmc\cores\AudioEngine\Utils\AEWAVLoader.cpp" />
     <ClCompile Include="..\..\xbmc\cores\dvdplayer\DVDCodecs\Audio\DVDAudioCodecPassthrough.cpp" />
@@ -775,7 +775,7 @@
     <ClCompile Include="..\..\xbmc\threads\platform\Implementation.cpp" />
     <ClInclude Include="..\..\xbmc\cores\AudioEngine\Sinks\AESinkProfiler.h" />
     <ClInclude Include="..\..\xbmc\cores\AudioEngine\Utils\AEBitstreamPacker.h" />
-    <ClInclude Include="..\..\xbmc\cores\AudioEngine\Utils\AEStreamList.h" />
+    <ClInclude Include="..\..\xbmc\cores\AudioEngine\Utils\AEBuffer.h" />
     <ClInclude Include="..\..\xbmc\filesystem\FileUPnP.h" />
     <ClInclude Include="..\..\xbmc\storage\DetectDVDType.h" />
     <ClInclude Include="..\..\xbmc\threads\platform\win\Implementation.cpp" />

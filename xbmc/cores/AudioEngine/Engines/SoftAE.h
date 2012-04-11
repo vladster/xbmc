@@ -34,6 +34,7 @@
 #include "Interfaces/AEEncoder.h"
 #include "Utils/AEConvert.h"
 #include "Utils/AERemap.h"
+#include "Utils/AEBuffer.h"
 #include "AEAudioFormat.h"
 
 #include "SoftAEStream.h"
@@ -162,9 +163,7 @@ private:
   SoundStateList m_playing_sounds;
 
   /* this will contain either float, or uint8_t depending on if we are in raw mode or not */
-  unsigned int   m_bufferSize;
-  void          *m_buffer;
-  unsigned int   m_bufferSamples;
+  CAEBuffer      m_buffer;
 
   /* the encoder */
   IAEEncoder    *m_encoder;

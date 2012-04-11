@@ -2607,7 +2607,9 @@
     <ClCompile Include="..\..\xbmc\cores\AudioEngine\Sinks\AESinkProfiler.cpp">
       <Filter>cores\AudioEngine\Sinks</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\xbmc\cores\AudioEngine\Utils\AEStreamList.cpp">
+    <ClCompile Include="..\..\xbmc\cores\AudioEngine\Utils\AEBuffer.cpp">
+      <Filter>cores\AudioEngine\Utils</Filter>
+    </ClCompile>
       <Filter>cores\AudioEngine\Utils</Filter>
     </ClCompile>
   </ItemGroup>
@@ -5243,7 +5245,9 @@
     <ClInclude Include="..\..\xbmc\cores\AudioEngine\Sinks\AESinkProfiler.h">
       <Filter>cores\AudioEngine\Sinks</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\xbmc\cores\AudioEngine\Utils\AEStreamList.h">
+    <ClInclude Include="..\..\xbmc\cores\AudioEngine\Utils\AEBuffer.h">
+      <Filter>cores\AudioEngine\Utils</Filter>
+    </ClInclude>
       <Filter>cores\AudioEngine\Utils</Filter>
     </ClInclude>
   </ItemGroup>

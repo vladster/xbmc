@@ -51,8 +51,6 @@ CSoftAE::CSoftAE():
   m_sink               (NULL ),
   m_transcode          (false),
   m_rawPassthrough     (false),
-  m_bufferSize         (0    ),
-  m_buffer             (NULL ),
   m_encoder            (NULL ),
   m_encodedBuffer      (NULL ),
   m_encodedBufferSize  (0    ),
@@ -294,7 +292,7 @@ bool CSoftAE::OpenSink()
     m_sinkFormat = newFormat;
 
     /* invalidate the buffer */
-    m_bufferSamples = 0;
+    m_buffer.Empty();
   }
   else
     CLog::Log(LOGINFO, "CSoftAE::OpenSink - keeping old sink");
@@ -303,10 +301,7 @@ bool CSoftAE::OpenSink()
   if (m_rawPassthrough)
   {
     if (!wasRawPassthrough)
-    {
-      /* invalidate the buffer */
-      m_bufferSamples = 0;
-    }
+      m_buffer.Empty();
     
     reInit = (reInit || m_chLayout != m_sinkFormat.m_channelLayout);
     m_chLayout       = m_sinkFormat.m_channelLayout;
@@ -326,7 +321,7 @@ bool CSoftAE::OpenSink()
       if (!wasTranscode || wasRawPassthrough)
       {
         /* invalidate the buffer */
-        m_bufferSamples = 0;
+        m_buffer.Empty();
         if (m_encoder)
           m_encoder->Reset();
       }
@@ -338,7 +333,7 @@ bool CSoftAE::OpenSink()
       encoderFormat.m_channelLayout = m_chLayout;
       if (!m_encoder || !m_encoder->IsCompatible(encoderFormat))
       {
-        m_bufferSamples = 0;
+        m_buffer.Empty();
         SetupEncoder(encoderFormat);
         m_encoderFormat = encoderFormat;
       }
@@ -362,13 +357,8 @@ bool CSoftAE::OpenSink()
     m_frameSize      = m_bytesPerSample * m_chLayout.Count();
   }
 
-  if (m_bufferSize < neededBufferSize)
-  {
-    m_bufferSamples = 0;
-    _aligned_free(m_buffer);
-    m_buffer = _aligned_malloc(neededBufferSize, 16);
-    m_bufferSize = neededBufferSize;
-  }
+  if (m_buffer.Size() < neededBufferSize)
+    m_buffer.Alloc(neededBufferSize);
 
   m_remap.Initialize(m_chLayout, m_sinkFormat.m_channelLayout, true);
   
@@ -546,9 +536,7 @@ void CSoftAE::Deinitialize()
   m_encoder = NULL;
 
   ResetEncoder();
-
-  _aligned_free(m_buffer);
-  m_buffer = NULL;
+  m_buffer.DeAlloc();
 
   _aligned_free(m_converted);
   m_converted = NULL;
@@ -815,7 +803,7 @@ void CSoftAE::Run()
     m_delay = m_sink->GetDelay();
     if (m_transcode && m_encoder && !m_rawPassthrough)
       m_delay += m_encoder->GetDelay(m_encodedBufferFrames - m_encodedBufferPos);
-    unsigned int buffered = m_bufferSamples / m_chLayout.Count();
+    unsigned int buffered = m_buffer.Used() / m_sinkFormat.m_frameSize;
     m_delay += (float)buffered / (float)m_sinkFormat.m_sampleRate;
   }
 
@@ -873,10 +861,9 @@ void CSoftAE::FinalizeSamples(float *buffer, unsigned int samples)
 void CSoftAE::RunOutputStage()
 {
   const unsigned int rSamples = m_sinkFormat.m_frames * m_sinkFormat.m_channelLayout.Count();
-  const unsigned int samples  = m_sinkFormat.m_frames * m_chLayout.Count();
 
   /* this normally only loops once */
-  while(m_bufferSamples >= samples)
+  while(m_buffer.Used() / m_sinkFormat.m_frameSize >= m_sinkFormat.m_frames)
   {
     int wroteFrames;
 
@@ -887,7 +874,11 @@ void CSoftAE::RunOutputStage()
       m_remappedSize = rSamples;
     }
 
-    m_remap.Remap((float *)m_buffer, m_remapped, m_sinkFormat.m_frames);
+    m_remap.Remap(
+      (float *)m_buffer.Raw(m_sinkFormat.m_frames * m_sinkFormat.m_frameSize),
+      m_remapped,
+      m_sinkFormat.m_frames
+    );
     FinalizeSamples(m_remapped, rSamples);
 
     if (m_convertFn)
@@ -907,37 +898,31 @@ void CSoftAE::RunOutputStage()
       wroteFrames = m_sink->AddPackets((uint8_t*)m_remapped, m_sinkFormat.m_frames);
     }
 
-    int wroteSamples = wroteFrames * m_sinkFormat.m_channelLayout.Count();
-    int bytesLeft    = (m_bufferSamples - wroteSamples) * m_bytesPerSample;
-    memmove((float*)m_buffer, (float*)m_buffer + wroteSamples, bytesLeft);
-    m_bufferSamples -= wroteSamples;
+    m_buffer.Shift(NULL, wroteFrames * m_sinkFormat.m_frameSize);
   }
 }
 
 void CSoftAE::RunRawOutputStage()
 {
-  unsigned int samples = m_sinkFormat.m_frames * m_sinkFormat.m_channelLayout.Count();
+  unsigned int block = m_sinkFormat.m_frames * m_sinkFormat.m_frameSize;
 
   /* this normally only loops once */
-  while(m_bufferSamples >= samples)
+  while(m_buffer.Used() >= block)
   {
     int wroteFrames;
-    uint8_t *rawBuffer = (uint8_t*)m_buffer;
-    wroteFrames = m_sink->AddPackets(rawBuffer, m_sinkFormat.m_frames);
-
-    int wroteSamples = wroteFrames * m_sinkFormat.m_channelLayout.Count();
-    int bytesLeft    = (m_bufferSamples - wroteSamples) * m_bytesPerSample;
-    memmove(rawBuffer, rawBuffer + (wroteSamples * m_bytesPerSample), bytesLeft);
-    m_bufferSamples -= wroteSamples;
+    wroteFrames = m_sink->AddPackets((uint8_t*)m_buffer.Raw(block), m_sinkFormat.m_frames);
+    m_buffer.Shift(NULL, wroteFrames * m_sinkFormat.m_frameSize);
   }
 }
 
 void CSoftAE::RunTranscodeStage()
 {
   /* if we dont have enough samples to encode yet, return */
-  if (m_bufferSamples >= m_encoderFormat.m_frameSamples && m_encodedBufferFrames < m_sinkFormat.m_frames * 2)
+  unsigned int block = m_encoderFormat.m_frames * m_encoderFormat.m_frameSize;
+
+  if (m_buffer.Used() >= block && m_encodedBufferFrames < m_sinkFormat.m_frames * 2)
   {
-    FinalizeSamples((float*)m_buffer, m_encoderFormat.m_frameSamples);    
+    FinalizeSamples((float*)m_buffer.Raw(block), m_encoderFormat.m_frameSamples);    
 
     void *buffer;
     if (m_convertFn)
@@ -949,18 +934,18 @@ void CSoftAE::RunTranscodeStage()
         m_converted     = (uint8_t *)_aligned_malloc(newsize, 16);
         m_convertedSize = newsize;
       }
-      m_convertFn((float*)m_buffer, m_encoderFormat.m_frames * m_encoderFormat.m_channelLayout.Count(), m_converted);
+      m_convertFn(
+        (float*)m_buffer.Raw(block),
+        m_encoderFormat.m_frames * m_encoderFormat.m_channelLayout.Count(),
+        m_converted
+      );
       buffer = m_converted;
     }
     else
-      buffer = m_buffer;
+      buffer = m_buffer.Raw(block);
 
     int encodedFrames  = m_encoder->Encode((float*)buffer, m_encoderFormat.m_frames);
-    int encodedSamples = encodedFrames * m_encoderFormat.m_channelLayout.Count();
-    int bytesLeft      = (m_bufferSamples - encodedSamples) * m_bytesPerSample;
-
-    memmove((float*)m_buffer, ((float*)m_buffer) + encodedSamples, bytesLeft);
-    m_bufferSamples -= encodedSamples;
+    m_buffer.Shift(NULL, encodedFrames * m_encoderFormat.m_frameSize);
 
     uint8_t *packet;
     unsigned int size = m_encoder->GetData(&packet);
@@ -1120,24 +1105,8 @@ inline void CSoftAE::RunNormalizeStage(unsigned int channelCount, void *out, uns
 
 inline void CSoftAE::RunBufferStage(void *out)
 {
-  if (m_rawPassthrough)
-  {
-    /* check for buffer overflow */
-    ASSERT(m_bufferSize - m_bufferSamples * m_bytesPerSample >= m_sinkFormat.m_frameSize);
-
-    uint8_t *rawBuffer = (uint8_t*)m_buffer;
-    memcpy(rawBuffer + (m_bufferSamples * m_bytesPerSample), out, m_sinkFormat.m_frameSize);
-  }
-  else
-  {
-    /* check for buffer overflow */
-    ASSERT(m_bufferSize - m_bufferSamples * sizeof(float) >= m_frameSize);
-
-    float *floatBuffer = (float*)m_buffer;
-    memcpy(floatBuffer + m_bufferSamples, out, m_frameSize);
-  }
-
-  m_bufferSamples += m_chLayout.Count();
+  if (m_rawPassthrough) m_buffer.Push(out, m_sinkFormat.m_frameSize);
+  else                  m_buffer.Push(out, m_frameSize);
 }
 
 inline void CSoftAE::RemoveStream(StreamList &streams, CSoftAEStream *stream)

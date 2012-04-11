@@ -52,6 +52,8 @@ CSoftAEStream::CSoftAEStream(enum AEDataFormat dataFormat, unsigned int sampleRa
   m_frameBufferSize (0    ),
   m_ssrc            (NULL ),
   m_framesBuffered  (0    ),
+  m_newPacket       (NULL ),
+  m_packet          (NULL ),
   m_vizPacketPos    (NULL ),
   m_draining        (false),
   m_vizBufferSamples(0    ),
@@ -98,8 +100,7 @@ void CSoftAEStream::Initialize()
   if (m_valid)
   {
     InternalFlush();
-    _aligned_free(m_newPacket.data   );
-    _aligned_free(m_newPacket.vizData);
+    delete m_newPacket;
 
     if (m_convert)
       _aligned_free(m_convertBuffer);
@@ -117,6 +118,7 @@ void CSoftAEStream::Initialize()
     /* we are raw, which means we need to work in the output format */
     useDataFormat       = ((CSoftAE*)&AE)->GetSinkDataFormat();
     m_initChannelLayout = ((CSoftAE*)&AE)->GetSinkChLayout  ();
+    m_samplesPerFrame   = m_initChannelLayout.Count();
   }
   else
   {
@@ -125,11 +127,11 @@ void CSoftAEStream::Initialize()
       m_valid = false;
       return;
     }
+    m_samplesPerFrame = AE.GetChannelLayout().Count();
   }
 
   m_bytesPerSample  = (CAEUtil::DataFormatToBits(useDataFormat) >> 3);
   m_bytesPerFrame   = m_bytesPerSample * m_initChannelLayout.Count();
-  m_samplesPerFrame = m_initChannelLayout.Count();
 
   m_aeChannelLayout = AE.GetChannelLayout();
   m_aePacketSamples = SOFTAE_FRAMES * m_aeChannelLayout.Count();
@@ -142,7 +144,10 @@ void CSoftAEStream::Initialize()
   m_format.m_frameSamples  = m_format.m_frames * m_initChannelLayout.Count();
   m_format.m_frameSize     = m_bytesPerFrame;
 
-  if (!AE_IS_RAW(m_initDataFormat))
+  m_newPacket = new PPacket();
+  if (AE_IS_RAW(m_initDataFormat))
+    m_newPacket->data.Alloc(m_format.m_frames * m_format.m_frameSize);
+  else
   {
     if (
       !m_remap   .Initialize(m_initChannelLayout, m_aeChannelLayout               , false, false, AE.GetStdChLayout()) ||
@@ -152,16 +157,10 @@ void CSoftAEStream::Initialize()
       return;
     }
 
-    m_newPacket.data = (uint8_t*)_aligned_malloc(m_format.m_frameSamples * sizeof(float), 16);
+    m_newPacket->data.Alloc(m_format.m_frameSamples * sizeof(float));
   }
-  else
-    m_newPacket.data = (uint8_t*)_aligned_malloc(m_format.m_frames * m_format.m_frameSize, 16);
 
-  m_newPacket.vizData = NULL;
-  m_newPacket.samples = 0;
-  m_packet.samples    = 0;
-  m_packet.data       = NULL;
-  m_packet.vizData    = NULL;
+  m_packet = NULL;
 
   if (m_frameBuffer)
     _aligned_free(m_frameBuffer);
@@ -195,7 +194,7 @@ void CSoftAEStream::Initialize()
     m_ssrcData.end_of_input  = 0;
   }
 
-  m_chLayoutCount = m_format.m_channelLayout.Count();  
+  m_chLayoutCount = m_format.m_channelLayout.Count();
   m_valid = true;
 }
 
@@ -222,8 +221,6 @@ CSoftAEStream::~CSoftAEStream()
     m_ssrc = NULL;
   }
 
-  _aligned_free(m_newPacket.data);
-
   CLog::Log(LOGDEBUG, "CSoftAEStream::~CSoftAEStream - Destructed");
 }
 
@@ -247,7 +244,7 @@ unsigned int CSoftAEStream::AddData(void *data, unsigned int size)
   if (m_draining)
   {
     /* if the stream has finished draining, cork it */
-    if (!m_packet.samples && m_outBuffer.empty())
+    if (!m_packet->data.Used() && m_outBuffer.empty())
       m_draining = false;
     else
       return 0;
@@ -334,57 +331,53 @@ unsigned int CSoftAEStream::ProcessFrameBuffer()
 
   /* buffer the data */
   m_framesBuffered += frames;
-  while(samples)
+
+  const unsigned int inputBlockSize     = m_format.m_frames * m_format.m_channelLayout.Count() * sizeof(float);
+  const unsigned int outputBlockSize    = m_format.m_frames * m_aeChannelLayout       .Count() * sizeof(float); 
+  const unsigned int outputBlockSizeViz = m_format.m_frames * 2 * sizeof(float);
+
+  size_t remaining = samples * m_bytesPerSample;
+  while(remaining)
   {
-    unsigned int room = m_format.m_frameSamples - m_newPacket.samples;
-    unsigned int copy = std::min(room, samples);
-
-    if (AE_IS_RAW(m_initDataFormat))
-    {
-      unsigned int size = copy * m_bytesPerSample;
-      memcpy(m_newPacket.data + (m_newPacket.samples * m_bytesPerSample), data, size);
-      data += size;
-    }
-    else
-    {
-      unsigned int size = copy * sizeof(float);
-      memcpy((float*)m_newPacket.data + m_newPacket.samples, data, size);
-      data += size;
-    }
-
-    m_newPacket.samples += copy;
-    samples             -= copy;
+    size_t copy = std::min(m_newPacket->data.Free(), remaining);
+    m_newPacket->data.Push(data, copy);
+    data      += copy;
+    remaining -= copy;
 
     /* if we have a full block of data */
-    if (m_newPacket.samples == m_format.m_frameSamples)
+    if (m_newPacket->data.Free() == 0)
     {
       if (AE_IS_RAW(m_initDataFormat))
       {
         m_outBuffer.push_back(m_newPacket);
-        m_newPacket.samples = 0;
-        m_newPacket.data    = (uint8_t*)_aligned_malloc(m_format.m_frames * m_format.m_frameSize, 16);
+        m_newPacket = new PPacket();
+        m_newPacket->data.Alloc(inputBlockSize);
+        continue;
       }
-      else
+
+      /* downmix/remap the data */
+      PPacket *pkt = new PPacket();
+      pkt->data.Alloc(outputBlockSize);
+      m_remap.Remap(
+        (float*)m_newPacket->data.Raw(inputBlockSize ),
+        (float*)pkt->data.Raw        (outputBlockSize),
+        m_format.m_frames
+      );
+
+      /* downmix for the viz if we have one */
+      if (m_audioCallback)
       {
-        /* downmix/remap the data */
-        PPacket pkt;
-        pkt.samples = m_aePacketSamples;
-        pkt.data    = (uint8_t*)_aligned_malloc(m_aePacketSamples * sizeof(float), 16);
-        m_remap.Remap((float*)m_newPacket.data, (float*)pkt.data, m_format.m_frames);
-
-        /* downmix for the viz if we have one */
-        if (m_audioCallback)
-        {
-          pkt.vizData = (float*)_aligned_malloc(m_format.m_frames * 2 * sizeof(float), 16);
-          m_vizRemap.Remap((float*)m_newPacket.data, pkt.vizData, m_format.m_frames);
-        }
-        else
-          pkt.vizData = NULL;
-
-        /* add the packet to the output */
-        m_outBuffer.push_back(pkt);
-        m_newPacket.samples = 0;
+        pkt->vizData.Alloc(outputBlockSizeViz);
+        m_vizRemap.Remap(
+          (float*)m_newPacket->data   .Raw(inputBlockSize    ),
+          (float*)pkt        ->vizData.Raw(outputBlockSizeViz),
+          m_format.m_frames
+        );
       }
+
+      /* add the packet to the output */
+      m_outBuffer.push_back(pkt);
+      m_newPacket->data.Empty();
     }
   }
 
@@ -417,12 +410,10 @@ uint8_t* CSoftAEStream::GetFrame()
     return NULL;
 
   /* if the packet is empty, advance to the next one */
-  if(!m_packet.samples)
+  if(!m_packet || m_packet->data.CursorEnd())
   {
-    _aligned_free(m_packet.data   );
-    _aligned_free(m_packet.vizData);
-    m_packet.data    = NULL;
-    m_packet.vizData = NULL;
+    delete m_packet;
+    m_packet = NULL;
     
     /* no more packets, return null */
     if (m_outBuffer.empty())
@@ -441,30 +432,16 @@ uint8_t* CSoftAEStream::GetFrame()
     /* get the next packet */
     m_packet = m_outBuffer.front();
     m_outBuffer.pop_front();
-
-    m_packetPos    = m_packet.data;
-    m_vizPacketPos = m_packet.vizData;
   }
   
   /* fetch one frame of data */
-  uint8_t *ret      = (uint8_t*)m_packetPos;
-  float   *vizData  = m_vizPacketPos;
-
-  m_packet.samples -= m_samplesPerFrame;
-  if (AE_IS_RAW(m_initDataFormat))
-    m_packetPos += m_bytesPerFrame;
-  else
-  {
-    m_packetPos += m_samplesPerFrame * sizeof(float);
-    if(vizData)
-      m_vizPacketPos += 2;
-  }
-
-  --m_framesBuffered;
+  ssize_t bytes = (AE_IS_RAW(m_initDataFormat)) ? m_bytesPerFrame : m_samplesPerFrame * sizeof(float);
+  uint8_t *ret  = (uint8_t*)m_packet->data.CursorRead(bytes);
 
   /* we have a frame, if we have a viz we need to hand the data to it */
-  if (m_audioCallback && vizData)
+  if (m_audioCallback && !m_packet->vizData.CursorEnd())
   {
+    float *vizData = (float*)m_packet->vizData.CursorRead(2 * sizeof(float));
     memcpy(m_vizBuffer + m_vizBufferSamples, vizData, 2 * sizeof(float));
     m_vizBufferSamples += 2;
     if (m_vizBufferSamples == 512)
@@ -474,6 +451,7 @@ uint8_t* CSoftAEStream::GetFrame()
     }
   }
 
+  --m_framesBuffered;
   return ret;
 }
 
@@ -519,7 +497,7 @@ void CSoftAEStream::Drain()
 bool CSoftAEStream::IsDrained()
 {
   CSharedLock lock(m_lock);
-  return (m_draining && !m_packet.samples && m_outBuffer.empty());
+  return (m_draining && !m_packet && m_outBuffer.empty());
 }
 
 void CSoftAEStream::Flush()
@@ -540,23 +518,24 @@ void CSoftAEStream::InternalFlush()
   }
   
   /* invalidate any incoming samples */
-  m_newPacket.samples = 0;
+  m_newPacket->data.Empty();
   
   /*
     clear the current buffered packet we cant delete the data as it may be
     in use by the AE thread, so we just set the packet count to 0, it will
     get freed by the next call to GetFrame or destruction
   */
-  m_packet.samples = 0;
+  if (m_packet)
+  {
+    delete m_packet;
+    m_packet = NULL;
+  }
 
   /* clear any other buffered packets */
   while(!m_outBuffer.empty()) {    
-    PPacket p = m_outBuffer.front();
+    PPacket *p = m_outBuffer.front();
     m_outBuffer.pop_front();    
-    _aligned_free(p.data);
-    _aligned_free(p.vizData);
-    p.data    = NULL;
-    p.vizData = NULL;
+    delete p;
   };
  
   /* reset our counts */

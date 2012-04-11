@@ -32,6 +32,7 @@ private:
   uint8_t *m_buffer;
   size_t   m_bufferSize;
   size_t   m_bufferPos;
+  size_t   m_cursorPos;
 
 public:
   CAEBuffer();
@@ -58,4 +59,9 @@ public:
   void  Pop    (void *dst, const size_t size);
   void  Shift  (void *dst, const size_t size);
   void* Raw    (const size_t size);
+
+  /* cursor methods */
+  inline void  CursorReset() { m_cursorPos = 0; }
+  inline bool  CursorEnd  () { return m_cursorPos == m_bufferSize; }
+  void*        CursorRead(const size_t size);
 };

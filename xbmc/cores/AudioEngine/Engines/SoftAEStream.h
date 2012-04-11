@@ -29,6 +29,7 @@
 #include "Interfaces/AEStream.h"
 #include "Utils/AEConvert.h"
 #include "Utils/AERemap.h"
+#include "Utils/AEBuffer.h"
 
 class IAEPostProc;
 class CSoftAEStream : public IAEStream
@@ -91,9 +92,8 @@ private:
   
   typedef struct
   {
-    unsigned int  samples;
-    uint8_t      *data;
-    float        *vizData;
+    CAEBuffer data;
+    CAEBuffer vizData;
   } PPacket;
 
   AEAudioFormat m_format;
@@ -114,24 +114,24 @@ private:
 
   CAEConvert::AEConvertToFn m_convertFn;
 
-  uint8_t           *m_frameBuffer;
-  unsigned int       m_frameBufferSize;
-  unsigned int       m_bytesPerSample;
-  unsigned int       m_bytesPerFrame;
-  unsigned int       m_samplesPerFrame;
-  CAEChannelInfo     m_aeChannelLayout;
-  unsigned int       m_aePacketSamples;
-  SRC_STATE         *m_ssrc;
-  SRC_DATA           m_ssrcData;
-  unsigned int       m_framesBuffered;
-  std::list<PPacket> m_outBuffer;
-  unsigned int       ProcessFrameBuffer();
-  PPacket            m_newPacket;
-  PPacket            m_packet;
-  uint8_t           *m_packetPos;
-  float             *m_vizPacketPos;
-  bool               m_paused;
-  bool               m_draining;
+  uint8_t            *m_frameBuffer;
+  unsigned int        m_frameBufferSize;
+  unsigned int        m_bytesPerSample;
+  unsigned int        m_bytesPerFrame;
+  unsigned int        m_samplesPerFrame;
+  CAEChannelInfo      m_aeChannelLayout;
+  unsigned int        m_aePacketSamples;
+  SRC_STATE          *m_ssrc;
+  SRC_DATA            m_ssrcData;
+  unsigned int        m_framesBuffered;
+  std::list<PPacket*> m_outBuffer;
+  unsigned int        ProcessFrameBuffer();
+  PPacket            *m_newPacket;
+  PPacket            *m_packet;
+  uint8_t            *m_packetPos;
+  float              *m_vizPacketPos;
+  bool                m_paused;
+  bool                m_draining;
 
   /* vizualization internals */
   CAERemap           m_vizRemap;

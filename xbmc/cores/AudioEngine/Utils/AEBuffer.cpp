@@ -26,7 +26,8 @@
 CAEBuffer::CAEBuffer() :
   m_buffer    (NULL),
   m_bufferSize(0   ),
-  m_bufferPos (0   )
+  m_bufferPos (0   ),
+  m_cursorPos (0   )
 {
 }
 
@@ -48,7 +49,7 @@ void CAEBuffer::ReAlloc(const size_t size)
 #ifdef _WIN32
   m_buffer = (uint8_t*)_aligned_realloc(m_buffer, size, 16);
 #else
-  uint8_t *tmp = (uint8_t*)_aligned_malloc(size, 16);
+  uint8_t* tmp = (uint8_t*)_aligned_malloc(size, 16);
   if (m_buffer)
   {
     size_t copy = std::min(size, m_bufferSize);
@@ -132,10 +133,21 @@ void CAEBuffer::Shift(void *dst, const size_t size)
   m_bufferPos -= size;
 }
 
-void *CAEBuffer::Raw(const size_t size)
+void* CAEBuffer::Raw(const size_t size)
 {
 #ifdef _DEBUG
-  ASSERT(size <= m_bufferPos);
+  ASSERT(size <= m_bufferSize);
 #endif
   return m_buffer;
+}
+
+void* CAEBuffer::CursorRead(const size_t size)
+{
+#ifdef _DEBUG
+  ASSERT(m_cursorPos + size <= m_bufferSize);
+#endif
+
+  uint8_t* out = m_buffer + m_cursorPos;
+  m_cursorPos += size;
+  return out;
 }

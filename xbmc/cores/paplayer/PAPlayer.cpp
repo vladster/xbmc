@@ -368,8 +368,6 @@ void PAPlayer::Process()
     }
 #endif
   }
-  
-  m_callback.OnPlayBackEnded();
 }
 
 inline void PAPlayer::ProcessStreams(float &delay, float &buffer)
@@ -379,6 +377,7 @@ inline void PAPlayer::ProcessStreams(float &delay, float &buffer)
   {
     m_isPlaying = false;
     delay       = 0;
+    m_callback.OnPlayBackEnded();
     return;
   }
 

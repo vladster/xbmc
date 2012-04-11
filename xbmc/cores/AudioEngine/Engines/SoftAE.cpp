@@ -989,19 +989,18 @@ unsigned int CSoftAE::RunRawStreamStage(unsigned int channelCount, void *out, bo
 
   /* get the frame and append it to the output */
   uint8_t *frame = masterStream->GetFrame();
-  if (!frame)
+  unsigned int mixed = 0;
+  if (frame)
   {
-    ResumeStreams(resumeStreams);
-    return 0;
+    memcpy(out, frame, m_sinkFormat.m_frameSize);
+    mixed = 1;
   }
-
-  memcpy(out, frame, m_sinkFormat.m_frameSize);
 
   if (masterStream->IsDrained() && masterStream->m_slave && masterStream->m_slave->m_paused)
     resumeStreams.push_back(masterStream);
 
-  ResumeStreams(resumeStreams);
-  return 1;
+  ResumeSlaveStreams(resumeStreams);
+  return mixed;
 }
 
 unsigned int CSoftAE::RunStreamStage(unsigned int channelCount, void *out, bool &restart)
@@ -1029,11 +1028,11 @@ unsigned int CSoftAE::RunStreamStage(unsigned int channelCount, void *out, bool 
     CSoftAEStream *stream = *itt;
 
     float *frame = (float*)stream->GetFrame();
-    if (!frame)
-      continue;
-
     if (stream->IsDrained() && stream->m_slave && stream->m_slave->IsPaused())
       resumeStreams.push_back(stream);
+
+    if (!frame)
+      continue;
 
     float volume = stream->GetVolume() * stream->GetReplayGain();
     #ifdef __SSE__
@@ -1049,11 +1048,11 @@ unsigned int CSoftAE::RunStreamStage(unsigned int channelCount, void *out, bool 
     ++mixed;
   }
 
-  ResumeStreams(resumeStreams);
+  ResumeSlaveStreams(resumeStreams);
   return mixed;
 }
 
-inline void CSoftAE::ResumeStreams(StreamList &streams)
+inline void CSoftAE::ResumeSlaveStreams(StreamList &streams)
 {
   /* resume any streams that need to be */
   for(StreamList::iterator itt = streams.begin(); itt != streams.end(); ++itt)

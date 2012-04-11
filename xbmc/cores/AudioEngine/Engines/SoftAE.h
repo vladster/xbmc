@@ -191,7 +191,7 @@ private:
   unsigned int RunRawStreamStage (unsigned int channelCount, void *out, bool &restart);
   unsigned int RunStreamStage    (unsigned int channelCount, void *out, bool &restart);
 
-  void         ResumeStreams     (StreamList &streams);
+  void         ResumeSlaveStreams(StreamList &streams);
   void         RunNormalizeStage (unsigned int channelCount, void *out, unsigned int mixed);
   void         RunBufferStage    (void *out);
 

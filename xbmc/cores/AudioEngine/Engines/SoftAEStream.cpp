@@ -324,10 +324,7 @@ unsigned int CSoftAEStream::ProcessFrameBuffer()
 
   /* buffer the data */
   m_framesBuffered += frames;
-
-  const unsigned int inputBlockSize     = m_format.m_frames * m_format.m_channelLayout.Count() * sampleSize;
-  const unsigned int outputBlockSize    = m_format.m_frames * m_aeChannelLayout       .Count() * sampleSize;
-  const unsigned int outputBlockSizeViz = m_format.m_frames * 2 * sizeof(float);
+  const unsigned int inputBlockSize = m_format.m_frames * m_format.m_channelLayout.Count() * sampleSize;
 
   size_t remaining = samples * sampleSize;
   while(remaining)
@@ -352,23 +349,26 @@ unsigned int CSoftAEStream::ProcessFrameBuffer()
 
     /* make a new packet for downmix/remap */
     PPacket *pkt = new PPacket();
-    pkt->data.Alloc(outputBlockSize);
 
     /* downmix/remap the data */
+    size_t frames = m_newPacket->data.Used() / m_format.m_channelLayout.Count() / sizeof(float);
+    size_t used   = frames * m_aeChannelLayout.Count() * sizeof(float);
+    pkt->data.Alloc(used);
     m_remap.Remap(
-      (float*)m_newPacket->data.Raw(inputBlockSize ),
-      (float*)pkt->data.Raw        (outputBlockSize),
-      m_format.m_frames
+      (float*)m_newPacket->data.Raw(m_newPacket->data.Used()),
+      (float*)pkt        ->data.Raw(used),
+      frames
     );
 
     /* downmix for the viz if we have one */
     if (m_audioCallback)
     {
-      pkt->vizData.Alloc(outputBlockSizeViz);
+      size_t vizUsed = frames * 2 * sizeof(float);
+      pkt->vizData.Alloc(vizUsed);
       m_vizRemap.Remap(
-        (float*)m_newPacket->data   .Raw(inputBlockSize    ),
-        (float*)pkt        ->vizData.Raw(outputBlockSizeViz),
-        m_format.m_frames
+        (float*)m_newPacket->data   .Raw(m_newPacket->data.Used()),
+        (float*)pkt        ->vizData.Raw(vizUsed),
+        frames
       );
     }
 

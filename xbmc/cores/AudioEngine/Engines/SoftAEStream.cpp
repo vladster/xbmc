@@ -114,8 +114,8 @@ void CSoftAEStream::Initialize()
   if (AE_IS_RAW(m_initDataFormat))
   {
     /* we are raw, which means we need to work in the output format */
-    useDataFormat       = ((CSoftAE*)&AE)->GetSinkDataFormat();
-    m_initChannelLayout = ((CSoftAE*)&AE)->GetSinkChLayout  ();
+    useDataFormat       = AE.GetSinkDataFormat();
+    m_initChannelLayout = AE.GetSinkChLayout  ();
     m_samplesPerFrame   = m_initChannelLayout.Count();
   }
   else

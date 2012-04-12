@@ -1216,7 +1216,7 @@ bool CApplication::Initialize()
   /* window id's 3000 - 3100 are reserved for python */
 
   CAEFactory::LoadEngine();
-  SetHardwareVolume(CAEFactory::AE->GetVolume());
+  CAEFactory::AE->SetVolume(g_settings.m_fVolumeLevel);
 
   // Make sure we have at least the default skin
   if (!LoadSkin(g_guiSettings.GetString("lookandfeel.skin")) && !LoadSkin(DEFAULT_SKIN))
@@ -5149,6 +5149,7 @@ void CApplication::SetVolume(float iValue, bool isPercentage/*=true*/)
 void CApplication::SetHardwareVolume(float hardwareVolume)
 {
   hardwareVolume = std::max(VOLUME_MINIMUM, std::min(VOLUME_MAXIMUM, hardwareVolume));
+  g_settings.m_fVolumeLevel = hardwareVolume;
   CAEFactory::AE->SetVolume(hardwareVolume);
 }
 

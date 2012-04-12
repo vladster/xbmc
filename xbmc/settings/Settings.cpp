@@ -896,7 +896,7 @@ bool CSettings::SaveSettings(const CStdString& strSettingsFile, CGUISettings *lo
   pNode = pRoot->InsertEndChild(volumeNode);
   if (!pNode) return false;
   XMLUtils::SetBoolean(pNode, "mute", m_bMute);
-  XMLUtils::SetFloat(pNode, "volumelevel", m_fVolumeLevel);
+  XMLUtils::SetFloat(pNode, "fvolumelevel", m_fVolumeLevel);
 
   SaveCalibration(pRoot);
 

@@ -65,7 +65,9 @@ public:
   virtual float GetDelay();
 
   virtual float GetVolume();
-  virtual void  SetVolume(float volume);
+  virtual void  SetVolume(const float volume);
+  virtual void  SetMute(const bool enabled) { m_muted = enabled; }
+  virtual bool  IsMuted() { return m_muted; }
 
   /* returns a new stream for data in the specified format */
   virtual IAEStream *MakeStream(enum AEDataFormat dataFormat, unsigned int sampleRate, CAEChannelInfo channelLayout, unsigned int options = 0);
@@ -135,6 +137,7 @@ private:
 
   /* the current configuration */
   float               m_volume;
+  bool                m_muted;
   CAEChannelInfo      m_chLayout;
   unsigned int        m_frameSize;
 

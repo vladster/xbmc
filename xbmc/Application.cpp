@@ -1216,7 +1216,10 @@ bool CApplication::Initialize()
   /* window id's 3000 - 3100 are reserved for python */
 
   CAEFactory::LoadEngine();
+  //  Restore volume
   CAEFactory::AE->SetVolume(g_settings.m_fVolumeLevel);
+  CAEFactory::AE->SetMute  (g_settings.m_bMute);
+
 
   // Make sure we have at least the default skin
   if (!LoadSkin(g_guiSettings.GetString("lookandfeel.skin")) && !LoadSkin(DEFAULT_SKIN))
@@ -1251,10 +1254,6 @@ bool CApplication::Initialize()
 
   CLog::Log(LOGINFO, "removing tempfiles");
   CUtil::RemoveTempFiles();
-
-  //  Restore volume
-  if (g_settings.m_bMute)
-    Mute();
 
   // if the user shutoff the xbox during music scan
   // restore the settings
@@ -5095,7 +5094,7 @@ bool CApplication::IsMuted() const
 {
   if (g_peripherals.IsMuted())
     return true;
-  return g_settings.m_bMute;
+  return CAEFactory::AE->IsMuted();
 }
 
 void CApplication::ToggleMute(void)
@@ -5111,8 +5110,7 @@ void CApplication::Mute()
   if (g_peripherals.Mute())
     return;
 
-  g_settings.m_fVolumeLevel = CAEFactory::AE->GetVolume();
-  CAEFactory::AE->SetVolume(0.0f);
+  CAEFactory::AE->SetMute(true);
   g_settings.m_bMute = true;
 }
 
@@ -5121,8 +5119,7 @@ void CApplication::UnMute()
   if (g_peripherals.UnMute())
     return;
 
-  CAEFactory::AE->SetVolume(g_settings.m_fVolumeLevel);
-  g_settings.m_fVolumeLevel = 1.0f;
+  CAEFactory::AE->SetMute(false);
   g_settings.m_bMute = false;
 }
 

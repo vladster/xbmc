@@ -417,9 +417,6 @@ void CSoftAE::Shutdown()
 
 bool CSoftAE::Initialize()
 {
-  /* get the current volume level */
-  m_volume = g_settings.m_fVolumeLevel;
-
   /* we start even if we failed to open a sink */
   OpenSink();
   m_running = true;
@@ -726,7 +723,6 @@ float CSoftAE::GetVolume()
 
 void CSoftAE::SetVolume(float volume)
 {
-  g_settings.m_fVolumeLevel = volume;
   m_volume = volume;
 }
 
@@ -844,6 +840,12 @@ void CSoftAE::MixSounds(float *buffer, unsigned int samples)
 void CSoftAE::FinalizeSamples(float *buffer, unsigned int samples)
 {
   MixSounds(buffer, samples);
+
+  if (m_muted)
+  {
+    memset(buffer, 0, samples * sizeof(float));
+    return;
+  }
 
   #ifdef __SSE__
     CAEUtil::SSEMulClampArray(buffer, m_volume, samples);

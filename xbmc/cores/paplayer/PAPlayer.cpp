@@ -43,13 +43,14 @@
 // First one being nullsoft's nsv audio decoder format
 
 PAPlayer::PAPlayer(IPlayerCallback& callback) :
-  IPlayer         (callback),
-  m_playbackSpeed (1    ),
-  m_isPlaying     (false),
-  m_isPaused      (false),
-  m_isFinished    (false),
-  m_currentStream (NULL ),
-  m_audioCallback (NULL )
+  IPlayer            (callback),
+  m_signalSpeedChange(false),
+  m_playbackSpeed    (1    ),
+  m_isPlaying        (false),
+  m_isPaused         (false),
+  m_isFinished       (false),
+  m_currentStream    (NULL ),
+  m_audioCallback    (NULL )
 {
   m_startEvent.Reset();
 }
@@ -355,6 +356,13 @@ void PAPlayer::Process()
   CLog::Log(LOGDEBUG, "PAPlayer::Process - Playback started");  
   while(m_isPlaying && !m_bStop)
   {
+    /* this needs to happen outside of any locks to prevent deadlocks */
+    if (m_signalSpeedChange)
+    {
+      m_callback.OnPlayBackSpeedChanged(m_playbackSpeed);
+      m_signalSpeedChange = false;
+    }
+
     float delay = 1.0f;
     float buffer = 1.0f;
     ProcessStreams(delay, buffer);
@@ -633,8 +641,8 @@ void PAPlayer::SetDynamicRangeCompression(long drc)
 
 void PAPlayer::ToFFRW(int iSpeed)
 {
-  m_playbackSpeed = iSpeed;
-  m_callback.OnPlayBackSpeedChanged(iSpeed);
+  m_playbackSpeed     = iSpeed;
+  m_signalSpeedChange = true;
 }
 
 __int64 PAPlayer::GetTime()

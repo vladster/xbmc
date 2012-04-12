@@ -108,18 +108,19 @@ private:
 
   typedef std::list<StreamInfo*> StreamList;
 
-  int                    m_playbackSpeed;    /* the playback speed (1 = normal) */
-  bool                   m_isPlaying;
-  bool                   m_isPaused;
-  bool                   m_isFinished;       /* if there are no more songs in the queue */
-  unsigned int           m_crossFadeTime;    /* how long the crossfade is */
-  CEvent                 m_startEvent;       /* event for playback start */
-  StreamInfo*            m_currentStream;    /* the current playing stream */
-  IAudioCallback*        m_audioCallback;    /* the viz audio callback */
+  bool                m_signalSpeedChange;   /* true if OnPlaybackSpeedChange needs to be called */
+  int                 m_playbackSpeed;       /* the playback speed (1 = normal) */
+  bool                m_isPlaying;
+  bool                m_isPaused;
+  bool                m_isFinished;          /* if there are no more songs in the queue */
+  unsigned int        m_crossFadeTime;       /* how long the crossfade is */
+  CEvent              m_startEvent;          /* event for playback start */
+  StreamInfo*         m_currentStream;       /* the current playing stream */
+  IAudioCallback*     m_audioCallback;       /* the viz audio callback */
   
-  CSharedSection         m_streamsLock;      /* lock for the stream list */
-  StreamList             m_streams;          /* playing streams */  
-  StreamList             m_finishing;        /* finishing streams */
+  CSharedSection      m_streamsLock;         /* lock for the stream list */
+  StreamList          m_streams;             /* playing streams */  
+  StreamList          m_finishing;           /* finishing streams */
 
   bool QueueNextFileEx(const CFileItem &file, bool fadeIn = true);
   void SoftStart(bool wait = false);

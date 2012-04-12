@@ -5126,9 +5126,13 @@ void CApplication::UnMute()
   g_settings.m_bMute = false;
 }
 
-void CApplication::SetVolume(long iValue)
+void CApplication::SetVolume(float iValue, bool isPercentage/*=true*/)
 {
-  float hardwareVolume = (float)iValue / 100.0f;
+  float hardwareVolume = iValue;
+
+  if(isPercentage)
+    hardwareVolume /= 100.0f;
+
   SetHardwareVolume(hardwareVolume);
 
 /* someone please update this for AE */

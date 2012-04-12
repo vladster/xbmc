@@ -199,7 +199,7 @@ bool CCoreAudioAE::OpenCoreAudio(unsigned int sampleRate, bool forceRaw, enum AE
     m_format.m_dataFormat       = AE_FMT_FLOAT;    
   }
 
-  if (m_outputDevice.IsEmpty())
+  if (m_outputDevice.empty())
     m_outputDevice = "default";
   
   AEAudioFormat initformat = m_format;

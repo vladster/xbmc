@@ -1166,9 +1166,10 @@ bool CCoreAudioAEHALIOS::Initialize(ICoreAudioSource *ae, bool passThrough, AEAu
     CLog::Log(LOGERROR, "CCoreAudioAEHALIOS::Initialize - Unable to open the requested channel layout");
     return false;
   }
-  
-  device.Replace("CoreAudio:", "");
-  
+
+  if(device.find("CoreAudio:"))
+    device.erase(0, strlen("CoreAudio:"));
+
   // If this is a passthrough (AC3/DTS) stream, attempt to handle it natively
   if (m_Passthrough)
   {

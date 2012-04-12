@@ -49,8 +49,8 @@ static BOOL CALLBACK DSEnumCallback(LPGUID lpGuid, LPCTSTR lpcstrDescription, LP
   DSDevice dev;
   std::list<DSDevice> &enumerator = *static_cast<std::list<DSDevice>*>(lpContext);
 
-  dev.name = lpcstrDescription;
-  g_charsetConverter.unknownToUTF8(dev.name);
+  dev.name = std::string(lpcstrDescription);
+  //g_charsetConverter.unknownToUTF8(dev.name);
 
   dev.lpGuid = lpGuid;
 

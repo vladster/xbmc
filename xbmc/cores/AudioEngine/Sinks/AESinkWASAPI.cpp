@@ -134,9 +134,9 @@ bool CAESinkWASAPI::Initialize(AEAudioFormat &format, std::string &device)
       goto failed;
     }
 
-    std::stringW strRawDevName(varName.pwszVal);
-    std::string strDevName;
-    g_charsetConverter.ucs2CharsetToStringCharset(strRawDevName, strDevName);
+    std::wstring strRawDevName(varName.pwszVal);
+    std::string strDevName = std::string(strRawDevName.begin(), strRawDevName.end());
+    //g_charsetConverter.ucs2CharsetToStringCharset(strRawDevName, strDevName.c_str());
 
     if(device == strDevName)
       i = uiCount;
@@ -163,9 +163,9 @@ bool CAESinkWASAPI::Initialize(AEAudioFormat &format, std::string &device)
 
     hr = pProperty->GetValue(PKEY_Device_FriendlyName, &varName);
 
-    std::stringW strRawDevName(varName.pwszVal);
-    std::string strDevName;
-    g_charsetConverter.ucs2CharsetToStringCharset(strRawDevName, strDevName);
+    std::wstring strRawDevName(varName.pwszVal);
+    std::string strDevName = std::string(strRawDevName.begin(), strRawDevName.end());
+    //g_charsetConverter.ucs2CharsetToStringCharset(strRawDevName, strDevName);
 
     CLog::Log(LOGINFO, __FUNCTION__": Found default sound device \"%s\"", strDevName.c_str());
 
@@ -471,9 +471,9 @@ void CAESinkWASAPI::EnumerateDevices(AEDeviceList &devices, bool passthrough)
       goto failed;
     }
 
-    std::stringW strRawDevName(varName.pwszVal);
-    std::string strDevName;
-    g_charsetConverter.wToUTF8(strRawDevName, strDevName);
+    std::wstring strRawDevName(varName.pwszVal);
+    std::string strDevName = std::string(strRawDevName.begin(), strRawDevName.end());
+    //g_charsetConverter.wToUTF8(strRawDevName, strDevName);
 
     CLog::Log(LOGDEBUG, __FUNCTION__": found endpoint device: %s", strDevName.c_str());
 

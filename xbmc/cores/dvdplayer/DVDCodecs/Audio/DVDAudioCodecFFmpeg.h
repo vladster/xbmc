@@ -45,12 +45,18 @@ public:
   virtual int GetBitRate();
 
 protected:
-  AVCodecContext*   m_pCodecContext;
-  CAEChannelInfo    m_channelLayout;
-  int               m_iMapChannels;
+  AVCodecContext*     m_pCodecContext;
+  AVAudioConvert*     m_pConvert;
+  enum AVSampleFormat m_iSampleFormat;  
+  CAEChannelInfo      m_channelLayout;
+  int                 m_iMapChannels;
+  bool                m_bLpcmMode;  
 
   AVFrame* m_pFrame1;
   int      m_iBufferSize1;
+  BYTE*    m_pBuffer2;
+  int      m_iBufferSize2;
+ 
 
   bool m_bOpenedCodec;
   int m_iBuffered;
@@ -62,5 +68,6 @@ protected:
   DllAvUtil m_dllAvUtil;
 
   void BuildChannelMap();
+  void ConvertToFloat();  
 };
 

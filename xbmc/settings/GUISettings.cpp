@@ -459,9 +459,13 @@ void CGUISettings::Initialize()
 
   AddBool(aocat, "audiooutput.ac3passthrough"   , 364, true);
   AddBool(aocat, "audiooutput.dtspassthrough"   , 254, true);
+
+#if !defined(TARGET_DARWIN_IOS)  
+  AddBool(aocat, "audiooutput.multichannellpcm" , 348, true );
+#endif
+
 #if !defined(TARGET_DARWIN)
   AddBool(aocat, "audiooutput.passthroughaac"   , 299, false);
-  AddBool(aocat, "audiooutput.multichannellpcm" , 348, true );
   AddBool(aocat, "audiooutput.truehdpassthrough", 349, true );
   AddBool(aocat, "audiooutput.dtshdpassthrough" , 407, true );
 #endif

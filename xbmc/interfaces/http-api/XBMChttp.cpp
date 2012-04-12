@@ -1597,7 +1597,7 @@ int CXbmcHttp::xbmcSetVolume(int numParas, CStdString paras[])
   else
   {
     int iPercent = atoi(paras[0].c_str());
-    g_application.SetVolume(iPercent);
+    g_application.SetVolume((float)iPercent, true);
     return SetResponse(openTag+"OK");
   }
 }

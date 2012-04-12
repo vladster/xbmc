@@ -86,8 +86,6 @@ extern "C"
   OSStatus SendAppleEventToSystemProcess(AEEventID EventToSend);
 #endif
 
-  void Cocoa_ResetAudioDevices();
-
 #ifdef __cplusplus
 }
 #endif

@@ -105,7 +105,7 @@ public:
   bool SetObjectListenerProc(AudioObjectPropertyListenerProc callback, void* pClientData);
   
   AudioDeviceID GetId() {return m_DeviceId;}
-  const char* GetName(std::string& name);
+  std::string GetName();
   UInt32 GetTotalOutputChannels();
   bool GetStreams(AudioStreamIdList* pList);
   bool IsRunning();

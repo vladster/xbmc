@@ -29,7 +29,6 @@
 #include "filesystem/IFile.h"
 #include <samplerate.h>
 
-#include "DllAvCore.h"
 #include "AEConvert.h"
 #include "AEUtil.h"
 #include "AERemap.h"

@@ -31,7 +31,6 @@
 #include "Utils/AEConvert.h"
 #include "Utils/AERemap.h"
 #include "Utils/AEUtil.h"
-#include "DllAvCore.h"
 
 #include "SoftAE.h"
 #include "SoftAESound.h"

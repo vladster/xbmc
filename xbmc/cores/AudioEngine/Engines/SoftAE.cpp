@@ -29,7 +29,6 @@
 #include "settings/GUISettings.h"
 #include "settings/Settings.h"
 #include "settings/AdvancedSettings.h"
-#include "DllAvCore.h"
 
 #include "SoftAE.h"
 #include "SoftAESound.h"

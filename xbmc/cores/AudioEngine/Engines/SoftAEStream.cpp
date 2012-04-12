@@ -23,7 +23,6 @@
 #include "threads/SingleLock.h"
 #include "utils/log.h"
 #include "utils/MathUtils.h"
-#include "DllAvCore.h"
 
 #include "AEFactory.h"
 #include "Utils/AEUtil.h"

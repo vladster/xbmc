@@ -125,7 +125,7 @@ bool CAEEncoderFFmpeg::Initialize(AEAudioFormat &format)
   if (!codec)
     return false;
 
-  m_CodecCtx                 = m_dllAvCodec.avcodec_alloc_context();
+  m_CodecCtx                 = m_dllAvCodec.avcodec_alloc_context3(codec);
   m_CodecCtx->bit_rate       = m_BitRate;
   m_CodecCtx->sample_rate    = format.m_sampleRate;
   m_CodecCtx->channel_layout = AV_CH_LAYOUT_5POINT1_BACK;
@@ -189,7 +189,7 @@ bool CAEEncoderFFmpeg::Initialize(AEAudioFormat &format)
   m_CodecCtx->channels = BuildChannelLayout(m_CodecCtx->channel_layout, m_Layout);
 
   /* open the codec */
-  if (m_dllAvCodec.avcodec_open(m_CodecCtx, codec))
+  if (m_dllAvCodec.avcodec_open2(m_CodecCtx, codec, NULL))
   {
     m_dllAvUtil.av_freep(&m_CodecCtx);
     return false;

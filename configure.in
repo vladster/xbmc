@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT([xbmc], [11.0], [http://trac.xbmc.org])
+AC_INIT([xbmc], [11.9.1], [http://trac.xbmc.org])
 AC_CONFIG_HEADERS([xbmc/config.h])
 AH_TOP([#pragma once])
 m4_include([m4/ax_python_devel.m4])
@@ -480,7 +480,6 @@ case $host in
      fi
      ARCH="arm-osx"
      use_arch="arm"
-     AC_SUBST(ARCH_DEFINES, "-D_ARMEL")
      PYTHON_VERSION="2.6"
      PYTHON_LDFLAGS="-L${prefix}/lib -lpython2.6"
      PYTHON_CPPFLAGS="-I${prefix}/include/python2.6"
@@ -517,7 +516,7 @@ case $host in
      use_texturepacker=no
      ARCH="arm"
      use_arch="arm"
-     AC_SUBST(ARCH_DEFINES, "-DTARGET_POSIX -DTARGET_LINUX -D_LINUX -D_ARMEL")
+     AC_SUBST(ARCH_DEFINES, "-DTARGET_POSIX -DTARGET_LINUX -D_LINUX")
      ;;
   *)
      AC_MSG_ERROR(unsupported host ($host))
@@ -785,20 +784,8 @@ AS_CASE([x$use_libbluray],
             [AC_LANG_PROGRAM(
                 [#include <libbluray/bluray.h>]
                ,[bd_get_playlist_info(0, 0)])]
-          ,[AC_MSG_RESULT(version has old angle api)
-            AC_DEFINE([HAVE_LIBBLURAY_NOANGLE],[],[System has an old api libbluray without angle support])]
+          ,[AC_MSG_ERROR(version has old angle api which is not supported, if you want to continue disable libbluray support)]
           ,[AC_MSG_RESULT(normal)]
-        )
-
-        AC_MSG_CHECKING([for libbluray log control])
-        AC_LINK_IFELSE(
-            [AC_LANG_PROGRAM(
-               [#include <libbluray/bluray.h>
-                #include <libbluray/log_control.h>]
-              ,[bd_set_debug_mask(0)])]
-          , AC_MSG_RESULT(yes)
-          ,[AC_MSG_RESULT(no)
-            AC_DEFINE([HAVE_LIBBLURAY_NOLOGCONTROL],[],[System has an old api libbluray without log support])]
         )
     )
   ],[
@@ -815,7 +802,9 @@ if test "$host_vendor" = "apple" ; then
     AC_DEFINE([HAVE_SDL],[1],["Define to 1 if using sdl"])
   fi
 else
-  AC_CHECK_LIB([dl],         [main],, AC_MSG_ERROR($missing_library))
+  case $host_os in
+    linux*) AC_CHECK_LIB([dl], [main],, AC_MSG_ERROR($missing_library)) ;;
+  esac
   AC_CHECK_LIB([resolv],     [main],, AC_MSG_ERROR($missing_library))
   AC_CHECK_LIB([jasper],     [main],, AC_MSG_ERROR($missing_library)) # check for cximage
   AC_CHECK_LIB([rt],         [clock_gettime],, AC_MSG_ERROR($missing_library))
@@ -1189,7 +1178,7 @@ if test "x$use_libcec" != "xno"; then
 
   # libcec is dyloaded, so we need to check for its headers and link any depends.
   if test "x$use_libcec" != "xno"; then
-    PKG_CHECK_MODULES([CEC],[libcec >= 1.1.0],,[use_libcec="no";AC_MSG_RESULT($libcec_disabled)])
+    PKG_CHECK_MODULES([CEC],[libcec >= 1.5.0],,[use_libcec="no";AC_MSG_RESULT($libcec_disabled)])
 
     if test "x$use_libcec" != "xno"; then
       INCLUDES="$INCLUDES $CEC_CFLAGS"
@@ -2046,7 +2035,7 @@ XB_CONFIG_MODULE([lib/ffmpeg], [
       --disable-amd3dnow \
       --disable-armv5te \
       --disable-armv6t2 \
-      --disable-static \
+      --enable-static \
       `if test "$use_debug" = "no"; then echo --disable-debug; fi` \
       --disable-muxers \
       --enable-muxer=spdif \
@@ -2060,9 +2049,9 @@ XB_CONFIG_MODULE([lib/ffmpeg], [
       --disable-ffplay \
       --disable-ffserver \
       --disable-ffmpeg \
-      --enable-shared \
       --disable-doc \
       --disable-decoder=mpeg_xvmc \
+      --disable-crystalhd \
       --enable-postproc \
       --enable-gpl \
       --enable-protocol=http \
@@ -2101,6 +2090,7 @@ XB_CONFIG_MODULE([lib/ffmpeg], [
       --disable-ffplay \
       --disable-ffserver \
       --disable-ffmpeg \
+      --disable-crystalhd \
       --enable-shared \
       --disable-doc \
       --enable-postproc \

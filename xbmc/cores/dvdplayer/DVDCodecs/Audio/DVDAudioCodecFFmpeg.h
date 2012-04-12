@@ -23,7 +23,6 @@
 
 #include "DVDAudioCodec.h"
 #include "DllAvCodec.h"
-#include "DllAvCore.h"
 #include "DllAvFormat.h"
 #include "DllAvUtil.h"
 
@@ -50,17 +49,16 @@ protected:
   CAEChannelInfo    m_channelLayout;
   int               m_iMapChannels;
 
-  BYTE *m_pBuffer1;
-  int   m_iBufferSize1;
+  AVFrame* m_pFrame1;
+  int      m_iBufferSize1;
 
   bool m_bOpenedCodec;
   int m_iBuffered;
 
-  int     m_channels;
-  int64_t m_layout;
+  int m_channels;
+  uint64_t m_layout;
 
   DllAvCodec m_dllAvCodec;
-  DllAvCore m_dllAvCore;
   DllAvUtil m_dllAvUtil;
 
   void BuildChannelMap();

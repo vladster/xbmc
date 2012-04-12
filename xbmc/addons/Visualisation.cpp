@@ -25,8 +25,10 @@
 #include "Application.h"
 #include "music/tags/MusicInfoTag.h"
 #include "settings/Settings.h"
+#include "settings/AdvancedSettings.h"
 #include "windowing/WindowingFactory.h"
 #include "utils/URIUtils.h"
+#include "utils/StringUtils.h"
 #include "cores/AudioEngine/AEFactory.h"
 #include "cores/AudioEngine/Utils/AEConvert.h"
 #ifdef _LINUX
@@ -56,8 +58,10 @@ const float* CAudioBuffer::Get() const
 
 void CAudioBuffer::Set(const float* psBuffer, int iSize)
 {
-  if (iSize < 0) return;
+  if (iSize<0)
+    return;
   memcpy(m_pBuffer, psBuffer, iSize * sizeof(float));
+  for (int i = iSize; i < m_iLen; ++i) m_pBuffer[i] = 0;
 }
 
 bool CVisualisation::Create(int x, int y, int w, int h)
@@ -75,8 +79,8 @@ bool CVisualisation::Create(int x, int y, int w, int h)
   m_pInfo->pixelRatio = g_settings.m_ResInfo[g_graphicsContext.GetVideoResolution()].fPixelRatio;
 
   m_pInfo->name = strdup(Name().c_str());
-  m_pInfo->presets = strdup(_P(Path()).c_str());
-  m_pInfo->profile = strdup(_P(Profile()).c_str());
+  m_pInfo->presets = strdup(CSpecialProtocol::TranslatePath(Path()).c_str());
+  m_pInfo->profile = strdup(CSpecialProtocol::TranslatePath(Profile()).c_str());
   m_pInfo->submodule = NULL;
 
   if (CAddonDll<DllVisualisation, Visualisation, VIS_PROPS>::Create())
@@ -97,7 +101,7 @@ bool CVisualisation::Create(int x, int y, int w, int h)
     GetPresets();
 
     if (GetSubModules())
-      m_pInfo->submodule = strdup(_P(m_submodules.front()).c_str());
+      m_pInfo->submodule = strdup(CSpecialProtocol::TranslatePath(m_submodules.front()).c_str());
     else
       m_pInfo->submodule = NULL;
 
@@ -131,7 +135,7 @@ void CVisualisation::Start(int iChannels, int iSamplesPerSec, int iBitsPerSample
 void CVisualisation::AudioData(const float* pAudioData, int iAudioDataLength, float *pFreqData, int iFreqDataLength)
 {
   // pass audio data to visz.
-  // audio data: is float audiodata [channel][iAudioDataLength] containing the raw audio data
+  // audio data: is short audiodata [channel][iAudioDataLength] containing the raw audio data
   // iAudioDataLength = length of audiodata array
   // pFreqData = fft-ed audio data
   // iFreqDataLength = length of pFreqData
@@ -168,9 +172,7 @@ void CVisualisation::Render()
 
 void CVisualisation::Stop()
 {
-  if (g_application.m_pPlayer)
-    g_application.m_pPlayer->UnRegisterAudioCallback();
-
+  if (g_application.m_pPlayer) g_application.m_pPlayer->UnRegisterAudioCallback();
   if (Initialized())
   {
     CAddonDll<DllVisualisation, Visualisation, VIS_PROPS>::Stop();
@@ -211,10 +213,10 @@ bool CVisualisation::OnAction(VIS_ACTION action, void *param)
         const CMusicInfoTag* tag = (const CMusicInfoTag*)param;
         VisTrack track;
         track.title       = tag->GetTitle().c_str();
-        track.artist      = tag->GetArtist().c_str();
+        track.artist      = StringUtils::Join(tag->GetArtist(), g_advancedSettings.m_musicItemSeparator).c_str();
         track.album       = tag->GetAlbum().c_str();
-        track.albumArtist = tag->GetAlbumArtist().c_str();
-        track.genre       = tag->GetGenre().c_str();
+        track.albumArtist = StringUtils::Join(tag->GetAlbumArtist(), g_advancedSettings.m_musicItemSeparator).c_str();
+        track.genre       = StringUtils::Join(tag->GetGenre(), g_advancedSettings.m_musicItemSeparator).c_str();
         track.comment     = tag->GetComment().c_str();
         track.lyrics      = tag->GetLyrics().c_str();
         track.trackNumber = tag->GetTrackNumber();
@@ -247,9 +249,6 @@ void CVisualisation::OnInitialize(int iChannels, int iSamplesPerSec, int iBitsPe
   UpdateTrack();
 
   CLog::Log(LOGDEBUG, "OnInitialize() done");
-}
-
-void CVisualisation::OnDeinitialize() {
 }
 
 void CVisualisation::OnAudioData(const float* pAudioData, int iAudioDataLength)
@@ -335,7 +334,7 @@ bool CVisualisation::UpdateTrack()
   if (Initialized())
   {
     // get the current album art filename
-    m_AlbumThumb = _P(g_infoManager.GetImage(MUSICPLAYER_COVER, WINDOW_INVALID));
+    m_AlbumThumb = CSpecialProtocol::TranslatePath(g_infoManager.GetImage(MUSICPLAYER_COVER, WINDOW_INVALID));
 
     // get the current track tag
     const CMusicInfoTag* tag = g_infoManager.GetCurrentSongTag();

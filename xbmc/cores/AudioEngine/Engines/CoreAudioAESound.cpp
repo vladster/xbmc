@@ -31,7 +31,6 @@
 #include "AEConvert.h"
 #include "AERemap.h"
 #include "AEUtil.h"
-#include "DllAvCore.h"
 
 #include "CoreAudioAE.h"
 #include "CoreAudioAESound.h"

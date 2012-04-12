@@ -22,7 +22,6 @@
 #include "system.h"
 #include "threads/SingleLock.h"
 #include "utils/log.h"
-#include "DllAvCore.h"
 
 #include "Interfaces/AE.h"
 #include "AEFactory.h"

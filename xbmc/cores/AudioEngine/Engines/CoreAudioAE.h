@@ -78,6 +78,9 @@ public:
   virtual float GetDelay();
   virtual float GetVolume();
   virtual void  SetVolume(float volume);
+  virtual void SetMute(const bool enabled);
+  virtual bool IsMuted();
+  
 
   virtual bool SupportsRaw();
   
@@ -153,5 +156,7 @@ private:
                     UInt32 inNumberFrames, 
                     AudioBufferList *ioData);
   float m_volume;
+  float m_volumeBeforeMute;  
+  bool  m_muted;
 };
 #endif
